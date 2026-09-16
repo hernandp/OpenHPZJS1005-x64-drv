@@ -1,0 +1,56 @@
+; Development package. A signed catalog is required for normal package deployment.
+[Version]
+Signature="$Windows NT$"
+Provider=%Provider%
+ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
+Class=Printer
+DriverVer=09/07/2026,0.1.0.0
+CatalogFile=lj1005.cat
+DriverIsolation=2
+PnpLockdown=1
+
+[Manufacturer]
+%Provider%=Models,NTamd64
+
+[Models.NTamd64]
+%Model%=Install,USBPRINT\Hewlett-Packardhp_LaBE8D
+%Model%=Install,LPTENUM\Hewlett-Packardhp_LaBE8D
+
+[Install]
+CopyFiles=DriverFiles,MonitorFiles
+DataSection=DriverData
+LanguageMonitor="HP LaserJet 1005 Firmware Monitor (development),lj1005monitor.dll"
+Include=ntprint.inf
+Needs=UNIDRV.OEM
+
+[DriverData]
+DriverFile=UNIDRV.DLL
+ConfigFile=UNIDRVUI.DLL
+DataFile=lj1005.gpd
+DefaultDataType=RAW
+
+[DriverFiles]
+lj1005.gpd
+lj1005.ini
+lj1005render.dll
+
+[MonitorFiles]
+lj1005monitor.dll,,,0x00000020
+
+[DestinationDirs]
+DriverFiles=66000
+MonitorFiles=66002
+
+[SourceDisksNames]
+1=%Disk%,,,
+
+[SourceDisksFiles]
+lj1005.gpd=1
+lj1005.ini=1
+lj1005render.dll=1
+lj1005monitor.dll=1
+
+[Strings]
+Provider="Open ZJS Project"
+Model="HP LaserJet 1005 Series (Open ZJS)"
+Disk="HP LaserJet 1005 Open ZJS driver"

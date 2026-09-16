@@ -1,0 +1,4 @@
+LIBRARY lj1005render
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE

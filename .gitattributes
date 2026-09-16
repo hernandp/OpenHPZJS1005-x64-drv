@@ -1,0 +1,9 @@
+# Stable source line endings across Windows and other development hosts.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.inf text eol=crlf
+*.gpd text eol=crlf
+*.ini text eol=crlf
+
+# Preserve upstream bytes, including its existing trailing whitespace.
+vendor/jbig/* -text whitespace=-blank-at-eol

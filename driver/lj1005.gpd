@@ -1,0 +1,121 @@
+*GPDFileVersion: "1.0"
+*GPDSpecVersion: "1.0"
+*ModelName: "HP LaserJet 1005 Series (Open ZJS)"
+*MasterUnits: PAIR(600, 600)
+*ResourceDLL: "unires.dll"
+*Include: "stdnames.gpd"
+*PrinterType: PAGE
+*MaxCopies: 1
+*XMoveUnit: 600
+*YMoveUnit: 600
+*RasterSendAllData?: TRUE
+*OptimizeLeftBound?: FALSE
+*OutputDataFormat: H_BYTE
+*SendMultipleRows?: FALSE
+*CursorXAfterSendBlockData: AT_CURSOR_X_ORIGIN
+*CursorYAfterSendBlockData: AUTO_INCREMENT
+*Feature: Orientation
+{
+    *Name: "Orientation"
+    *DefaultOption: PORTRAIT
+    *Option: PORTRAIT
+    {
+        *Name: "Portrait"
+    }
+    *Option: LANDSCAPE_CC270
+    {
+        *Name: "Landscape"
+    }
+}
+*Feature: PaperSize
+{
+    *Name: "Paper size"
+    *DefaultOption: A4
+    *Option: A4
+    {
+        *Name: "A4"
+        *PageDimensions: PAIR(4960, 7016)
+        *PrintableArea: PAIR(4770, 6826)
+        *PrintableOrigin: PAIR(95, 95)
+    }
+    *Option: LETTER
+    {
+        *Name: "Letter"
+        *PageDimensions: PAIR(5100, 6600)
+        *PrintableArea: PAIR(4910, 6410)
+        *PrintableOrigin: PAIR(95, 95)
+    }
+}
+*Feature: Resolution
+{
+    *Name: "Resolution"
+    *DefaultOption: DPI600
+    *Option: DPI600
+    {
+        *Name: "600 dpi"
+        *DPI: PAIR(600, 600)
+        *TextDPI: PAIR(600, 600)
+        *SpotDiameter: 100
+        *PinsPerPhysPass: 1
+        *PinsPerLogPass: 1
+    }
+}
+*Feature: ColorMode
+{
+    *Name: "Color mode"
+    *DefaultOption: Mono
+    *Option: Mono
+    {
+        *Name: "Monochrome"
+        *Color?: FALSE
+        *DevNumOfPlanes: 1
+        *DevBPP: 1
+        *DrvBPP: 1
+    }
+}
+*Command: CmdStartDoc
+{
+    *Order: JOB_SETUP.1
+    *CallbackID: 1
+}
+*Command: CmdStartPage
+{
+    *Order: PAGE_SETUP.1
+    *CallbackID: 2
+}
+*Command: CmdEndPage
+{
+    *Order: PAGE_FINISH.1
+    *CallbackID: 3
+}
+*Command: CmdEndDoc
+{
+    *Order: JOB_FINISH.1
+    *CallbackID: 4
+}
+*Command: CmdSendBlockData
+{
+    *Cmd: ""
+}
+*Command: CmdCR
+{
+    *Cmd: ""
+}
+*Command: CmdLF
+{
+    *Cmd: ""
+}
+*Command: CmdFF
+{
+    *Cmd: ""
+}
+*Command: CmdXMoveAbsolute
+{
+    *CallbackID: 5
+    *Params: LIST(DestX)
+}
+*Command: CmdYMoveAbsolute
+{
+    *CallbackID: 6
+    *Params: LIST(DestY)
+}
