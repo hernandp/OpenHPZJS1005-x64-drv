@@ -1,11 +1,17 @@
 """Verify queue_test captures offline. Requires Pillow and the optional reference build."""
 from io import BytesIO
 from pathlib import Path
+import argparse
 import subprocess
 from PIL import Image, ImageChops
 
 root = Path(__file__).resolve().parents[1]
-reference = root / "build/Release/reference_foo2zjs.exe"
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--capture-directory", type=Path, default=root / "artifacts")
+parser.add_argument("--prefix", default="full-")
+parser.add_argument("--reference", type=Path, default=root / "build/Release/reference_foo2zjs.exe")
+args = parser.parse_args()
+reference = args.reference
 
 def pages(path):
     stream = BytesIO(path.read_bytes())
@@ -20,7 +26,7 @@ def pages(path):
     return result
 
 for scenario in ("portrait", "landscape", "blank", "multi", "letter"):
-    pbm = root / f"artifacts/full-{scenario}.pbm"
+    pbm = args.capture_directory / f"{args.prefix}{scenario}.pbm"
     images = pages(pbm)
     assert len(images) == (3 if scenario == "multi" else 1)
     size = (5100, 6600) if scenario == "letter" else (4960, 7016)

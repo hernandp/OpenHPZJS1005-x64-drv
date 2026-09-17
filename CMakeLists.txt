@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.24)
 project(HPLJ1005x64 VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Keep the printer DLLs usable on computers without the Visual C++ redistributable.
+# All code linked into a module uses the same runtime; exported interfaces use
+# Windows/COM ownership rules rather than passing CRT allocations across modules.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 if(WIN32 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
   message(FATAL_ERROR "This project targets Windows x64; configure with -A x64")
 endif()
@@ -35,7 +39,7 @@ if(WIN32)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${CMAKE_CURRENT_SOURCE_DIR}/driver/lj1005.gpd" "${CMAKE_CURRENT_SOURCE_DIR}/driver/lj1005.inf" "${CMAKE_CURRENT_SOURCE_DIR}/driver/lj1005.ini"
       "$<TARGET_FILE_DIR:lj1005render>"
-    DEPENDS lj1005render)
+    DEPENDS lj1005render lj1005monitor)
   target_sources(lj1005 PRIVATE src/usb_windows.cpp)
   target_link_libraries(lj1005 PRIVATE setupapi cfgmgr32)
   target_compile_definitions(lj1005 PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)

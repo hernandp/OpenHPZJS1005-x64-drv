@@ -1,4 +1,82 @@
-# Development verification — updated 2026-09-16
+# Development verification — updated 2026-09-17
+
+## Clean Windows 11 VM installation (2026-09-17)
+
+**Package installation and offline output passed on a fresh Windows 11 Pro 25H2
+x64 VM, build 26200.6584.** The VM was created from the maintainer's ISO, with Secure
+Boot and TPM enabled, no connected network adapter, no Visual Studio, and no
+registered x64 Visual C++ redistributable. Normal signature enforcement remained
+enabled. The fresh Windows image already included Unidrv in its spool directory;
+no Windows components were copied there manually.
+
+The unchanged engineering candidate from `artifacts/rc-6f7a09d0` was checked
+against its manifest before transfer. Unsigned PnP staging failed as expected
+with `0x800B0100` (no signature). A new code-signing certificate was generated
+and trusted **only inside the disposable guest**, then used to sign its copy of
+the catalog. PnP staging succeeded, followed by `Add-PrinterDriver` using the
+staged INF. Windows reported `IsPackageAware=True`, the registered Unidrv core
+dependency GUID, the expected language monitor and matching installed DLL hashes.
+This validates package mechanics under lab trust, not a publicly trusted release.
+
+A `FILE:` queue captured portrait, landscape, blank, three-page and Letter jobs.
+All five scenarios cleared the queue and passed ZJS inspection. Independent host
+decoding verified seven raster pages, their dimensions and margins, the blank
+middle page, distinct first/third-page markings and byte-for-byte equality with
+the OpenPrinting reference encoder. No physical printer or firmware was used.
+
+Local evidence is under
+`artifacts/OpenZJS-Win11-25H2/runs/20260917-135639-43deeaa8`: `results/` contains
+baseline, signing, driver-store, registration and capture reports; `captures/`
+contains the ZJS and decoded PBMs; `reference-verification.txt` records the
+independent comparison. A pre-driver/pre-certificate checkpoint is preserved as
+`Clean-Windows-before-driver`. The ISO SHA-256 was
+`d141f6030fed50f75e2b03e1eb2e53646c4b21e5386047cb860af5223f102a32`.
+After verification the empty test queue and OS revision were recorded, and the
+VM was shut down normally with its installed state and clean checkpoint retained.
+
+Provisioning initially hit a host BCD-store collision; boot files were instead
+created from isolated Windows PE inside the guest. The test harness was corrected
+to reconnect after checkpoints, use the native certificate importer under
+PowerShell Direct, query the driver's `Path` property, and preserve per-run
+evidence. Earlier failed attempts remain in local logs. See [VM testing](VM_TESTING.md)
+for the scripts and their scope. The final test ran after restoring the clean
+checkpoint. End-to-end recreation with the consolidated provisioning scripts has
+not yet been repeated; their stages were exercised during this recovery.
+
+Still pending: production certificate trust, Setup/firmware import, upgrade and
+uninstall, additional Windows builds, actual application dialogs and physical USB
+testing of this package. The working host printer was not changed.
+
+## Release packaging foundation (2026-09-16)
+
+Checkpoint commit `c882ffd` preserves the previously verified development source.
+The subsequent package-aware INF declares the Windows Unidrv core dependency.
+New builds statically link the MSVC runtime. A fresh candidate build from an
+archived source snapshot passed all six CTest suites. Dumpbin found only Windows
+system imports in the shipped renderer, monitor and diagnostic utility; no
+separate MSVC runtime imports remained. The static-runtime utility produced the
+same previously verified A4/Letter single/multi-page ZJS bytes and decoded PBMs.
+
+WDK 10.0.26100.0 GpdCheck passed. InfVerif accepted the INF with warnings 1296
+(no associated service in this printer install section) and 2083 (the generic
+validator reports the printer-specific package section as unreferenced). The
+section follows Microsoft's documented `PrinterPackageInstallation.amd64`
+pattern; actual handling by the printer installer remains a clean-VM test.
+Inf2Cat for `10_GE_X64` generated an unsigned catalog with no errors or warnings.
+These results do not establish WHQL eligibility or public signature trust.
+
+The source ZIP's 60 file entries and binary ZIP's 12 file entries were checked
+against their complete manifests, including SHA-256 and size. The source archive
+matched its working-copy snapshot, and the binary provenance matched the source
+archive hash. The production archive contains no firmware, Windows binaries or
+test executables. Local evidence: `artifacts/rc-6f7a09d0/validation/`, the two ZIPs
+in that directory, and `artifacts/verify-candidate.py`.
+
+No driver was installed and no physical print was sent for this milestone.
+Signing, clean-machine installation and runtime/hardware acceptance of these
+specific binaries are still pending. Hyper-V is available locally, but the
+existing VM is a development environment; clean installation media or another
+clean VM must be selected before deployment testing.
 
 ## Coding style and edit verification (2026-09-16)
 

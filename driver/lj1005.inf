@@ -1,10 +1,10 @@
-; Development package. A signed catalog is required for normal package deployment.
+; Package-aware Type 3 driver. The generated catalog must be signed before deployment.
 [Version]
 Signature="$Windows NT$"
 Provider=%Provider%
 ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
 Class=Printer
-DriverVer=09/07/2026,0.1.0.0
+DriverVer=09/16/2026,0.1.0.0
 CatalogFile=lj1005.cat
 DriverIsolation=2
 PnpLockdown=1
@@ -18,16 +18,14 @@ PnpLockdown=1
 
 [Install]
 CopyFiles=DriverFiles,MonitorFiles
-DataSection=DriverData
 LanguageMonitor="HP LaserJet 1005 Firmware Monitor (development),lj1005monitor.dll"
-Include=ntprint.inf
-Needs=UNIDRV.OEM
-
-[DriverData]
-DriverFile=UNIDRV.DLL
-ConfigFile=UNIDRVUI.DLL
 DataFile=lj1005.gpd
 DefaultDataType=RAW
+CoreDriverSections="{D20EA372-DD35-4950-9ED8-A6335AFE79F0},UNIDRV.OEM,UNIDRV_DATA,TTFSUB.OEM"
+
+[PrinterPackageInstallation.amd64]
+PackageAware=TRUE
+CoreDriverDependencies={D20EA372-DD35-4950-9ED8-A6335AFE79F0}
 
 [DriverFiles]
 lj1005.gpd

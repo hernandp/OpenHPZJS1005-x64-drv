@@ -48,7 +48,13 @@ git -C third_party/foo2zjs checkout 80499ed5bf6caa2963ad337e37cfda78a80aab1e
 
 `./scripts/package-dev.ps1` creates `artifacts/HPLJ1005x64-0.1.0-development.zip` with source, x64 binaries, installer scripts, tests and a SHA-256 file manifest. The bundle excludes original HP firmware, Windows components and downloaded reference sources. See `docs/TEST_STATUS.md` for passed checks and unresolved hardware tests.
 
-The INF passes WDK InfVerif and the Inf2Cat signability check for `10_GE_X64`. This does not sign the package or establish hardware compatibility. The bundle has no signed catalog and uses the development installer described below. Its binaries use the MSVC dynamic C++ runtime; target computers need a compatible x64 Visual C++ runtime. The tested host already has the Visual Studio runtime installed.
+The bundle has no signed catalog and uses the development installer described below. New builds statically link the MSVC runtime; earlier development builds required the Visual C++ redistributable. The installed development driver has not been replaced by this packaging work.
+
+## Public release preparation
+
+The [release plan](docs/RELEASE_PLAN.md) tracks the installer, signing, firmware import and clean-machine acceptance work. `./scripts/package-candidate.ps1` builds matching source and production-binary archives from a fresh source snapshot, runs the automated tests and WDK checks, and generates an unsigned catalog and SHA-256 manifests. It requires the WDK in addition to the build tools. Its default catalog target is Windows 11 24H2 x64 (`10_GE_X64`).
+
+The INF now declares Unidrv as a Windows core-driver dependency. Installation and five offline GDI capture scenarios passed on a fresh Windows 11 Pro 25H2 x64 VM with Secure Boot enabled and a certificate trusted only inside that VM. All captures matched the Linux reference encoder. See [VM testing](docs/VM_TESTING.md) and [test evidence](docs/TEST_STATUS.md). Public signing, the end-user installer and physical testing of this package remain pending. Neither HP firmware nor Windows components are bundled.
 
 ## Verified USB diagnostic path
 
