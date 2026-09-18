@@ -1,4 +1,54 @@
-# Development verification — updated 2026-09-17
+# Development verification — updated 2026-09-18
+
+## Native installer preview (2026-09-18)
+
+The new native x64 `Setup.exe` provides an Install/repair/Remove dialog and a
+standard file picker for the user's original `sihp1005.img`. Size and SHA-256
+validation run before elevation and again during installation. No HP firmware,
+Windows components, signing certificate or private key is bundled.
+
+The candidate in `artifacts/rc-93e8c09e` built from its archived source with all
+six CTest suites passing. All four production executables/DLLs are x64 with no
+separate MSVC runtime dependency. GpdCheck and Inf2Cat passed; InfVerif accepted
+the same two previously documented warnings. Both ZIP manifests were verified:
+66 source entries and 13 binary-package entries, including Setup. The CLI still
+matches previously verified A4/Letter single/multi-page bytes and round trips.
+
+On the isolated Windows 11 Pro 25H2 VM, native Setup rejected an unsigned
+catalog, incorrect firmware, a modified signed-catalog member and a same-name
+queue owned by Microsoft Print to PDF. The tampered-package rollback left no
+owned queue, cache or installation record. With a certificate generated and
+trusted only in the guest, installation and same-build repair returned success,
+imported the exact firmware and configured A4. Five GDI file captures covered
+portrait, landscape, blank, three-page and Letter output. Secure Boot and normal
+signature enforcement remained enabled; the working host printer was untouched.
+
+Initial removal tests found the Windows-installed monitor's SYSTEM-only write
+ACL. Cleanup now grants administrators deletion permission only after checking
+the owned monitor's hash and other driver/queue dependencies. The existing ACL's
+read permissions are preserved. Loaded files and the running installed Setup
+can be scheduled for deletion at restart; an ownership record blocks reuse
+until that cleanup completes. The installed uninstaller returned 3010; after
+restart, its executable was gone and a second invocation from the extracted
+package completed cleanup with exit 0. Assertions verified removal of the driver
+store package, queue, monitor registration/DLL, firmware, cache, uninstall entry
+and ownership record. Microsoft Print to PDF remained intact.
+
+The automated run timed out reconnecting during restart. A later connection
+completed the remaining assertions and exported the guest evidence to
+`artifacts/OpenZJS-Win11-25H2/installer-recovery-20260918-152558`. Its `result.json`,
+`results/steps.jsonl` and `reference-verification.txt` record cleanup and exact
+Linux-reference equality for all five captures (seven raster pages). The guest
+was then shut down normally. The harness now checks boot time rather than a
+fixed delay and allows more connection time; an uninterrupted run of that final
+harness revision has not yet been repeated. Earlier failures remain recorded.
+
+Remaining acceptance: manual dialog/elevation testing, USB port detection and
+physical printing through this installer, additional OS builds, production
+signature trust, binary upgrades, migration of development installs and broader
+failure injection. Repair currently restores missing firmware and queue port/A4
+defaults, not deleted queues or damaged binaries. This is an engineering preview,
+not the completed end-user release milestone. See [deployment](DEPLOYMENT.md).
 
 ## Clean Windows 11 VM installation (2026-09-17)
 

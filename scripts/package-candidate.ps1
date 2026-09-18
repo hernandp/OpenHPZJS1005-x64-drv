@@ -115,13 +115,15 @@ foreach ($file in @('lj1005.inf', 'lj1005.gpd', 'lj1005.ini', 'lj1005render.dll'
 }
 New-Item -ItemType Directory -Path (Join-Path $bundle 'tools') | Out-Null
 Copy-Item -LiteralPath (Join-Path $binaryRoot 'lj1005.exe') -Destination (Join-Path $bundle 'tools')
+Copy-Item -LiteralPath (Join-Path $binaryRoot 'lj1005setup.exe') -Destination (Join-Path $bundle 'Setup.exe')
 foreach ($file in @('LICENSE', 'THIRD_PARTY.md')) {
     Copy-Item -LiteralPath (Join-Path $source $file) -Destination $bundle
 }
 Copy-Item -LiteralPath (Join-Path $source 'docs\DEPLOYMENT.md') -Destination (Join-Path $bundle 'README.md')
 
 foreach ($file in @(Get-ChildItem -LiteralPath $payload -Filter '*.dll') +
-                  @(Get-ChildItem -LiteralPath (Join-Path $bundle 'tools') -Filter '*.exe')) {
+                  @(Get-ChildItem -LiteralPath (Join-Path $bundle 'tools') -Filter '*.exe') +
+                  @(Get-ChildItem -LiteralPath $bundle -Filter '*.exe')) {
     $bytes = [IO.File]::ReadAllBytes($file.FullName)
     $peOffset = [BitConverter]::ToInt32($bytes, 0x3c)
     if ([BitConverter]::ToUInt32($bytes, $peOffset) -ne 0x4550 -or

@@ -3,13 +3,15 @@
 This unsigned candidate targets the **original HP LaserJet 1005 Series** over USB
 on Windows x64. It is not for the P1005 or M1005. Do not use this candidate to
 replace a working installation: publicly trusted signing and the end-user
-installation flow are still release gates. There is no Setup program or supported
-uninstaller yet. Package installation and offline GDI captures passed on a fresh
+installation flow are still release gates. The package includes an experimental
+native Setup with firmware selection, limited repair and ownership-aware removal.
+Package installation and offline GDI captures passed on a fresh
 Windows 11 Pro 25H2 x64 VM using a certificate trusted only inside that guest;
 this does not establish public trust or physical compatibility of this package.
 
 ## Contents and requirements
 
+- `Setup.exe`: native x64 installer preview for Windows 11 24H2 or later.
 - `driver/`: package-aware Type 3 INF, GPD, INI, renderer, firmware monitor and
   **unsigned** catalog. The catalog is an integrity inventory, not a signature.
 - `tools/lj1005.exe`: optional command-line diagnostic utility.
@@ -29,8 +31,51 @@ user from their HP driver package. The accepted 116892-byte image has SHA-256:
 638b9ad4a2cf6888208926ef7c7de073da8ba4cded25d31000a585c4526a9ca1
 ```
 
-The firmware-import UI is not implemented. Development scripts exist in the
-matching source archive, but they are not the clean-machine deployment path.
+## Setup preview
+
+Extract the complete candidate ZIP. On a clean test machine with a trusted,
+signed copy of the driver catalog, connect and turn on one original LaserJet
+1005, run `Setup.exe`, and choose **Install or repair**. The next dialog asks for
+the **firmware image file**, `sihp1005.img`, from your extracted original HP driver
+package. Setup checks its size and SHA-256 before requesting administrator
+permission, then validates it again in the elevated process. Cancelling the file
+dialog makes no installation changes. Firmware remains user-supplied and is
+never included in the downloadable package.
+
+Setup installs through the Windows driver store, selects the matching USB port,
+enables bidirectional communication and creates **HP LaserJet 1005 (Open ZJS)**
+with A4 defaults. It requires a running Print Spooler and reports incompatible
+architecture, OS, Protected Print Mode, missing hardware and trust failures.
+It never imports a certificate or changes Windows security settings.
+
+Run Setup again with the same build to restore missing firmware and reset the
+owned queue's port and A4 defaults. This limited repair does not recreate a
+deleted queue or repair damaged driver binaries. Different-build upgrades and
+migration from a development installation are deliberately refused in this
+preview. Keep using the development tooling for an existing development queue.
+
+Choose **Remove** in Setup or uninstall **Open ZJS - HP LaserJet 1005** from
+Windows installed apps. Removal checks ownership and dependent queues, refuses
+pending jobs, and removes the owned driver, firmware and cache. Windows may keep
+the monitor or running Setup executable open; Setup then requests a restart to
+finish deleting those files. It does not restart the shared Print Spooler.
+A small protected cleanup record can remain after restart; a subsequent Setup
+installation or removal clears it. Reinstallation is blocked while file removal
+is still pending. Unexpected or changed resources are preserved with an error.
+
+For automated isolated lab tests only, `Setup.exe --quiet --install --offline
+--firmware "C:\path\sihp1005.img"` uses `FILE:` instead of USB. `--quiet --remove`
+removes the owned installation. Quiet mode requires an already elevated process;
+exit codes are 0 for success, 3010 for success requiring restart, 1 for an
+operation failure and 2 for an unknown/incomplete option. No driver-signature
+bypass is provided. The unsigned candidate is expected to fail trust checks.
+
+The interactive dialog has not yet had a manual usability test. Public signing,
+in-place upgrades, development migration and physical USB acceptance of the
+packaged installer remain release gates. Development scripts in the matching
+source archive are not the clean-machine deployment path.
+
+## Security settings
 
 Windows Protected Print Mode must be off because it excludes third-party
 drivers. Setup must report this condition and respect administrator policy;
@@ -39,9 +84,9 @@ and Secure Boot must remain enabled for release acceptance.
 
 ## Clean-machine acceptance procedure
 
-The lab-signing, package-registration and file-output steps below passed in the
-25H2 VM on 2026-09-17. Production trust, firmware/USB, installer lifecycle and
-additional OS builds remain pending. See the source repository's
+The original package-registration and file-output checks passed in the
+25H2 VM on 2026-09-17. Native installer results are recorded separately;
+production trust, physical USB and additional OS builds remain pending. See the source repository's
 `docs/TEST_STATUS.md` and `docs/VM_TESTING.md` for scope and evidence.
 
 Use a disposable VM snapshot or spare PC. Record the exact Windows edition,

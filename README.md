@@ -54,7 +54,9 @@ The bundle has no signed catalog and uses the development installer described be
 
 The [release plan](docs/RELEASE_PLAN.md) tracks the installer, signing, firmware import and clean-machine acceptance work. `./scripts/package-candidate.ps1` builds matching source and production-binary archives from a fresh source snapshot, runs the automated tests and WDK checks, and generates an unsigned catalog and SHA-256 manifests. It requires the WDK in addition to the build tools. Its default catalog target is Windows 11 24H2 x64 (`10_GE_X64`).
 
-The INF now declares Unidrv as a Windows core-driver dependency. Installation and five offline GDI capture scenarios passed on a fresh Windows 11 Pro 25H2 x64 VM with Secure Boot enabled and a certificate trusted only inside that VM. All captures matched the Linux reference encoder. See [VM testing](docs/VM_TESTING.md) and [test evidence](docs/TEST_STATUS.md). Public signing, the end-user installer and physical testing of this package remain pending. Neither HP firmware nor Windows components are bundled.
+The candidate now contains a native **Setup.exe** preview. Choose **Install or repair** to open a file dialog for **sihp1005.img** from your original HP driver package. Setup validates the image before requesting elevation, installs the package, selects the USB port and configures A4. It also provides limited same-build repair and ownership-aware removal. See [Setup instructions and limitations](docs/DEPLOYMENT.md). Existing development installations are not migrated by this preview.
+
+The INF declares Unidrv as a Windows core-driver dependency. Installation and five offline GDI capture scenarios passed on a fresh Windows 11 Pro 25H2 x64 VM with Secure Boot enabled and a certificate trusted only inside that VM. All captures matched the Linux reference encoder. See [VM testing](docs/VM_TESTING.md) and [test evidence](docs/TEST_STATUS.md). Public signing, installer acceptance and physical testing of this package remain pending. The unsigned download cannot install on an ordinary clean PC yet. Neither HP firmware nor Windows components are bundled.
 
 ## Verified USB diagnostic path
 

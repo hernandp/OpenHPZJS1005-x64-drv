@@ -67,6 +67,40 @@ not delete or replace existing VMs. A failed PE stage may leave the temporary di
 attached. Inspect the stage logs before deciding how to recover. The virtual disks
 are kept outside the OneDrive source tree and excluded from release archives.
 
+## Native installer tests
+
+Once the clean checkpoint exists, run the following from an elevated PowerShell
+7 session. **This always restores that checkpoint**, discarding subsequent work
+in the dedicated project VM. The VM identity and network isolation are checked.
+
+```powershell
+./scripts/test-vm-installer.ps1 `
+  -CandidatePath artifacts/rc-XXXXXXXX/HPLJ1005x64 `
+  -FirmwarePath C:/private/original-driver/sihp1005.img `
+  -QueueTestPath artifacts/rc-XXXXXXXX/source/build/Release/queue_test.exe
+```
+
+The firmware file is copied privately into the disposable guest for import
+testing. It is not added to the candidate or copied back in the evidence. The
+script invokes native Setup in quiet mode, checks rejection of unsigned and
+altered packages, invalid firmware and an unrelated queue with the same name,
+then checks installation, A4 defaults, same-build repair and five file captures.
+It runs the installed uninstaller and, when needed, restarts only the guest and
+finishes cleanup. It checks that the driver package, queue, monitor, firmware,
+cache and ownership record are gone and Microsoft Print to PDF remains.
+
+Signing certificates are created and trusted only inside the guest. Secure Boot
+and normal signature enforcement remain enabled. The source candidate stays
+unsigned. The test does not exercise the interactive picker, elevation dialog,
+USB port selection or physical printing.
+
+`last-installer-run.txt` points to the new `installer-YYYYMMDD-HHMMSS` evidence
+directory. Inspect `result.json`, `failure.txt` when present, and
+`results/steps.jsonl`. Decode and independently compare `captures/` using the
+commands above with this run directory before accepting the raster output.
+The harness leaves the dedicated VM running for inspection; shut it down
+normally when finished.
+
 References: [Windows image deployment](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/capture-and-apply-windows-system-and-recovery-partitions),
 [customizing Windows PE](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/winpe-mount-and-customize),
 [PowerShell Direct](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/powershell-direct),

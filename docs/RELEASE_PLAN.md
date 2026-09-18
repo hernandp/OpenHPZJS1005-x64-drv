@@ -22,8 +22,9 @@ initial supported scope, even where development code has partial support.
   staging, package-aware registration and five GDI file-capture scenarios on
   clean Windows 11 Pro 25H2 x64. Secure Boot remained enabled. All capture bytes
   matched the Linux reference encoder. See [VM testing](VM_TESTING.md).
-- Pending: public certificate trust and the end-user installer lifecycle on a
-  clean Windows installation. See [deployment](DEPLOYMENT.md).
+- Pending: public certificate trust and full end-user installer acceptance.
+  The native preview has since passed lab installation, limited repair and
+  removal checks; see [deployment](DEPLOYMENT.md).
 
 Build a candidate with Visual Studio C++, PowerShell 7 and WDK 10.0.26100.0:
 
@@ -52,12 +53,20 @@ on a clean PC. Build a GUI installer with elevation only for installation work.
 Detect architecture, supported OS, Protected Print Mode, spooler readiness and
 the exact USB model. Explain failures without requiring developer terminology.
 
-Import and hash-check firmware from the user's folder/package; do not bundle HP
+Import and hash-check firmware selected in a file dialog (`sihp1005.img`); do not bundle HP
 firmware without confirmed distribution rights. Install through the driver store,
 select the live USB port, enable bidirectional communication and set A4 defaults.
 Provide repair, upgrade, rollback and uninstall with ownership tracking. Never
 remove unrelated print jobs or overwrite another printer's resources. Resolve
 the existing development monitor name and migration strategy before release.
+
+The native Setup preview now implements the firmware file picker, preflight,
+protected package cache, driver-store installation, ownership journal, limited
+same-build repair and removal. The maintainer selected VM-only lab signing while
+the public certificate route is unresolved. See [deployment](DEPLOYMENT.md) for
+the preview's bounds and [test status](TEST_STATUS.md) for exercised paths.
+Binary upgrades, development migration, GUI usability and physical USB acceptance
+remain outstanding; this milestone is not complete.
 
 ## 3. Reliability and diagnostics
 
