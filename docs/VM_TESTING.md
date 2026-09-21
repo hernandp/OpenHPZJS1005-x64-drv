@@ -101,6 +101,11 @@ commands above with this run directory before accepting the raster output.
 The harness leaves the dedicated VM running for inspection; shut it down
 normally when finished.
 
+The revised harness completed without manual recovery on 2026-09-21, including
+the guest restart and removal assertions. Five captures then passed independent
+geometry and Linux-reference byte checks, and the VM was shut down normally.
+See `docs/TEST_STATUS.md` for the evidence location and remaining acceptance gaps.
+
 References: [Windows image deployment](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/capture-and-apply-windows-system-and-recovery-partitions),
 [customizing Windows PE](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/winpe-mount-and-customize),
 [PowerShell Direct](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/powershell-direct),

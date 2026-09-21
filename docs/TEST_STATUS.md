@@ -1,4 +1,68 @@
-# Development verification — updated 2026-09-18
+# Development verification — updated 2026-09-21
+
+## Direct USB print validation (2026-09-21)
+
+`usb-print` now validates its complete in-memory input before device enumeration
+or access. The new offline `validate` command exercises the same strict original
+1005 profile: document/page/image order, required settings, geometry, consecutive
+page numbers, copy limits, bounded JBIG decoding and exact trailing padding.
+See [print validation](PRINT_VALIDATION.md) for the accepted profile and limits.
+
+All seven CTest suites pass. Protocol tests reject every truncated prefix of a
+small valid job, missing/duplicate boundaries, invalid items and settings,
+geometry/header mismatches, corrupt image data and padding, and resource-limit
+violations. The new CLI test checks that a signature-only input produces the
+validation error in `usb-print` before device lookup. Format checks pass.
+
+The five September 21 installer captures, repaired three-page mixed-media ResetDC
+capture, repaired landscape image, bold three-page job and Linux-reference job
+all pass strict validation. The historical `artifacts/venteveos-reset.zjs` with
+duplicate document headers is rejected. Encoder wire output is unchanged.
+No physical print or host installation was performed for this change. This
+completes direct-file validation; status reporting, support diagnostics and the
+other release gates remain open.
+
+Fresh candidate `artifacts/rc-62568a37` built from its archived source and passed
+all seven suites, GpdCheck and Inf2Cat. InfVerif accepted the same previously
+documented warnings 1296 and 2083. Both ZIP manifests were independently checked
+(69 source entries and 13 binary entries), including archive hashes and source
+provenance. Its CLI accepted the nine captures above and rejected the historical
+duplicate-header job. Four A4/Letter single/multi-page encoding comparisons
+remained byte-identical to the earlier baseline. Results are in the candidate's
+`validation/verification.json` and tool logs. This candidate is unsigned and has
+not been installed or physically tested; earlier installer VM evidence applies
+to `rc-93e8c09e`. The source archive predates only this packaging-result paragraph.
+
+## Uninterrupted installer rerun (2026-09-21)
+
+After relocating the workspace to `C:\src\HPLJ1005x64`, the revised native
+installer harness completed from `Clean-Windows-before-driver` without manual
+recovery. The existing `artifacts/rc-93e8c09e` candidate passed its file manifest
+check; its 27 production source/build-definition files matched the current
+checkout. The relocation build had also passed all six CTest suites.
+
+Unsigned catalog, invalid firmware, altered package and foreign same-name queue
+checks each returned the expected failure. Installation and same-build repair
+returned 0. The installed uninstaller returned 3010, and cleanup after the guest
+restart returned 0. All removal assertions passed, including driver-store,
+queue, monitor, firmware, cache and ownership-record cleanup, with Microsoft
+Print to PDF preserved. Transient PowerShell Direct connection and credential
+errors recovered through the harness's existing retries.
+
+All five captures (portrait, landscape, blank, three-page and Letter) decoded
+successfully. Independent verification checked seven raster pages, geometry,
+margins, the blank middle page and distinct first/third-page markings, and found
+exact Linux-reference byte equality for every capture. Secure Boot remained
+enabled; signing trust was added only inside the isolated guest. The dedicated
+VM was shut down normally after verification. No host driver was installed or
+physical print job submitted.
+
+Local evidence: `artifacts/OpenZJS-Win11-25H2/installer-20260921-144401`, including
+`result.json`, `results/steps.jsonl`, `reference-verification.txt` and
+`final-vm.json`. The orchestration transcript and successful exit code are in
+`artifacts/resume-20260921`. This closes the uninterrupted-harness rerun gap;
+interactive Setup/elevation, physical USB acceptance, production signing,
+upgrades and development-install migration remain pending.
 
 ## Native installer preview (2026-09-18)
 
@@ -40,8 +104,8 @@ completed the remaining assertions and exported the guest evidence to
 `results/steps.jsonl` and `reference-verification.txt` record cleanup and exact
 Linux-reference equality for all five captures (seven raster pages). The guest
 was then shut down normally. The harness now checks boot time rather than a
-fixed delay and allows more connection time; an uninterrupted run of that final
-harness revision has not yet been repeated. Earlier failures remain recorded.
+fixed delay and allows more connection time. Its uninterrupted rerun passed on
+September 21, as recorded above. Earlier failures remain recorded.
 
 Remaining acceptance: manual dialog/elevation testing, USB port detection and
 physical printing through this installer, additional OS builds, production

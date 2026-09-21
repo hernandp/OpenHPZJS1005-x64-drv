@@ -109,6 +109,13 @@ int main(int argc, char** argv) {
             return 0;
         }
 
+        if (cmd == "validate" && argc == 3) {
+            const auto info = lj1005::ValidatePrintJob(ReadFile(argv[2]));
+            std::cout << "Validated " << info.pages << " page(s), " << info.sheets << " sheet(s), " << info.rasterBytes
+                      << " raster bytes\n";
+            return 0;
+        }
+
         if (cmd == "decode" && argc == 4) {
             auto pages = lj1005::DecodeJob(ReadFile(argv[2]));
 
@@ -174,6 +181,12 @@ int main(int argc, char** argv) {
         }
 
         if ((cmd == "usb-print" || cmd == "usb-firmware") && argc == 3) {
+            lj1005::Bytes bytes;
+            if (cmd == "usb-print") {
+                bytes = ReadFile(argv[2]);
+                const auto info = lj1005::ValidatePrintJob(bytes);
+                std::cout << "Validated " << info.pages << " page(s), " << info.sheets << " sheet(s)\n";
+            }
             auto devices = lj1005::GetUsbDevices();
             if (devices.size() != 1)
                 throw std::runtime_error("Exactly one connected HP LaserJet 1005 is required");
@@ -191,8 +204,6 @@ int main(int argc, char** argv) {
             if (lj1005::GetFirmwareState(lj1005::GetUsbDeviceId(devices.front())) != lj1005::FirmwareState::ready)
                 throw std::runtime_error("Printer firmware is missing; run usb-firmware first");
 
-            auto bytes = ReadFile(argv[2]);
-            lj1005::InspectZjs(bytes, std::cout);
             lj1005::UsbSend(devices.front(), bytes);
             std::cout << "Transferred " << bytes.size() << " bytes to USB; verify the printer physically\n";
             return 0;
@@ -200,7 +211,7 @@ int main(int argc, char** argv) {
 #endif
         std::cerr
             << "Usage:\n  lj1005 testpage output.pbm\n  lj1005 encode input.pbm output.zjs [a4|letter]\n"
-               "  lj1005 inspect input.zjs\n  lj1005 decode input.zjs output.pbm\n  lj1005 firmware sihp1005.img output.dl\n"
+               "  lj1005 inspect input.zjs\n  lj1005 validate input.zjs\n  lj1005 decode input.zjs output.pbm\n  lj1005 firmware sihp1005.img output.dl\n"
                "  lj1005 usb-list\n  lj1005 usb-id\n  lj1005 usb-query-status output.bin\n  lj1005 usb-read-status output.bin\n  lj1005 usb-firmware sihp1005.img\n  lj1005 usb-print input.zjs\n";
         return 1;
     }

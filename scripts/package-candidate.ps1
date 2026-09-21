@@ -72,7 +72,7 @@ $sourcePaths = @('CMakeLists.txt', 'LICENSE', 'README.md', 'THIRD_PARTY.md', '.g
     '.gitattributes', '.clang-format', 'driver', 'include', 'src', 'scripts', 'tests', 'vendor', 'docs')
 $files = & git -C $projectRoot -c core.quotepath=false ls-files --cached --others --exclude-standard -- @sourcePaths
 if ($LASTEXITCODE -ne 0 -or !$files) { throw 'Source snapshot requires a Git checkout.' }
-$allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.md', '.gpd', '.inf', '.ini', '.def')
+$allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md', '.gpd', '.inf', '.ini', '.def')
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative.Contains('..') -or [IO.Path]::IsPathRooted($relative)) { throw "Invalid source path: $relative" }
     if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions) {

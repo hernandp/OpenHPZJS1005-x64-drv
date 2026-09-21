@@ -34,7 +34,7 @@ Requires Visual Studio Desktop development with C++, Windows SDK, CMake and Powe
 ./scripts/build.ps1
 ```
 
-Outputs are in `build/Release`, including `lj1005.exe`, `lj1005render.dll`, `lj1005monitor.dll`, the GPD/INF/INI files and `queue_test.exe`. The build runs all six automated test suites. Building and running these tests requires neither HP firmware nor a connected printer, and does not install a driver or submit print jobs. Installation, file-capture integration tests and physical printing are separate steps.
+Outputs are in `build/Release`, including `lj1005.exe`, `lj1005render.dll`, `lj1005monitor.dll`, the GPD/INF/INI files and `queue_test.exe`. The build runs all seven automated test suites. Building and running these tests requires neither HP firmware nor a connected printer, and does not install a driver or submit print jobs. Installation, file-capture integration tests and physical printing are separate steps.
 
 The optional Linux-reference checkout is excluded from Git; to enable its comparison executables:
 
@@ -75,7 +75,9 @@ New-Item -ItemType Directory -Force artifacts | Out-Null
 
 `usb-firmware` now checks the IEEE 1284 identity and skips upload when firmware is already running. After an upload it polls for `FWVER` before reporting success. `usb-print` refuses to send a job when firmware is missing. These checks do not prove the paper result; physical test confirmation remains necessary.
 
-The encoder accepts binary PBM/P4, 1=black, MSB first, at 600 dpi. It accepts concatenated pages, with no extra padding between PBM images. The PBM separator is exactly one whitespace byte; use LF before the binary raster. `encode` supports `a4` and `letter` media codes; input dimensions are pixels, not rescaled automatically. `inspect` checks ZJS framing; it is not a complete semantic validator for arbitrary third-party print files.
+The encoder accepts binary PBM/P4, 1=black, MSB first, at 600 dpi. It accepts concatenated pages, with no extra padding between PBM images. The PBM separator is exactly one whitespace byte; use LF before the binary raster. `encode` supports `a4` and `letter` media codes; input dimensions are pixels, not rescaled automatically. `inspect` lists ZJS records for diagnosis.
+
+Use `lj1005 validate input.zjs` for offline print validation. `usb-print` performs the same checks before accessing the printer: complete document/page boundaries, supported settings, paper geometry, consecutive page numbers, JBIG decoding and exact padding. Limits are 128 MiB of input, 128 MiB of decoded rasters and 1000 sheets including copies. Unsupported ZJS profiles are rejected. See [print validation](docs/PRINT_VALIDATION.md) for scope and compatibility.
 
 ## Windows driver architecture
 

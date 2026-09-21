@@ -50,7 +50,7 @@ Use clang-format **22** and the root `.clang-format`. The PowerShell 7 helper fi
 ```powershell
 ./scripts/format.ps1          # Apply layout to project-owned C++ files
 ./scripts/format.ps1 -Check   # Check without editing
-./scripts/build.ps1          # Build and run the six offline test suites
+./scripts/build.ps1          # Build and run the seven offline test suites
 ```
 
 The formatter controls layout; it does not rename identifiers, choose logical blank-line groupings, or prove that moved braces preserve behavior. Update declarations and callers together when renaming, and review the semantic diff before accepting a style change. Keep include order around Windows SDK headers intact. No formatter or build command above installs a driver or submits a page.

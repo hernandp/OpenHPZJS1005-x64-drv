@@ -34,7 +34,7 @@ Build a candidate with Visual Studio C++, PowerShell 7 and WDK 10.0.26100.0:
 ./scripts/package-candidate.ps1 -WdkRoot C:/path/to/wdk
 ```
 
-The script builds in a new `artifacts/rc-*` directory, runs the six automated
+The script builds in a new `artifacts/rc-*` directory, runs the seven automated
 test suites, validates the package and produces source/binary ZIPs and hashes.
 It never installs the driver, changes trust stores or sends a print job. Dirty
 working copies are allowed for engineering candidates and recorded explicitly;
@@ -72,6 +72,14 @@ remain outstanding; this milestone is not complete.
 
 Validate complete ZJS framing, geometry, page count and resource limits before
 sending potentially harmful data; checking only the `JZJZ` prefix is insufficient.
+Completed on 2026-09-21 for file-based `usb-print`: strict supported-profile
+validation runs before device access, including bounded JBIG decoding, exact
+padding, page/copy counts and paper geometry. The offline `validate` command
+exposes the same checks. Seven automated suites pass; verified captures remain
+accepted and the historical duplicate-header stream is rejected. See
+[print validation](PRINT_VALIDATION.md). This gate covers direct file submission;
+the spooler continues using the native encoder and its existing monitor checks.
+
 Make paper-out, door-open, disconnected, cancelled and timed-out jobs actionable.
 Avoid blind retry of partially transmitted jobs. Bound memory and parser work.
 Provide a support report without document contents or firmware binaries.

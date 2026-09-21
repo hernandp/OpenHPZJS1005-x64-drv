@@ -30,6 +30,15 @@ namespace lj1005 {
     Bytes EndDocument();
     Bytes EncodeJob(const Raster& raster, const PageOptions& options = {});
     Bytes WrapFirmware(std::span<const std::uint8_t> elf);
+
+    struct PrintJobInfo {
+        std::uint32_t pages{}, sheets{};
+        std::uint64_t rasterBytes{};
+    };
+
+    // Strictly validate the supported 1005 print profile, including decoding each image.
+    // Throws before callers may send any bytes; retains at most one decoded page.
+    PrintJobInfo ValidatePrintJob(std::span<const std::uint8_t> data);
     void InspectZjs(std::span<const std::uint8_t> data, std::ostream& output);
     std::vector<Raster> DecodeJob(std::span<const std::uint8_t> data);
 }
