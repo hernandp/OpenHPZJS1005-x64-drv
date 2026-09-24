@@ -1,4 +1,104 @@
-# Development verification — updated 2026-09-21
+# Development verification — updated 2026-09-24
+
+## Interactive installer dialogs — VM checks passed (2026-09-23–24)
+
+Candidate `rc-2316786f` was exercised through its actual dialogs in the isolated
+Windows 11 VM, with the user operating the elevated VM console. Main-dialog and
+firmware-picker cancellation closed Setup without elevation. Invalid firmware
+displayed the original-1005 mismatch error before elevation. Denying elevation
+displayed "Administrator permission was not granted" with Windows error 1223
+(user-reported); accepting elevation with valid firmware displayed the expected
+missing-USB-printer error. The user also canceled the removal confirmation.
+After cancellation, printer names/drivers/ports, the installation ownership,
+status, INF path and repair schema matched the baseline, and the firmware hash
+was unchanged. This was not a complete payload integrity check.
+The initial, picker, invalid-firmware and missing-USB dialogs were visually
+inspected; results are recorded in
+`artifacts/OpenZJS-Win11-25H2/interactive-20260923/dialog-test-matrix.csv`.
+
+The user reported that some dialogs appeared behind other windows. Code review
+found that the main dialog was destroyed before opening the unowned picker or
+launching elevation, and result message boxes did not request foreground focus.
+Setup now keeps the main dialog alive as owner during picker/elevation handling
+and requests foreground activation for initial and result dialogs. The Release
+build and all seven existing CTest suites pass; these tests do not exercise
+window focus. On September 24 the user confirmed that the picker/invalid-firmware
+error, denied-elevation error 1223, accepted-elevation missing-printer error,
+removal confirmation and removal success result appeared in front. Dismissing
+the success result closed Setup. Removal did not request a restart. A subsequent
+guest inspection verified removal of the owned queue, driver, driver-store INF,
+monitor registration/DLL, firmware, package cache, ownership journal and uninstall
+entry. Microsoft Print to PDF retained its driver and port, and Secure Boot
+remained enabled. Evidence is in `removal-verified.json` and its referenced
+snapshot under the same interactive evidence directory. These checks do not
+verify a successful interactive installation with a physical USB printer.
+The packaged candidate above predates this fix. A separate `Setup-foreground.exe`
+engineering build was copied to the guest test folder and its SHA-256 verified;
+`foreground-ready.json` records its identity. The original candidate executable
+was preserved for comparison.
+
+## Extended same-build repair — VM acceptance passed (2026-09-24)
+
+Setup now records the hashes of its cached payload and installed Setup after a
+successful fresh installation. Repair checks the supplied package against that
+record before changing files, checks existing queue/driver/monitor ownership,
+and restores the cache, uninstaller, firmware and a deleted owned queue. Live
+driver files are reinstalled through `InstallPrinterDriverFromPackageW` with
+`IPDFP_COPY_ALL_FILES`, then verified against the recorded hashes. A damaged
+driver-store package is rejected before that reinstall. Failed repairs retain
+`NeedsRepair`; both that state and an interrupted `Repairing` state are retryable.
+Known temporary siblings from interrupted writes are included in owned removal.
+Older previews without the hash record require removal and fresh installation.
+
+The extended VM harness injects cache/firmware corruption, a deleted queue,
+missing installed Setup and live renderer, a corrupt live GPD, a sharing
+violation and an interrupted repair journal. It checks rejection of tampered
+repair sources and a foreign same-name queue before mutation, verifies restored
+file hashes and A4 settings, compares the unrelated PDF queue, and then captures
+five scenarios and removes the installation. The guest spooler is stopped only
+by fault injection while damaging live files; Setup does not restart it.
+
+The first VM run (`installer-20260922-170039`, candidate `rc-05df2dd8`) passed
+initial installation but failed the new driver-ownership check during repair.
+Inspection showed that `GetPrinterDriverDirectoryW` returns the `x64` environment
+root; the code now explicitly uses its `3` subdirectory for this Type 3 driver.
+That failed attempt made no repair changes and left the dedicated guest running
+with its initial installation for inspection. The host printer was not changed.
+
+The September 22 candidate `artifacts/rc-2316786f` includes the directory fix, bounded queue
+ownership-marker checks and interrupted-write cleanup. Its archived-source build
+passes all seven CTest suites, GpdCheck and Inf2Cat; InfVerif accepts the existing
+1296/2083 warnings. Formatting passes. Both ZIP manifests and archive hashes
+were checked (69 source entries, 13 binary entries), and the prior nine captures
+and four encoder byte comparisons still pass. Evidence is in the candidate's
+`validation/` directory, including `verification.json`.
+
+The September 22 rerun was canceled at elevation. On September 24, fresh
+candidate `rc-a6cc1e56`, which also contains the foreground fix, passed the seven
+CTest suites, formatting, WDK validation with the same known INF warnings, both
+archive manifests/hashes, nine existing captures and four encoder byte
+comparisons. Production source matches the archive; subsequent changes are
+acceptance documentation and VM-harness removal-retry handling.
+
+The first September 24 run passed all repair cases and five reference-verified
+captures, then hit Windows error 3008 while removing an in-use monitor. Setup
+preserved its partial-removal record and instructed the user to restart and
+retry. The harness was extended to exercise that exact condition; other removal
+errors still fail. The complete rerun passed at
+`artifacts/OpenZJS-Win11-25H2/installer-20260924-201121`: initial install,
+same-build repair, deleted queue/cache/firmware restoration, live-file repair,
+sharing-failure retry and interrupted-journal recovery all passed. Tampered
+sources and a foreign queue were rejected without the prohibited changes.
+
+After the monitor-in-use error, the first guest restart allowed removal to
+return 3010; a second restart and cleanup returned 0. All owned-resource removal
+assertions passed and the unrelated PDF printer was preserved. Portrait,
+landscape, blank, three-page and Letter captures passed geometry, page-count,
+margin and Linux-reference byte checks. Evidence includes `results/steps.jsonl`,
+`result.json`, `reference-verification.txt` and `final-vm.json`; the wrapper
+transcript/result is in `artifacts/repair-r2-20260924`. The VM was shut down
+normally. This is lab acceptance with guest-only certificate trust and Secure
+Boot enabled; no physical USB print or host installation was performed.
 
 ## Direct USB print validation (2026-09-21)
 

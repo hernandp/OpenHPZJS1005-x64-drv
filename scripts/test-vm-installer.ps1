@@ -18,6 +18,11 @@ $run = Join-Path $evidence ('installer-' + [DateTime]::UtcNow.ToString('yyyyMMdd
 New-Item -ItemType Directory -Path $run | Out-Null
 $credential = Import-Clixml (Join-Path $evidence 'credential.clixml')
 $session = $null
+function Write-Phase([string]$Message) {
+    $line = [DateTime]::UtcNow.ToString('o') + ' ' + $Message
+    $line | Add-Content (Join-Path $run 'progress.log')
+    Write-Host $line
+}
 function Connect-Guest {
     $deadline = (Get-Date).AddMinutes(6)
     do {
@@ -25,12 +30,32 @@ function Connect-Guest {
     } while ((Get-Date) -lt $deadline)
     throw 'Guest connection timed out.'
 }
+function Restart-Guest($CurrentSession) {
+    Write-Phase 'Restarting the guest for removal cleanup.'
+    $previousBoot = Invoke-Command -Session $CurrentSession -ScriptBlock { (Get-CimInstance Win32_OperatingSystem).LastBootUpTime }
+    Invoke-Command -Session $CurrentSession -ScriptBlock {
+        & shutdown.exe /r /t 1
+        if ($LASTEXITCODE) { throw 'Guest restart request failed.' }
+    }
+    Remove-PSSession $CurrentSession
+    $restartDeadline = (Get-Date).AddMinutes(4)
+    do {
+        Start-Sleep -Seconds 5
+        $connection = Connect-Guest
+        $currentBoot = Invoke-Command -Session $connection -ScriptBlock { (Get-CimInstance Win32_OperatingSystem).LastBootUpTime }
+        if ($currentBoot -gt $previousBoot) { return $connection }
+        Remove-PSSession $connection
+    } while ((Get-Date) -lt $restartDeadline)
+    throw 'Guest did not restart before the deadline.'
+}
 try {
+    Write-Phase 'Restoring the isolated clean checkpoint.'
     $checkpoint = Get-VMSnapshot -VM $vm -Name 'Clean-Windows-before-driver'
     if ($vm.State -ne 'Off') { Stop-VM -VM $vm -TurnOff -Force }
     Restore-VMSnapshot -VMSnapshot $checkpoint -Confirm:$false
     if ((Get-VM -Id $vm.Id).State -ne 'Running') { Start-VM -VM $vm }
     $session = Connect-Guest
+    Write-Phase 'Guest connected; checking security and copying the candidate.'
     Invoke-Command -Session $session -ScriptBlock {
         if (!(Confirm-SecureBootUEFI)) { throw 'Secure Boot must be enabled.' }
         New-Item -ItemType Directory -Path 'C:\OpenZJS-Installer-Test\results', 'C:\OpenZJS-Installer-Test\captures' -Force | Out-Null
@@ -47,6 +72,7 @@ try {
         $state = 'HKLM:\SOFTWARE\OpenZJS\LaserJet1005'
         $installRoot = 'C:\Program Files\OpenZJS LaserJet 1005'
         function Run-Setup($label, $exe, $arguments) {
+            Write-Host "Running installer check: $label"
             $process = Start-Process -FilePath $exe -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden -RedirectStandardError "$results\$label-error.txt"
             @{ label = $label; exitCode = $process.ExitCode } | ConvertTo-Json -Compress | Add-Content "$results\steps.jsonl"
             return $process.ExitCode
@@ -84,6 +110,69 @@ try {
         if ((Get-PrintConfiguration -PrinterName $queue).PaperSize -ne 'A4') { throw 'A4 default missing.' }
         if ((Get-FileHash 'C:\Windows\System32\lj1005-firmware.img').Hash -ne (Get-FileHash "$base\sihp1005.img").Hash) { throw 'Firmware differs.' }
         if ((Run-Setup 'repair' $setup $argsInstall) -ne 0) { throw 'Repair failed.' }
+        $pdfBefore = Get-Printer -Name 'Microsoft Print to PDF' | Select-Object Name,DriverName,PortName,Shared
+        $pdfBefore | ConvertTo-Json | Set-Content "$results\unrelated-printer-before.json"
+        if ((Get-ItemProperty $state).RepairSchema -ne '1') { throw 'Repair identity missing.' }
+        function Assert-Repaired {
+            if ((Get-ItemProperty $state).Status -ne 'Complete') { throw 'Repair journal incomplete.' }
+            $printer = Get-Printer -Name $queue
+            if ($printer.DriverName -ne 'HP LaserJet 1005 Series (Open ZJS)' -or $printer.PortName -ne 'FILE:') { throw 'Queue was not restored.' }
+            if ((Get-PrintConfiguration -PrinterName $queue).PaperSize -ne 'A4') { throw 'Repaired queue is not A4.' }
+            foreach ($file in Get-ChildItem "$base\package\driver" -File) {
+                if ((Get-FileHash -LiteralPath "$installRoot\driver\$($file.Name)").Hash -ne (Get-FileHash -LiteralPath $file.FullName).Hash) { throw "Cache repair differs: $($file.Name)" }
+            }
+            if ((Get-FileHash -LiteralPath "$installRoot\Setup.exe").Hash -ne (Get-FileHash -LiteralPath $setup).Hash) { throw 'Installed uninstaller differs.' }
+            if ((Get-FileHash 'C:\Windows\System32\lj1005-firmware.img').Hash -ne (Get-FileHash "$base\sihp1005.img").Hash) { throw 'Repaired firmware differs.' }
+            $driver = Get-PrinterDriver -Name $printer.DriverName
+            $liveDirectory = Split-Path $driver.DataFile -Parent
+            foreach ($name in @('lj1005.gpd','lj1005.ini','lj1005render.dll')) {
+                if ((Get-FileHash -LiteralPath (Join-Path $liveDirectory $name)).Hash -ne (Get-FileHash -LiteralPath "$base\package\driver\$name").Hash) { throw "Live driver repair differs: $name" }
+            }
+            $pdfAfter = Get-Printer -Name 'Microsoft Print to PDF' | Select-Object Name,DriverName,PortName,Shared
+            if (($pdfBefore | ConvertTo-Json -Compress) -ne ($pdfAfter | ConvertTo-Json -Compress)) { throw 'Unrelated printer changed.' }
+        }
+        Assert-Repaired
+        if ((Run-Setup 'repair-tampered-source' "$base\tampered\Setup.exe" $argsInstall) -ne 1) { throw 'Repair accepted changed source.' }
+        Assert-Repaired
+        # A foreign queue must be rejected before even damaged owned files are restored.
+        Remove-Printer -Name $queue
+        Add-Printer -Name $queue -DriverName 'Microsoft Print To PDF' -PortName 'PORTPROMPT:'
+        [IO.File]::WriteAllBytes('C:\Windows\System32\lj1005-firmware.img', [byte[]](1,2,3))
+        $damagedFirmware = (Get-FileHash 'C:\Windows\System32\lj1005-firmware.img').Hash
+        if ((Run-Setup 'repair-foreign-queue' $setup $argsInstall) -ne 1) { throw 'Repair accepted foreign queue.' }
+        if ((Get-Printer -Name $queue).DriverName -ne 'Microsoft Print To PDF' -or
+            (Get-FileHash 'C:\Windows\System32\lj1005-firmware.img').Hash -ne $damagedFirmware -or
+            (Get-ItemProperty $state).Status -ne 'Complete') { throw 'Rejected repair made changes.' }
+        Remove-Printer -Name $queue
+        Add-Content -LiteralPath "$installRoot\driver\lj1005.gpd" '*% Corrupt cache for repair test'
+        Remove-Item -LiteralPath "$installRoot\driver\lj1005.ini", "$installRoot\Setup.exe"
+        if ((Run-Setup 'repair-deleted-queue-cache-firmware' $setup $argsInstall) -ne 0) { throw 'Queue/cache/firmware repair failed.' }
+        Assert-Repaired
+        # Service stops are fault injection in this disposable guest only. Setup
+        # itself must never restart the shared spooler or edit live files directly.
+        $liveDirectory = Split-Path (Get-PrinterDriver -Name 'HP LaserJet 1005 Series (Open ZJS)').DataFile -Parent
+        if ($liveDirectory -ne 'C:\Windows\system32\spool\DRIVERS\x64\3') { throw 'Unexpected live driver directory.' }
+        Stop-Service Spooler
+        try {
+            Remove-Item -LiteralPath (Join-Path $liveDirectory 'lj1005.gpd'), (Join-Path $liveDirectory 'lj1005render.dll')
+            # Recreate after unlinking so a potential store hard link is not modified.
+            [IO.File]::WriteAllBytes((Join-Path $liveDirectory 'lj1005.gpd'), [byte[]](1,2,3))
+        } finally { Start-Service Spooler }
+        if ((Run-Setup 'repair-live-driver-files' $setup $argsInstall) -ne 0) { throw 'Live driver repair failed.' }
+        Assert-Repaired
+        # A sharing violation exercises partial repair and a subsequent retry.
+        $lock = [IO.File]::Open("$installRoot\driver\lj1005.ini", [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+        try {
+            if ((Run-Setup 'repair-locked-cache' $setup $argsInstall) -ne 1) { throw 'Locked file was not reported.' }
+            if ((Get-ItemProperty $state).Status -ne 'NeedsRepair') { throw 'Failed repair was reported complete.' }
+        } finally { $lock.Dispose() }
+        if ((Run-Setup 'repair-retry' $setup $argsInstall) -ne 0) { throw 'Repair retry failed.' }
+        Assert-Repaired
+        Set-ItemProperty -LiteralPath $state -Name Status -Value Repairing
+        Remove-Item -LiteralPath 'C:\Windows\System32\lj1005-firmware.img'
+        if ((Run-Setup 'repair-interrupted-journal' $setup $argsInstall) -ne 0) { throw 'Interrupted repair could not resume.' }
+        Assert-Repaired
+        $pdfBefore | ConvertTo-Json | Set-Content "$results\unrelated-printer-preserved.json"
         foreach ($scenario in @('portrait','landscape','blank','multi','letter')) {
             & "$base\queue_test.exe" $queue "$base\captures\$scenario.zjs" $scenario > "$results\capture-$scenario.txt"
             if ($LASTEXITCODE) { throw "Capture failed: $scenario" }
@@ -91,6 +180,12 @@ try {
         Get-Printer -Name $queue | Select-Object Name,DriverName,PortName | ConvertTo-Json | Set-Content "$results\installed-queue.json"
         Get-PrinterDriver -Name 'HP LaserJet 1005 Series (Open ZJS)' | Select-Object Name,IsPackageAware,InfPath,Path | ConvertTo-Json | Set-Content "$results\installed-driver.json"
         if (@(Get-PrintJob -PrinterName $queue).Count) { throw 'Capture jobs remain.' }
+        # An interrupted atomic file write can leave a temporary sibling. Removal
+        # must clean only these known owned names, without deleting a directory tree.
+        foreach ($temporary in @("$installRoot\driver\lj1005.gpd.repair", "$installRoot\Setup.exe.repair",
+                                  'C:\Windows\System32\lj1005-firmware.img.repair')) {
+            [IO.File]::WriteAllBytes($temporary, [byte[]](1,2,3))
+        }
         $exit = Run-Setup 'remove' "$installRoot\Setup.exe" '--quiet --remove'
         if ($exit -eq 0) {
             Assert-Clean
@@ -99,25 +194,32 @@ try {
         }
         return $exit
     }
+    if ($removeExit -eq 1) {
+        # Windows can retain monitor references after the live-file repair and
+        # captures. Exercise the exact restart-and-retry instruction; unrelated
+        # removal failures must still fail the run.
+        $monitorInUse = Invoke-Command -Session $session -ScriptBlock {
+            $record = Get-ItemProperty 'HKLM:\SOFTWARE\OpenZJS\LaserJet1005'
+            $message = (Get-Content 'C:\OpenZJS-Installer-Test\results\remove-error.txt' -Raw).Trim()
+            return $record.Status -eq 'Removing' -and $record.Driver -eq '0' -and $record.Monitor -eq '1' -and
+                $message -eq "Windows could not remove the firmware monitor. Try removal again after restarting Windows.`nWindows error: 3008".Replace("`n", [Environment]::NewLine)
+        }
+        if ($monitorInUse) {
+            Write-Phase 'Monitor in use (3008); verifying the documented removal retry.'
+            $session = Restart-Guest $session
+            $removeExit = Invoke-Command -Session $session -ScriptBlock {
+                $base = 'C:\OpenZJS-Installer-Test'
+                $process = Start-Process 'C:\Program Files\OpenZJS LaserJet 1005\Setup.exe' -ArgumentList '--quiet --remove' -Wait -PassThru -WindowStyle Hidden -RedirectStandardError "$base\results\remove-retry-error.txt"
+                @{ label = 'remove-retry'; exitCode = $process.ExitCode } | ConvertTo-Json -Compress | Add-Content "$base\results\steps.jsonl"
+                return $process.ExitCode
+            }
+        }
+    }
     if ($removeExit -eq 3010) {
-        $previousBoot = Invoke-Command -Session $session -ScriptBlock { (Get-CimInstance Win32_OperatingSystem).LastBootUpTime }
         Invoke-Command -Session $session -ScriptBlock {
             if ((Get-ItemProperty 'HKLM:\SOFTWARE\OpenZJS\LaserJet1005').Status -ne 'RebootPending') { throw 'Missing restart journal.' }
-            & shutdown.exe /r /t 1
-            if ($LASTEXITCODE) { throw 'Guest restart request failed.' }
         }
-        Remove-PSSession $session
-        $session = $null
-        $restartDeadline = (Get-Date).AddMinutes(4)
-        do {
-            Start-Sleep -Seconds 5
-            $session = Connect-Guest
-            $currentBoot = Invoke-Command -Session $session -ScriptBlock { (Get-CimInstance Win32_OperatingSystem).LastBootUpTime }
-            if ($currentBoot -gt $previousBoot) { break }
-            Remove-PSSession $session
-            $session = $null
-        } while ((Get-Date) -lt $restartDeadline)
-        if (!$session) { throw 'Guest did not restart before the deadline.' }
+        $session = Restart-Guest $session
         Invoke-Command -Session $session -ScriptBlock {
             $base = 'C:\OpenZJS-Installer-Test'
             if (Test-Path 'C:\Windows\System32\lj1005monitor.dll') { throw 'Monitor still present after restart.' }
@@ -132,6 +234,7 @@ try {
                 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OpenZJS-LaserJet1005',
                 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\HP LaserJet 1005 Firmware Monitor (development)',
                 'C:\Program Files\OpenZJS LaserJet 1005', 'C:\Windows\System32\lj1005-firmware.img',
+                'C:\Windows\System32\lj1005-firmware.img.repair',
                 'C:\Windows\System32\lj1005monitor.dll')) {
             if (Test-Path $path) { throw "Removal residue: $path" }
         }

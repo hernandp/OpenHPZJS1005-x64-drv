@@ -4,7 +4,7 @@ This unsigned candidate targets the **original HP LaserJet 1005 Series** over US
 on Windows x64. It is not for the P1005 or M1005. Do not use this candidate to
 replace a working installation: publicly trusted signing and the end-user
 installation flow are still release gates. The package includes an experimental
-native Setup with firmware selection, limited repair and ownership-aware removal.
+native Setup with firmware selection, same-build repair and ownership-aware removal.
 Package installation and offline GDI captures passed on a fresh
 Windows 11 Pro 25H2 x64 VM using a certificate trusted only inside that guest;
 this does not establish public trust or physical compatibility of this package.
@@ -48,11 +48,28 @@ with A4 defaults. It requires a running Print Spooler and reports incompatible
 architecture, OS, Protected Print Mode, missing hardware and trust failures.
 It never imports a certificate or changes Windows security settings.
 
-Run Setup again with the same build to restore missing firmware and reset the
-owned queue's port and A4 defaults. This limited repair does not recreate a
-deleted queue or repair damaged driver binaries. Different-build upgrades and
-migration from a development installation are deliberately refused in this
-preview. Keep using the development tooling for an existing development queue.
+Run Setup again from the **same complete extracted package** to repair an owned
+installation. Setup verifies the source files against hashes recorded during
+installation, restores missing or damaged cache files, its installed uninstaller
+and firmware, recreates a deleted owned queue, and resets its port and A4 defaults.
+It asks Windows to reinstall the live driver files and verifies their hashes
+before reporting success. Repair does not restart the shared Print Spooler.
+If files are in use, close printing applications or restart Windows and run
+repair again. A failed or interrupted repair can be retried with the same package.
+
+A conflicting queue, changed driver/monitor registration, redirected destination,
+dependent queue or pending job prevents repair. Setup preserves unrelated printers.
+It requires an intact Windows driver-store package; driver-store corruption is
+reported before reinstalling those files. Keep the original signed package for
+repair, including its catalog. Different-build upgrades, development-install
+migration and repair of older previews without recorded file hashes are refused.
+Remove an older owned preview, restart if requested, and install the new build.
+Keep using the development tooling for an existing development queue.
+
+Extended repair passed its failure-injection VM run on September 24, including
+restoration of damaged files and a deleted queue, failed/interrupted repair
+retries, and removal after a monitor-in-use restart/retry. Consult the source repository's `docs/TEST_STATUS.md`
+before treating this engineering preview as a verified recovery tool.
 
 Choose **Remove** in Setup or uninstall **Open ZJS - HP LaserJet 1005** from
 Windows installed apps. Removal checks ownership and dependent queues, refuses
@@ -70,10 +87,14 @@ exit codes are 0 for success, 3010 for success requiring restart, 1 for an
 operation failure and 2 for an unknown/incomplete option. No driver-signature
 bypass is provided. The unsigned candidate is expected to fail trust checks.
 
-The interactive dialog has not yet had a manual usability test. Public signing,
-in-place upgrades, development migration and physical USB acceptance of the
-packaged installer remain release gates. Development scripts in the matching
-source archive are not the clean-machine deployment path.
+Interactive VM checks passed on September 23–24: firmware selection, both cancel
+paths, invalid-firmware errors, denied/accepted elevation and confirmed removal.
+The foreground-dialog fix was retested, and removal preserved the unrelated PDF
+printer. Successful interactive installation still requires physical USB
+acceptance. Public signing, in-place upgrades and development migration also
+remain release gates. See `docs/TEST_STATUS.md` for build identities and scope.
+Development scripts in the matching source archive are not the clean-machine
+deployment path.
 
 ## Security settings
 

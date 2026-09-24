@@ -362,7 +362,8 @@ namespace {
         const auto error =
             GetPrinterDataExW(printer, L"PrinterDriverData", L"OpenZJSOwner", &type,
                               reinterpret_cast<BYTE*>(marker.data()), static_cast<DWORD>(sizeof(marker)), &needed);
-        if (error != ERROR_SUCCESS || type != REG_SZ || std::wstring(marker.data()) != OWNER) {
+        if (error != ERROR_SUCCESS || type != REG_SZ || needed != (wcslen(OWNER) + 1) * sizeof(wchar_t) ||
+            marker[needed / sizeof(wchar_t) - 1] != L'\0' || std::wstring(marker.data()) != OWNER) {
             ClosePrinter(printer);
             Fail(L"The existing queue was not created by this installer. It will not be changed.");
         }
@@ -404,6 +405,226 @@ namespace {
             Fail(L"Cannot validate A4 settings.");
         PRINTER_INFO_8W global{devmode};
         Check(SetPrinterW(printer, 8, reinterpret_cast<BYTE*>(&global), 0), L"Cannot save A4 defaults.");
+    }
+
+    void CreateOwnedQueue(const std::wstring& port) {
+        PRINTER_INFO_2W info{};
+        info.pPrinterName = const_cast<LPWSTR>(QUEUE);
+        info.pPortName = const_cast<LPWSTR>(port.c_str());
+        info.pDriverName = const_cast<LPWSTR>(MODEL);
+        info.pPrintProcessor = const_cast<LPWSTR>(L"winprint");
+        info.pDatatype = const_cast<LPWSTR>(L"RAW");
+        info.Attributes = PRINTER_ATTRIBUTE_LOCAL | PRINTER_ATTRIBUTE_ENABLE_BIDI;
+        const auto printer = AddPrinterW(nullptr, 2, reinterpret_cast<BYTE*>(&info));
+        if (!printer)
+            Fail(L"Cannot create the printer queue.", GetLastError());
+        try {
+            const auto error = SetPrinterDataExW(printer, L"PrinterDriverData", L"OpenZJSOwner", REG_SZ,
+                                                 reinterpret_cast<BYTE*>(const_cast<LPWSTR>(OWNER)),
+                                                 static_cast<DWORD>((wcslen(OWNER) + 1) * sizeof(wchar_t)));
+            if (error != ERROR_SUCCESS) {
+                DeletePrinter(printer);
+                Fail(L"Cannot mark queue ownership.", error);
+            }
+            ConfigureQueue(printer, port);
+        }
+        catch (...) {
+            ClosePrinter(printer);
+            throw;
+        }
+        ClosePrinter(printer);
+    }
+
+    void RegisterUninstaller() {
+        WriteSetting(ARP, L"DisplayName", L"Open ZJS - HP LaserJet 1005");
+        WriteSetting(ARP, L"DisplayVersion", L"0.1.0");
+        WriteSetting(ARP, L"Publisher", L"Open ZJS Project");
+        WriteSetting(ARP, L"UninstallString", L"\"" + (InstallRoot() / L"Setup.exe").wstring() + L"\" --remove");
+    }
+
+    std::wstring HashName(const wchar_t* name) {
+        return std::wstring(L"Hash.") + name;
+    }
+
+    void RecordRepairIdentity() {
+        for (const auto name : PAYLOAD)
+            WriteSetting(STATE, HashName(name).c_str(), Hash(ReadBytes(InstallRoot() / L"driver" / name)));
+        WriteSetting(STATE, L"Hash.Setup.exe", Hash(ReadBytes(InstallRoot() / L"Setup.exe")));
+        WriteSetting(STATE, L"RepairSchema", L"1");
+    }
+
+    fs::path DriverDirectory() {
+        DWORD needed = 0;
+        GetPrinterDriverDirectoryW(nullptr, const_cast<LPWSTR>(L"Windows x64"), 1, nullptr, 0, &needed);
+        std::vector<BYTE> buffer(needed);
+        Check(
+            GetPrinterDriverDirectoryW(nullptr, const_cast<LPWSTR>(L"Windows x64"), 1, buffer.data(), needed, &needed),
+            L"Cannot locate the Windows printer driver directory.");
+        // The API returns the environment root (x64); this is a Type 3 driver.
+        return fs::path(reinterpret_cast<const wchar_t*>(buffer.data())) / L"3";
+    }
+
+    bool CheckRegisteredDriver(const fs::path& inf, const fs::path& directory) {
+        DWORD needed = 0, count = 0;
+        const auto environment = const_cast<LPWSTR>(L"Windows x64");
+        if (!EnumPrinterDriversW(nullptr, environment, 8, nullptr, 0, &needed, &count) &&
+            GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+            Fail(L"Cannot inspect the installed driver package.", GetLastError());
+        if (!needed)
+            return false;
+        std::vector<BYTE> buffer(needed);
+        Check(EnumPrinterDriversW(nullptr, environment, 8, buffer.data(), needed, &needed, &count),
+              L"Cannot inspect the installed driver package.");
+        const auto* drivers = reinterpret_cast<const DRIVER_INFO_8W*>(buffer.data());
+        for (DWORD i = 0; i < count; ++i) {
+            const auto& driver = drivers[i];
+            if (_wcsicmp(driver.pName, MODEL) != 0)
+                continue;
+            if (!driver.pszInfPath || _wcsicmp(driver.pszInfPath, inf.c_str()) != 0 || !driver.pMonitorName ||
+                _wcsicmp(driver.pMonitorName, MONITOR) != 0 || !driver.pDataFile ||
+                _wcsicmp(driver.pDataFile, (directory / L"lj1005.gpd").c_str()) != 0 ||
+                !(driver.dwPrinterDriverAttributes & PRINTER_DRIVER_PACKAGE_AWARE))
+                Fail(L"The registered driver no longer matches the owned package. It will not be replaced.");
+            return true;
+        }
+        return false;
+    }
+
+    bool MatchesFile(const fs::path& file, const std::wstring& expected) {
+        RejectLinks(file);
+        return fs::is_regular_file(file) && Hash(ReadBytes(file)) == expected;
+    }
+
+    void RestoreOwnedFile(const fs::path& file, const std::vector<BYTE>& bytes) {
+        RejectLinks(file);
+        if (MatchesFile(file, Hash(bytes)))
+            return;
+        // Replace the directory entry, never write through a possible hard link.
+        // A fixed sibling is safe under the protected installation directories;
+        // interrupted writes are retried under the installation mutex.
+        const auto temporary = fs::path(file.wstring() + L".repair");
+        RejectLinks(temporary);
+        if (fs::exists(temporary))
+            Check(DeleteFileW(temporary.c_str()), L"Cannot clear an interrupted repair file.");
+        try {
+            WriteNew(temporary, bytes);
+            Check(
+                MoveFileExW(temporary.c_str(), file.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH),
+                L"Cannot restore an installation file. Close applications using it or restart Windows, then run repair again.");
+        }
+        catch (...) {
+            DeleteFileW(temporary.c_str());
+            throw;
+        }
+    }
+
+    void DeleteRepairTemporary(const fs::path& file) {
+        const auto temporary = fs::path(file.wstring() + L".repair");
+        RejectLinks(temporary);
+        if (fs::exists(temporary))
+            Check(DeleteFileW(temporary.c_str()), L"Cannot remove an interrupted repair file.");
+    }
+
+    void RepairOwned(const fs::path& source, const std::vector<BYTE>& firmware, const std::wstring& port) {
+        const auto status = ReadSetting(STATE, L"Status");
+        if (status == L"RebootPending")
+            Fail(L"Restart Windows to finish removal, then run Setup again.");
+        if (status != L"Complete" && status != L"Repairing" && status != L"NeedsRepair")
+            Fail(L"A previous installation was interrupted. Run Remove, then install again.");
+        if (ReadSetting(STATE, L"RepairSchema") != L"1")
+            Fail(
+                L"This older installation has no repair identity. Remove it, restart if requested, then install again.");
+        // Keep verified bytes in memory: the supplied package may be user-writable.
+        std::array<std::vector<BYTE>, PAYLOAD.size()> payload;
+        for (std::size_t i = 0; i < PAYLOAD.size(); ++i) {
+            payload[i] = ReadBytes(source / PAYLOAD[i]);
+            const auto expected = ReadSetting(STATE, HashName(PAYLOAD[i]).c_str());
+            if (expected.empty() || Hash(payload[i]) != expected)
+                Fail(
+                    L"Repair requires the exact package used to install this build. The selected package differs or is damaged.");
+            RejectLinks(InstallRoot() / L"driver" / PAYLOAD[i]);
+        }
+        const auto setup = ReadBytes(ModulePath());
+        if (Hash(setup) != ReadSetting(STATE, L"Hash.Setup.exe"))
+            Fail(L"Repair requires the original Setup for this build. In-place upgrades are not supported yet.");
+        RejectLinks(InstallRoot() / L"Setup.exe");
+        RejectLinks(SystemPath(L"lj1005monitor.dll"));
+        const fs::path stored = ReadSetting(STATE, L"InfPath");
+        if (stored.empty() || stored.filename() != L"lj1005.inf" || !Flag(L"Driver") || !Flag(L"Monitor") ||
+            !Flag(L"MonitorFile") || !Flag(L"Firmware"))
+            Fail(L"The installation ownership record is incomplete. Repair cannot safely continue.");
+        const auto directory = DriverDirectory();
+        CheckRegisteredDriver(stored, directory);
+        const auto monitorKey = std::wstring(L"SYSTEM\\CurrentControlSet\\Control\\Print\\Monitors\\") + MONITOR;
+        const auto monitorDll = ReadSetting(monitorKey.c_str(), L"Driver");
+        if (!monitorDll.empty() && _wcsicmp(monitorDll.c_str(), L"lj1005monitor.dll") != 0)
+            Fail(L"The firmware monitor registration has changed. It will not be replaced.");
+        if (QueueExists()) {
+            const auto printer = OpenOwnedQueue();
+            ClosePrinter(printer);
+        }
+        for (const auto name : {L"lj1005.gpd", L"lj1005.ini", L"lj1005render.dll"})
+            RejectLinks(directory / name);
+        // No changes until source identity, ownership, dependencies and paths pass.
+        WriteSetting(STATE, L"Status", L"Repairing");
+        try {
+            fs::create_directories(InstallRoot() / L"driver");
+            for (std::size_t i = 0; i < PAYLOAD.size(); ++i)
+                RestoreOwnedFile(InstallRoot() / L"driver" / PAYLOAD[i], payload[i]);
+            RestoreOwnedFile(InstallRoot() / L"Setup.exe", setup);
+            const auto inf = InstallRoot() / L"driver" / L"lj1005.inf";
+            TrustedCatalog(InstallRoot() / L"driver" / L"lj1005.cat");
+            std::array<wchar_t, 32768> published{}, staged{};
+            Check(SetupCopyOEMInfW(inf.c_str(), nullptr, SPOST_PATH, 0, published.data(),
+                                   static_cast<DWORD>(published.size()), nullptr, nullptr),
+                  L"Windows could not restore the driver package. Repair is incomplete; run Setup again.");
+            Check(SetupGetInfDriverStoreLocationW(published.data(), nullptr, nullptr, staged.data(),
+                                                  static_cast<DWORD>(staged.size()), nullptr),
+                  L"Cannot locate the repair package.");
+            if (_wcsicmp(staged.data(), stored.c_str()) != 0)
+                Fail(L"Windows staged a different package. Repair stopped to preserve the installed driver.");
+            for (const auto name : PAYLOAD)
+                if (!MatchesFile(stored.parent_path() / name, ReadSetting(STATE, HashName(name).c_str())))
+                    Fail(
+                        L"The Windows driver-store package is damaged. Repair stopped before loading it; Windows package recovery is required.");
+            // Windows owns the live driver files. Reinstall through its package API,
+            // ignoring timestamps so missing/corrupt same-version files are restored.
+            const auto result =
+                InstallPrinterDriverFromPackageW(nullptr, staged.data(), MODEL, L"Windows x64", IPDFP_COPY_ALL_FILES);
+            if (FAILED(result))
+                Fail(
+                    L"Windows could not repair the driver. Close printing applications or restart Windows, then run repair again.",
+                    static_cast<DWORD>(result));
+            if (!CheckRegisteredDriver(stored, directory))
+                Fail(L"Windows did not restore the printer driver registration.");
+            for (const auto name : {L"lj1005.gpd", L"lj1005.ini", L"lj1005render.dll"})
+                if (!MatchesFile(directory / name, ReadSetting(STATE, HashName(name).c_str())))
+                    Fail(L"A driver file is still damaged or in use. Restart Windows, then run repair again.");
+            if (!MatchesFile(SystemPath(L"lj1005monitor.dll"), ReadSetting(STATE, L"MonitorHash")) ||
+                _wcsicmp(ReadSetting(monitorKey.c_str(), L"Driver").c_str(), L"lj1005monitor.dll") != 0)
+                Fail(L"The firmware monitor was not restored. Restart Windows, then run repair again.");
+            RestoreOwnedFile(SystemPath(L"lj1005-firmware.img"), firmware);
+            if (QueueExists()) {
+                const auto printer = OpenOwnedQueue();
+                try {
+                    ConfigureQueue(printer, port);
+                }
+                catch (...) {
+                    ClosePrinter(printer);
+                    throw;
+                }
+                ClosePrinter(printer);
+            }
+            else {
+                CreateOwnedQueue(port);
+            }
+            RegisterUninstaller();
+            WriteSetting(STATE, L"Status", L"Complete");
+        }
+        catch (...) {
+            WriteSetting(STATE, L"Status", L"NeedsRepair");
+            throw;
+        }
     }
 
     void AllowOwnedMonitorDeletion(const fs::path& path) {
@@ -535,16 +756,19 @@ namespace {
             }
             Mark(L"Firmware", false);
         }
+        DeleteRepairTemporary(SystemPath(L"lj1005-firmware.img"));
         // Only remove known files, never a recursive directory tree. A running
         // installed Setup is scheduled for deletion at reboot if Windows locks it.
         for (const auto name : PAYLOAD) {
             const auto file = InstallRoot() / L"driver" / name;
+            DeleteRepairTemporary(file);
             RejectLinks(file);
             if (fs::exists(file))
                 Check(DeleteFileW(file.c_str()), L"Cannot remove cached driver files.");
         }
         RemoveDirectoryW((InstallRoot() / L"driver").c_str());
         const auto setup = InstallRoot() / L"Setup.exe";
+        DeleteRepairTemporary(setup);
         if (fs::exists(setup) && !DeleteFileW(setup.c_str())) {
             Check(MoveFileExW(setup.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT), L"Cannot schedule Setup removal.");
             pending = true;
@@ -571,30 +795,7 @@ namespace {
         const bool owned = ReadSetting(STATE, L"Owner") == OWNER;
         CheckQueues();
         if (owned) {
-            if (ReadSetting(STATE, L"Status") == L"RebootPending")
-                Fail(L"Restart Windows to finish removal, then run Setup again.");
-            if (ReadSetting(STATE, L"Status") != L"Complete")
-                Fail(L"A previous installation was interrupted. Run Remove, then install again.");
-            for (const auto name : PAYLOAD) {
-                if (std::wstring(name) == L"lj1005.cat")
-                    continue;
-                if (Hash(ReadBytes(source / name)) != Hash(ReadBytes(InstallRoot() / L"driver" / name)))
-                    Fail(
-                        L"This is a different driver build. In-place upgrades are not supported by this preview. Remove the owned installation first.");
-            }
-            if (!fs::exists(SystemPath(L"lj1005-firmware.img")))
-                WriteNew(SystemPath(L"lj1005-firmware.img"), firmware);
-            else if (Hash(ReadBytes(SystemPath(L"lj1005-firmware.img"))) != FW_HASH)
-                Fail(L"Installed firmware was changed. It will not be overwritten.");
-            const auto printer = OpenOwnedQueue();
-            try {
-                ConfigureQueue(printer, port);
-            }
-            catch (...) {
-                ClosePrinter(printer);
-                throw;
-            }
-            ClosePrinter(printer);
+            RepairOwned(source, firmware, port);
             return;
         }
         Key model((std::wstring(
@@ -636,35 +837,9 @@ namespace {
                 Fail(L"Windows could not register the printer driver.", static_cast<DWORD>(result));
             Mark(L"Firmware");
             WriteNew(SystemPath(L"lj1005-firmware.img"), firmware);
-            PRINTER_INFO_2W info{};
-            info.pPrinterName = const_cast<LPWSTR>(QUEUE);
-            info.pPortName = const_cast<LPWSTR>(port.c_str());
-            info.pDriverName = const_cast<LPWSTR>(MODEL);
-            info.pPrintProcessor = const_cast<LPWSTR>(L"winprint");
-            info.pDatatype = const_cast<LPWSTR>(L"RAW");
-            info.Attributes = PRINTER_ATTRIBUTE_LOCAL | PRINTER_ATTRIBUTE_ENABLE_BIDI;
-            const auto printer = AddPrinterW(nullptr, 2, reinterpret_cast<BYTE*>(&info));
-            if (!printer)
-                Fail(L"Cannot create the printer queue.", GetLastError());
-            try {
-                const auto error = SetPrinterDataExW(printer, L"PrinterDriverData", L"OpenZJSOwner", REG_SZ,
-                                                     reinterpret_cast<BYTE*>(const_cast<LPWSTR>(OWNER)),
-                                                     static_cast<DWORD>((wcslen(OWNER) + 1) * sizeof(wchar_t)));
-                if (error != ERROR_SUCCESS) {
-                    DeletePrinter(printer);
-                    Fail(L"Cannot mark queue ownership.", error);
-                }
-                ConfigureQueue(printer, port);
-            }
-            catch (...) {
-                ClosePrinter(printer);
-                throw;
-            }
-            ClosePrinter(printer);
-            WriteSetting(ARP, L"DisplayName", L"Open ZJS - HP LaserJet 1005");
-            WriteSetting(ARP, L"DisplayVersion", L"0.1.0");
-            WriteSetting(ARP, L"Publisher", L"Open ZJS Project");
-            WriteSetting(ARP, L"UninstallString", L"\"" + (InstallRoot() / L"Setup.exe").wstring() + L"\" --remove");
+            CreateOwnedQueue(port);
+            RegisterUninstaller();
+            RecordRepairIdentity();
             WriteSetting(STATE, L"Status", L"Complete");
         }
         catch (...) {
@@ -678,7 +853,7 @@ namespace {
         }
     }
 
-    std::wstring PickFirmware() {
+    std::wstring PickFirmware(HWND owner) {
         IFileOpenDialog* dialog = nullptr;
         if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dialog))))
             Fail(L"Cannot open the firmware file picker.");
@@ -689,7 +864,7 @@ namespace {
         dialog->SetFileName(L"sihp1005.img");
         dialog->SetTitle(L"Select the original HP LaserJet 1005 firmware image");
         std::wstring path;
-        if (SUCCEEDED(dialog->Show(nullptr))) {
+        if (SUCCEEDED(dialog->Show(owner))) {
             IShellItem* item = nullptr;
             if (SUCCEEDED(dialog->GetResult(&item))) {
                 PWSTR name = nullptr;
@@ -704,15 +879,53 @@ namespace {
         return path;
     }
 
-    void Elevate(const std::wstring& arguments) {
+    void Elevate(const std::wstring& arguments, HWND owner = nullptr) {
         const auto path = ModulePath();
         SHELLEXECUTEINFOW execute{};
         execute.cbSize = sizeof(execute);
+        execute.fMask = SEE_MASK_NOASYNC;
+        execute.hwnd = owner;
         execute.lpVerb = L"runas";
         execute.lpFile = path.c_str();
         execute.lpParameters = arguments.c_str();
         execute.nShow = SW_SHOWNORMAL;
         Check(ShellExecuteExW(&execute), L"Administrator permission was not granted.");
+    }
+
+    HRESULT CALLBACK SetupDialogCallback(HWND window, UINT notification, WPARAM button, LPARAM, LONG_PTR data) {
+        if (notification == TDN_CREATED)
+            SetForegroundWindow(window);
+        if (notification != TDN_BUTTON_CLICKED)
+            return S_OK;
+
+        // Keep the main dialog alive while the picker and elevation UI use it
+        // as their owner. No exception may cross the Windows callback boundary.
+        auto& result = *reinterpret_cast<int*>(data);
+        try {
+            if (button == 100) {
+                const auto file = PickFirmware(window);
+                if (!file.empty()) {
+                    Firmware(file);
+                    Elevate(L"--install --firmware \"" + file + L"\"", window);
+                }
+            }
+            else if (button == 101)
+                Elevate(L"--remove", window);
+        }
+        catch (const Failure& error) {
+            result = 1;
+            MessageBoxW(window, error.message.c_str(), L"HP LaserJet 1005 Setup",
+                        MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
+            OutputDebugStringW(error.message.c_str());
+        }
+        catch (...) {
+            result = 1;
+            MessageBoxW(
+                window,
+                L"Setup could not complete the operation. Check the selected files and Windows printer settings.",
+                L"HP LaserJet 1005 Setup", MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
+        }
+        return S_OK;
     }
 }
 
@@ -754,24 +967,17 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
                 L"Connect the printer by USB and turn it on. Next, select the sihp1005.img firmware image from your original HP driver package.\n\nThis preview requires a Windows-trusted driver package. P1005 and M1005 printers are not supported.";
             dialog.cButtons = 2;
             dialog.pButtons = buttons;
-            int selected = IDCANCEL;
-            TaskDialogIndirect(&dialog, &selected, nullptr, nullptr);
-            if (selected == 100) {
-                const auto file = PickFirmware();
-                if (!file.empty()) {
-                    Firmware(file);
-                    Elevate(L"--install --firmware \"" + file + L"\"");
-                }
-            }
-            else if (selected == 101)
-                Elevate(L"--remove");
+            dialog.pfCallback = SetupDialogCallback;
+            dialog.lpCallbackData = reinterpret_cast<LONG_PTR>(&result);
+            if (FAILED(TaskDialogIndirect(&dialog, nullptr, nullptr, nullptr)))
+                Fail(L"Cannot open Setup.");
         }
         else {
             if (install && remove)
                 Fail(L"Choose either installation or removal.");
             if (remove && !quiet &&
                 MessageBoxW(nullptr, L"Remove the Open ZJS printer, driver and imported firmware?",
-                            L"Remove HP LaserJet 1005", MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
+                            L"Remove HP LaserJet 1005", MB_OKCANCEL | MB_ICONQUESTION | MB_SETFOREGROUND) != IDOK) {
                 CoUninitialize();
                 return 0;
             }
@@ -797,14 +1003,15 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
                                    ? L"The printer was removed. Restart Windows to finish removing files that were in use."
                                    : L"The printer installation was removed.")
                             : L"Setup is complete. Select HP LaserJet 1005 (Open ZJS) in your application's Print dialog.",
-                        L"HP LaserJet 1005 Setup", MB_OK | MB_ICONINFORMATION);
+                        L"HP LaserJet 1005 Setup", MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND);
             }
         }
     }
     catch (const Failure& error) {
         result = 1;
         if (!quiet)
-            MessageBoxW(nullptr, error.message.c_str(), L"HP LaserJet 1005 Setup", MB_OK | MB_ICONERROR);
+            MessageBoxW(nullptr, error.message.c_str(), L"HP LaserJet 1005 Setup",
+                        MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
         OutputDebugStringW(error.message.c_str());
         std::wcerr << error.message << L'\n';
     }
@@ -815,7 +1022,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
             MessageBoxW(
                 nullptr,
                 L"Setup could not complete the operation. Check the selected files and Windows printer settings.",
-                L"HP LaserJet 1005 Setup", MB_OK | MB_ICONERROR);
+                L"HP LaserJet 1005 Setup", MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
     }
     CoUninitialize();
     return result;

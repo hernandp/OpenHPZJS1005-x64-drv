@@ -85,6 +85,21 @@ testing. It is not added to the candidate or copied back in the evidence. The
 script invokes native Setup in quiet mode, checks rejection of unsigned and
 altered packages, invalid firmware and an unrelated queue with the same name,
 then checks installation, A4 defaults, same-build repair and five file captures.
+The repair checks deliberately delete the owned queue, cached INI, installed
+Setup and live renderer, corrupt firmware and cached/live GPD files, hold a
+cached file open to force a sharing failure, and set an interrupted repair
+journal. They verify exact restored hashes, retry behavior and unchanged PDF
+queue settings. Tampered sources and a foreign same-name queue must fail before
+mutation. Known temporary repair files are injected before the removal check.
+Only the disposable guest's spooler is stopped for live-file fault injection;
+the installer itself must not restart it. These extended cases were added on
+September 22. On September 24 all repair cases and five reference-verified
+captures passed; final removal encountered a monitor-in-use error (3008).
+The harness now checks that exact error and the partial-removal journal before
+restarting the guest and retrying removal once. Other removal errors still fail
+the run. The full rerun `installer-20260924-201121` passed: removal retry returned
+3010, the subsequent restart/cleanup returned 0, all resource assertions passed,
+and all five captures matched the reference. See test status for evidence.
 It runs the installed uninstaller and, when needed, restarts only the guest and
 finishes cleanup. It checks that the driver package, queue, monitor, firmware,
 cache and ownership record are gone and Microsoft Print to PDF remains.
@@ -100,6 +115,8 @@ directory. Inspect `result.json`, `failure.txt` when present, and
 commands above with this run directory before accepting the raster output.
 The harness leaves the dedicated VM running for inspection; shut it down
 normally when finished.
+`progress.log` records host-side phases, and the transcript reports each Setup
+test label, so a connection delay can be distinguished from an installer failure.
 
 The revised harness completed without manual recovery on 2026-09-21, including
 the guest restart and removal assertions. Five captures then passed independent

@@ -23,7 +23,7 @@ initial supported scope, even where development code has partial support.
   clean Windows 11 Pro 25H2 x64. Secure Boot remained enabled. All capture bytes
   matched the Linux reference encoder. See [VM testing](VM_TESTING.md).
 - Pending: public certificate trust and full end-user installer acceptance.
-  The native preview has since passed lab installation, limited repair and
+  The native preview has since passed lab installation, extended repair and
   removal checks; see [deployment](DEPLOYMENT.md).
 
 Build a candidate with Visual Studio C++, PowerShell 7 and WDK 10.0.26100.0:
@@ -61,12 +61,30 @@ remove unrelated print jobs or overwrite another printer's resources. Resolve
 the existing development monitor name and migration strategy before release.
 
 The native Setup preview now implements the firmware file picker, preflight,
-protected package cache, driver-store installation, ownership journal, limited
+protected package cache, driver-store installation, ownership journal,
 same-build repair and removal. The maintainer selected VM-only lab signing while
 the public certificate route is unresolved. See [deployment](DEPLOYMENT.md) for
 the preview's bounds and [test status](TEST_STATUS.md) for exercised paths.
-Binary upgrades, development migration, GUI usability and physical USB acceptance
+Binary upgrades, development migration and physical USB acceptance
 remain outstanding; this milestone is not complete.
+
+Interactive VM checks passed on September 23–24, including firmware selection,
+cancellation, errors, elevation and confirmed removal with unrelated-printer
+preservation. A foreground-dialog defect found during testing was corrected and
+retested. The VM has no USB printer, so successful interactive installation and
+physical printing remain separate acceptance checks.
+
+Extended same-build repair passed VM acceptance on 2026-09-24 with candidate
+`rc-a6cc1e56`: recovery of the owned queue, cache, uninstaller, firmware and live
+driver files; failure/interruption retries; foreign-resource protection; five
+reference-matched captures; and removal with restart/retry when Windows retained
+the monitor. Unrelated printer preservation and final cleanup passed. The
+earlier driver-directory comparison error was corrected. See test status for
+the exact build, harness revision scope and evidence.
+
+Next: define and implement different-build upgrade and rollback behavior, then
+test interruption and failure recovery in the isolated VM before a physical
+USB acceptance run. Same-build repair acceptance does not validate upgrades.
 
 ## 3. Reliability and diagnostics
 
