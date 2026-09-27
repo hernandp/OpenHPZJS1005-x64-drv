@@ -123,6 +123,54 @@ the guest restart and removal assertions. Five captures then passed independent
 geometry and Linux-reference byte checks, and the VM was shut down normally.
 See `docs/TEST_STATUS.md` for the evidence location and remaining acceptance gaps.
 
+## Different-build upgrade and rollback
+
+Build the separate fault fixture with `scripts/build.ps1 -BuildSetupFaultFixture`,
+then run this from elevated PowerShell 7. Like the installer harness, it always
+restores the dedicated clean checkpoint and verifies VM identity and isolation.
+The previous and candidate packages must have different monitor binaries.
+
+```powershell
+./scripts/test-vm-upgrade.ps1 `
+  -PreviousPackage artifacts/rc-PREVIOUS/HPLJ1005x64 `
+  -CandidatePackage artifacts/rc-CURRENT/HPLJ1005x64 `
+  -FaultSetup build/Release/lj1005setup_fault.exe `
+  -QueueTestPath build/Release/queue_test.exe `
+  -FirmwarePath C:/private/original-driver/sihp1005.img
+```
+
+The harness signs both catalogs only in the guest and exercises production Setup
+for normal upgrade, rollback, recovery and rejection cases. A separate fixture
+compiled from the same source provides deterministic process termination and
+failure after durable phase writes. Production Setup and release archives must
+exclude both that fixture and its hooks. A guest file lock forces restart
+recovery; the host printer and trust stores are not changed.
+
+`last-upgrade-run.txt` identifies the dated evidence directory. Check
+`result.json`, `progress.log`, `steps.jsonl`, `results/assertions.jsonl` and any
+`failure.txt`. The final assertions include removal of the saved backup and both
+exercised driver-store packages. See [upgrade behavior](UPGRADE_ROLLBACK.md) for
+saved settings and recovery rules. These quiet-mode checks do not validate the
+interactive confirmations or a physical USB printer.
+
+Validate, decode and independently compare both portrait captures on the host:
+
+```powershell
+$run = (Get-Content artifacts/OpenZJS-Win11-25H2/last-upgrade-run.txt -Raw).Trim()
+foreach ($prefix in @('upgraded-', 'rolled-back-')) {
+    $name = "$run/captures/${prefix}portrait"
+    ./build/Release/lj1005.exe validate "$name.zjs"
+    if ($LASTEXITCODE) { throw 'Protocol validation failed.' }
+    ./build/Release/lj1005.exe decode "$name.zjs" "$name.pbm"
+    if ($LASTEXITCODE) { throw 'Decode failed.' }
+    python ./tests/verify_captures.py --capture-directory "$run/captures" --prefix $prefix --scenarios portrait
+    if ($LASTEXITCODE) { throw 'Reference verification failed.' }
+}
+```
+
+Shut down the guest normally after evidence review; the harness leaves it running
+for inspection.
+
 References: [Windows image deployment](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/capture-and-apply-windows-system-and-recovery-partitions),
 [customizing Windows PE](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/winpe-mount-and-customize),
 [PowerShell Direct](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/powershell-direct),

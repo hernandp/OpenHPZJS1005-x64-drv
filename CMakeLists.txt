@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(HPLJ1005x64 VERSION 0.1.0 LANGUAGES C CXX)
+project(HPLJ1005x64 VERSION 0.1.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Keep the printer DLLs usable on computers without the Visual C++ redistributable.
@@ -69,6 +69,13 @@ if(BUILD_TESTING)
   endif()
   add_test(NAME firmware COMMAND firmware_tests)
   if(WIN32)
+    # Explicit VM-only target. Never built or shipped by package-candidate.ps1.
+    add_executable(lj1005setup_fault WIN32 EXCLUDE_FROM_ALL src/setup.cpp src/usb_windows.cpp)
+    target_link_libraries(lj1005setup_fault PRIVATE lj1005_core winspool setupapi cfgmgr32 bcrypt wintrust crypt32 ole32 uuid shell32 comctl32 advapi32)
+    target_compile_definitions(lj1005setup_fault PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN OPENZJS_SETUP_TESTING)
+    if(MSVC)
+      target_compile_options(lj1005setup_fault PRIVATE /W4 /WX /permissive- /EHsc)
+    endif()
     add_test(NAME print_validation_cli COMMAND ${CMAKE_COMMAND}
       "-DCLI=$<TARGET_FILE:lj1005>" "-DOUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/validation-test"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/verify_validation_cli.cmake")

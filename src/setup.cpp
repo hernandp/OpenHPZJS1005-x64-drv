@@ -18,6 +18,7 @@
 #include <vector>
 #include <thread>
 #include <iostream>
+#include <utility>
 
 #pragma comment(                                                                                                       \
     linker,                                                                                                            \
@@ -31,6 +32,7 @@ namespace {
     constexpr auto STATE = L"SOFTWARE\\OpenZJS\\LaserJet1005";
     constexpr auto OWNER = L"{851B5A16-66F6-4F48-8D74-0CFBD5FA9947}";
     constexpr auto ARP = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\OpenZJS-LaserJet1005";
+    constexpr auto UPDATE = L"SOFTWARE\\OpenZJS\\LaserJet1005Update";
     constexpr auto FW_HASH = L"638b9ad4a2cf6888208926ef7c7de073da8ba4cded25d31000a585c4526a9ca1";
     constexpr std::array PAYLOAD = {L"lj1005.inf", L"lj1005.cat",       L"lj1005.gpd",
                                     L"lj1005.ini", L"lj1005render.dll", L"lj1005monitor.dll"};
@@ -437,7 +439,8 @@ namespace {
 
     void RegisterUninstaller() {
         WriteSetting(ARP, L"DisplayName", L"Open ZJS - HP LaserJet 1005");
-        WriteSetting(ARP, L"DisplayVersion", L"0.1.0");
+        const auto version = ReadSetting(STATE, L"Version");
+        WriteSetting(ARP, L"DisplayVersion", version.empty() ? L"0.1.0" : version);
         WriteSetting(ARP, L"Publisher", L"Open ZJS Project");
         WriteSetting(ARP, L"UninstallString", L"\"" + (InstallRoot() / L"Setup.exe").wstring() + L"\" --remove");
     }
@@ -546,7 +549,7 @@ namespace {
         }
         const auto setup = ReadBytes(ModulePath());
         if (Hash(setup) != ReadSetting(STATE, L"Hash.Setup.exe"))
-            Fail(L"Repair requires the original Setup for this build. In-place upgrades are not supported yet.");
+            Fail(L"Repair requires the original Setup for this build. Choose Upgrade to install a different build.");
         RejectLinks(InstallRoot() / L"Setup.exe");
         RejectLinks(SystemPath(L"lj1005monitor.dll"));
         const fs::path stored = ReadSetting(STATE, L"InfPath");
@@ -685,8 +688,13 @@ namespace {
             Fail(L"Cannot grant permission to delete the owned monitor.", error);
     }
 
-    void RemoveOwned() {
+    void DiscardUpdate();
+    bool UpdateInProgress();
+
+    void RemoveOwned(bool updating = false) {
         Preflight(false);
+        if (!updating && UpdateInProgress())
+            Fail(L"An upgrade or rollback is unfinished. Run Upgrade to recover, or choose Roll back first.");
         if (ReadSetting(STATE, L"Owner") != OWNER)
             Fail(L"No installation owned by this Setup was found.");
         RejectLinks(InstallRoot());
@@ -775,23 +783,43 @@ namespace {
         }
         RemoveDirectoryW(InstallRoot().c_str());
         RegDeleteKeyExW(HKEY_LOCAL_MACHINE, ARP, KEY_WOW64_64KEY, 0);
+        // Keep ownership until backup cleanup succeeds, so a failure is retryable.
+        if (!updating)
+            DiscardUpdate();
         if (pending)
             WriteSetting(STATE, L"Status", L"RebootPending");
         else
             RegDeleteKeyExW(HKEY_LOCAL_MACHINE, STATE, KEY_WOW64_64KEY, 0);
     }
 
-    void Install(const fs::path& firmwareSource, bool offline) {
+    std::wstring PackageVersion(const fs::path& inf) {
+        const auto handle = SetupOpenInfFileW(inf.c_str(), nullptr, INF_STYLE_WIN4, nullptr);
+        if (handle == INVALID_HANDLE_VALUE)
+            Fail(L"Cannot read the driver package version.");
+        INFCONTEXT context{};
+        std::array<wchar_t, 256> version{};
+        const bool ok = SetupFindFirstLineW(handle, L"Version", L"DriverVer", &context) &&
+                        SetupGetStringFieldW(&context, 2, version.data(), static_cast<DWORD>(version.size()), nullptr);
+        SetupCloseInfFile(handle);
+        if (!ok || !version[0])
+            Fail(L"The driver package has no version.");
+        return version.data();
+    }
+
+    void Install(const fs::path& firmwareSource, bool offline, const fs::path& package = {}) {
         Preflight();
+        if (package.empty() && UpdateInProgress())
+            Fail(L"An upgrade or rollback is unfinished. Run Upgrade to recover, or choose Roll back first.");
         const auto firmware = Firmware(firmwareSource);
         const auto port = offline ? L"FILE:" : UsbPort();
-        const auto source = ModulePath().parent_path() / L"driver";
+        const auto setup = package.empty() ? ModulePath() : package / L"Setup.exe";
+        const auto source = setup.parent_path() / L"driver";
         TrustedCatalog(source / L"lj1005.cat");
         RejectLinks(InstallRoot());
         RejectLinks(SystemPath(L"lj1005-firmware.img"));
         if (ReadSetting(STATE, L"Owner") == OWNER && ReadSetting(STATE, L"Status") == L"RebootPending" &&
             !fs::exists(InstallRoot() / L"Setup.exe") && !fs::exists(SystemPath(L"lj1005monitor.dll")))
-            RemoveOwned();
+            RemoveOwned(!package.empty());
         const bool owned = ReadSetting(STATE, L"Owner") == OWNER;
         CheckQueues();
         if (owned) {
@@ -813,7 +841,7 @@ namespace {
         WriteSetting(STATE, L"Status", L"Installing");
         try {
             fs::create_directories(InstallRoot() / L"driver");
-            WriteNew(InstallRoot() / L"Setup.exe", ReadBytes(ModulePath()));
+            WriteNew(InstallRoot() / L"Setup.exe", ReadBytes(setup));
             for (const auto name : PAYLOAD)
                 WriteNew(InstallRoot() / L"driver" / name, ReadBytes(source / name));
             TrustedCatalog(InstallRoot() / L"driver" / L"lj1005.cat");
@@ -838,13 +866,14 @@ namespace {
             Mark(L"Firmware");
             WriteNew(SystemPath(L"lj1005-firmware.img"), firmware);
             CreateOwnedQueue(port);
+            WriteSetting(STATE, L"Version", PackageVersion(inf));
             RegisterUninstaller();
             RecordRepairIdentity();
             WriteSetting(STATE, L"Status", L"Complete");
         }
         catch (...) {
             try {
-                RemoveOwned();
+                RemoveOwned(!package.empty());
             }
             catch (...) {
                 WriteSetting(STATE, L"Status", L"NeedsRemoval");
@@ -852,6 +881,8 @@ namespace {
             throw;
         }
     }
+
+#include "setup_update.hpp"
 
     std::wstring PickFirmware(HWND owner) {
         IFileOpenDialog* dialog = nullptr;
@@ -902,15 +933,21 @@ namespace {
         // as their owner. No exception may cross the Windows callback boundary.
         auto& result = *reinterpret_cast<int*>(data);
         try {
-            if (button == 100) {
+            if (button == 102 && UpdateInProgress() && ReadSetting(UPDATE, L"Phase") != L"Preparing")
+                Elevate(L"--upgrade", window);
+            else if (button == 100 || button == 102) {
                 const auto file = PickFirmware(window);
                 if (!file.empty()) {
                     Firmware(file);
-                    Elevate(L"--install --firmware \"" + file + L"\"", window);
+                    Elevate(std::wstring(button == 102 ? L"--upgrade" : L"--install") + L" --firmware \"" + file +
+                                L"\"",
+                            window);
                 }
             }
             else if (button == 101)
                 Elevate(L"--remove", window);
+            else if (button == 103)
+                Elevate(L"--rollback", window);
         }
         catch (const Failure& error) {
             result = 1;
@@ -933,7 +970,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     int count = 0;
     const auto arguments = CommandLineToArgvW(GetCommandLineW(), &count);
-    bool quiet = false, remove = false, install = false, offline = false;
+    bool quiet = false, remove = false, install = false, upgrade = false, rollback = false, offline = false;
     fs::path firmware;
     for (int i = 1; i < count; ++i) {
         const std::wstring arg = arguments[i];
@@ -943,6 +980,10 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
             remove = true;
         else if (arg == L"--install")
             install = true;
+        else if (arg == L"--upgrade")
+            upgrade = true;
+        else if (arg == L"--rollback")
+            rollback = true;
         else if (arg == L"--offline")
             offline = true;
         else if (arg == L"--firmware" && i + 1 < count)
@@ -956,8 +997,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     LocalFree(arguments);
     int result = 0;
     try {
-        if (!install && !remove) {
-            const TASKDIALOG_BUTTON buttons[] = {{100, L"Install or repair"}, {101, L"Remove"}};
+        if (!install && !remove && !upgrade && !rollback) {
+            const TASKDIALOG_BUTTON buttons[] = {
+                {100, L"Install or repair"}, {102, L"Upgrade"}, {103, L"Roll back"}, {101, L"Remove"}};
             TASKDIALOGCONFIG dialog{};
             dialog.cbSize = sizeof(dialog);
             dialog.dwCommonButtons = TDCBF_CANCEL_BUTTON;
@@ -965,7 +1007,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
             dialog.pszMainInstruction = L"Set up your original HP LaserJet 1005";
             dialog.pszContent =
                 L"Connect the printer by USB and turn it on. Next, select the sihp1005.img firmware image from your original HP driver package.\n\nThis preview requires a Windows-trusted driver package. P1005 and M1005 printers are not supported.";
-            dialog.cButtons = 2;
+            dialog.cButtons = static_cast<UINT>(std::size(buttons));
             dialog.pButtons = buttons;
             dialog.pfCallback = SetupDialogCallback;
             dialog.lpCallbackData = reinterpret_cast<LONG_PTR>(&result);
@@ -973,32 +1015,54 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
                 Fail(L"Cannot open Setup.");
         }
         else {
-            if (install && remove)
-                Fail(L"Choose either installation or removal.");
+            if (static_cast<int>(install) + static_cast<int>(remove) + static_cast<int>(upgrade) +
+                    static_cast<int>(rollback) !=
+                1)
+                Fail(L"Choose one operation: installation, upgrade, rollback or removal.");
             if (remove && !quiet &&
                 MessageBoxW(nullptr, L"Remove the Open ZJS printer, driver and imported firmware?",
                             L"Remove HP LaserJet 1005", MB_OKCANCEL | MB_ICONQUESTION | MB_SETFOREGROUND) != IDOK) {
                 CoUninitialize();
                 return 0;
             }
+            if ((upgrade || rollback) && !quiet &&
+                MessageBoxW(
+                    nullptr,
+                    rollback
+                        ? L"Restore the previous driver build and its saved printer settings?"
+                        : L"Upgrade this printer? Setup saves the previous build and settings for rollback. A restart may be required.",
+                    L"HP LaserJet 1005 Setup", MB_OKCANCEL | MB_ICONQUESTION | MB_SETFOREGROUND) != IDOK) {
+                CoUninitialize();
+                return 0;
+            }
             if (!IsAdmin() && !quiet) {
-                Elevate(remove ? L"--remove"
-                               : L"--install --firmware \"" + firmware.wstring() + L"\"" +
-                                     (offline ? L" --offline" : L""));
+                Elevate(remove     ? L"--remove"
+                        : rollback ? L"--rollback"
+                                   : std::wstring(upgrade ? L"--upgrade" : L"--install") + L" --firmware \"" +
+                                         firmware.wstring() + L"\"" + (offline ? L" --offline" : L""));
             }
             else {
                 InstallationLock lock;
-                if (remove)
+                bool restart = false;
+                if (upgrade)
+                    restart = UpgradeOwned(firmware, offline);
+                else if (rollback)
+                    restart = RollbackUpdate();
+                else if (remove)
                     RemoveOwned();
                 else
                     Install(firmware, offline);
-                const bool restart = ReadSetting(STATE, L"Status") == L"RebootPending";
+                restart = restart || ReadSetting(STATE, L"Status") == L"RebootPending";
                 if (restart)
                     result = ERROR_SUCCESS_REBOOT_REQUIRED;
                 if (!quiet)
                     MessageBoxW(
                         nullptr,
-                        remove
+                        (upgrade || rollback)
+                            ? (restart
+                                   ? L"Restart Windows, then run this Setup again and choose Upgrade or Roll back to finish recovery."
+                                   : L"The update or recovery operation is complete. Your saved printer settings were restored.")
+                        : remove
                             ? (restart
                                    ? L"The printer was removed. Restart Windows to finish removing files that were in use."
                                    : L"The printer installation was removed.")

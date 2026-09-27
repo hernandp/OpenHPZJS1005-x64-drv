@@ -4,7 +4,8 @@ This unsigned candidate targets the **original HP LaserJet 1005 Series** over US
 on Windows x64. It is not for the P1005 or M1005. Do not use this candidate to
 replace a working installation: publicly trusted signing and the end-user
 installation flow are still release gates. The package includes an experimental
-native Setup with firmware selection, same-build repair and ownership-aware removal.
+native Setup with firmware selection, same-build repair, owned upgrades/rollback
+and ownership-aware removal.
 Package installation and offline GDI captures passed on a fresh
 Windows 11 Pro 25H2 x64 VM using a certificate trusted only inside that guest;
 this does not establish public trust or physical compatibility of this package.
@@ -61,10 +62,20 @@ A conflicting queue, changed driver/monitor registration, redirected destination
 dependent queue or pending job prevents repair. Setup preserves unrelated printers.
 It requires an intact Windows driver-store package; driver-store corruption is
 reported before reinstalling those files. Keep the original signed package for
-repair, including its catalog. Different-build upgrades, development-install
-migration and repair of older previews without recorded file hashes are refused.
-Remove an older owned preview, restart if requested, and install the new build.
-Keep using the development tooling for an existing development queue.
+repair, including its catalog. Development-install migration and repair of older
+previews without recorded file hashes are refused. Keep using the development
+tooling for an existing development queue.
+
+Setup 0.1.1 adds **Upgrade** for a different complete package and **Roll back**
+for the saved previous build. Upgrade requires an intact owned installation and
+saves its package, firmware, global queue preferences and permissions before
+replacement. Older package versions are refused through Upgrade. If Windows
+retains a monitor/file, restart and rerun the new extracted Setup to continue.
+An interrupted installation is recovered by rollback. Keep the extracted new
+package until recovery finishes; do not use an older Setup to remove an
+unfinished update. One previous build is retained; a subsequent upgrade replaces
+that history. See the source archive's `docs/UPGRADE_ROLLBACK.md` for details and
+`docs/TEST_STATUS.md` for the actual acceptance scope.
 
 Extended repair passed its failure-injection VM run on September 24, including
 restoration of damaged files and a deleted queue, failed/interrupted repair
@@ -91,8 +102,9 @@ Interactive VM checks passed on September 23–24: firmware selection, both canc
 paths, invalid-firmware errors, denied/accepted elevation and confirmed removal.
 The foreground-dialog fix was retested, and removal preserved the unrelated PDF
 printer. Successful interactive installation still requires physical USB
-acceptance. Public signing, in-place upgrades and development migration also
-remain release gates. See `docs/TEST_STATUS.md` for build identities and scope.
+acceptance. The new Upgrade/Roll back dialogs need an interactive acceptance
+pass; their VM transaction tests run in quiet mode. Public signing and development
+migration also remain release gates. See `docs/TEST_STATUS.md` for build identities and scope.
 Development scripts in the matching source archive are not the clean-machine
 deployment path.
 

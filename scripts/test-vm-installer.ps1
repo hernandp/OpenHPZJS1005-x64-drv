@@ -16,6 +16,7 @@ if (@(Get-VMNetworkAdapter -VM $vm | Where-Object SwitchName).Count) { throw 'VM
 if ((Get-FileHash -LiteralPath $FirmwarePath -Algorithm SHA256).Hash -ne '638B9AD4A2CF6888208926EF7C7DE073DA8BA4CDED25D31000A585C4526A9CA1') { throw 'Unexpected firmware.' }
 $run = Join-Path $evidence ('installer-' + [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Path $run | Out-Null
+$run | Set-Content (Join-Path $evidence 'last-installer-run.txt')
 $credential = Import-Clixml (Join-Path $evidence 'credential.clixml')
 $session = $null
 function Write-Phase([string]$Message) {
@@ -41,10 +42,16 @@ function Restart-Guest($CurrentSession) {
     $restartDeadline = (Get-Date).AddMinutes(4)
     do {
         Start-Sleep -Seconds 5
-        $connection = Connect-Guest
-        $currentBoot = Invoke-Command -Session $connection -ScriptBlock { (Get-CimInstance Win32_OperatingSystem).LastBootUpTime }
-        if ($currentBoot -gt $previousBoot) { return $connection }
-        Remove-PSSession $connection
+        $connection = $null
+        try {
+            $connection = Connect-Guest
+            $currentBoot = Invoke-Command -Session $connection -ScriptBlock { (Get-CimInstance Win32_OperatingSystem).LastBootUpTime }
+            if ($currentBoot -gt $previousBoot) { return $connection }
+        } catch {
+            # PowerShell Direct can reconnect while the old guest is still
+            # shutting down; CIM then reports that shutdown is in progress.
+        }
+        if ($connection) { Remove-PSSession $connection }
     } while ((Get-Date) -lt $restartDeadline)
     throw 'Guest did not restart before the deadline.'
 }

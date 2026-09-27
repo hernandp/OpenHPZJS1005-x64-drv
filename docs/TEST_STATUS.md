@@ -1,4 +1,63 @@
-# Development verification — updated 2026-09-24
+# Development verification — updated 2026-09-27
+
+## Different-build upgrade and rollback — VM acceptance passed (2026-09-27)
+
+Setup 0.1.1 adds owned upgrades and one saved rollback package. It snapshots the
+previous package/Setup, firmware, global printer defaults and queue permissions,
+validates and stages the target before removal, and records recovery phases.
+The changed monitor is replaced through owned removal/reinstallation. See
+[upgrade and rollback](UPGRADE_ROLLBACK.md) for recovery and preservation limits.
+
+Candidate `rc-2c0e7be2` (0.1.1) passed the quiet-mode upgrade matrix against the
+installed `rc-a6cc1e56` (0.1.0) baseline. The monitor binaries differ. Evidence is
+`artifacts/OpenZJS-Win11-25H2/upgrade-20260927-194408`: `result.json`,
+`steps.jsonl`, `results/assertions.jsonl` and both reference-verification logs.
+The checks passed for:
+
+- Version/build replacement with exact cached/live payload and firmware hashes,
+  retained Letter defaults, queue metadata and access permissions.
+- Tampered upgrade source, dependent queue, older-version package and damaged
+  rollback backup rejection while preserving the working installation.
+- A locked monitor forcing exit 3010, then successful upgrade after one guest
+  restart. New files were not installed before pending deletion completed.
+- Explicit rollback, recovery after terminated upgrade and rollback processes,
+  and automatic restoration after an injected failure following installation.
+- Removal with a retained backup, including an injected unexpected backup file:
+  removal refused that file, retained ownership, and succeeded on retry after
+  the harness removed its injected file. Both used driver-store packages were
+  absent after final removal, and Microsoft Print to PDF was preserved.
+
+Normal operations and recovery use the packaged production Setup. Deterministic
+termination/failure injection uses a separately compiled fixture from the same
+source; production Setup and the user archive exclude that fixture and its
+hooks. Both post-upgrade and post-rollback portrait captures passed strict ZJS
+validation, geometry/margin checks and exact Linux-reference encoder comparison.
+
+The same candidate passed the existing installation/extended-repair cases and
+five further reference-matched captures in `installer-20260927-194907`. Removal
+returned monitor-in-use error 3008, then 3010 after restart. The harness queried
+CIM during the next shutdown and lost its connection; this was a harness timing
+failure, not a successful unattended run. Reconnecting after reboot completed
+removal with exit 0 and verified all cleanup assertions. The original failure
+is retained. Continuation evidence and normal VM shutdown are recorded in
+`artifacts/finish-repair-20260927`. Both harnesses now retry transient boot-time
+queries; that retry change has syntax validation but has not had a full rerun.
+
+The latest engineering candidate, `rc-8bd03d60`, includes one subsequent GUI
+condition fix: a failed preparation reopens the firmware picker when Upgrade is
+selected. Its transaction/quiet-mode implementation is unchanged from the
+VM-tested candidate; this newer executable has not been run through the VM
+matrix. Both candidates pass all seven CTest suites, GpdCheck, Inf2Cat and
+InfVerif (the existing 1296/2083 warnings remain), import checks and archive
+manifest/hash verification (72 source entries, 13 binary entries). Current
+production source matches `rc-8bd03d60`; subsequent edits are harness retry
+handling and acceptance documentation. Formatting passes.
+
+All installation/trust changes were limited to the isolated guest, with Secure
+Boot enabled. No host installation or physical USB print was performed. The new
+Upgrade/Roll back confirmations, cancellation and recovery messages still need
+interactive acceptance. Public signing and development-installation migration
+remain separate release gates.
 
 ## Interactive installer dialogs — VM checks passed (2026-09-23–24)
 

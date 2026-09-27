@@ -9,6 +9,8 @@ root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--capture-directory", type=Path, default=root / "artifacts")
 parser.add_argument("--prefix", default="full-")
+parser.add_argument("--scenarios", nargs="+", choices=("portrait", "landscape", "blank", "multi", "letter"),
+                    default=("portrait", "landscape", "blank", "multi", "letter"))
 parser.add_argument("--reference", type=Path, default=root / "build/Release/reference_foo2zjs.exe")
 args = parser.parse_args()
 reference = args.reference
@@ -25,7 +27,7 @@ def pages(path):
         result.append(ImageChops.invert(Image.frombytes("1", (width, height), data).convert("L")))
     return result
 
-for scenario in ("portrait", "landscape", "blank", "multi", "letter"):
+for scenario in args.scenarios:
     pbm = args.capture_directory / f"{args.prefix}{scenario}.pbm"
     images = pages(pbm)
     assert len(images) == (3 if scenario == "multi" else 1)

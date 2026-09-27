@@ -62,11 +62,11 @@ the existing development monitor name and migration strategy before release.
 
 The native Setup preview now implements the firmware file picker, preflight,
 protected package cache, driver-store installation, ownership journal,
-same-build repair and removal. The maintainer selected VM-only lab signing while
+same-build repair, different-build upgrade, rollback and removal. The maintainer selected VM-only lab signing while
 the public certificate route is unresolved. See [deployment](DEPLOYMENT.md) for
 the preview's bounds and [test status](TEST_STATUS.md) for exercised paths.
-Binary upgrades, development migration and physical USB acceptance
-remain outstanding; this milestone is not complete.
+Interactive upgrade/recovery dialogs, development migration and physical USB
+acceptance remain outstanding; this milestone is not complete.
 
 Interactive VM checks passed on September 23–24, including firmware selection,
 cancellation, errors, elevation and confirmed removal with unrelated-printer
@@ -82,9 +82,18 @@ the monitor. Unrelated printer preservation and final cleanup passed. The
 earlier driver-directory comparison error was corrected. See test status for
 the exact build, harness revision scope and evidence.
 
-Next: define and implement different-build upgrade and rollback behavior, then
-test interruption and failure recovery in the isolated VM before a physical
-USB acceptance run. Same-build repair acceptance does not validate upgrades.
+Different-build upgrade and rollback passed quiet-mode VM acceptance on
+2026-09-27, using version 0.1.0 as the installed baseline and 0.1.1 as the target.
+The checks cover changed binaries, retained global printer settings/permissions,
+restart recovery, explicit rollback, automatic failure rollback, terminated
+upgrade/rollback processes and refusal of unsafe sources or dependencies.
+See [upgrade and rollback](UPGRADE_ROLLBACK.md) and test status for the exact
+candidate and evidence.
+
+Next: exercise the new Upgrade/Roll back confirmations and recovery messages
+interactively, then run physical USB acceptance. The September 23–24 dialog
+checks predate these new operations. Public signing and development-installation
+migration remain separate release gates.
 
 ## 3. Reliability and diagnostics
 
