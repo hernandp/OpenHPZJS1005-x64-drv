@@ -65,8 +65,8 @@ protected package cache, driver-store installation, ownership journal,
 same-build repair, different-build upgrade, rollback and removal. The maintainer selected VM-only lab signing while
 the public certificate route is unresolved. See [deployment](DEPLOYMENT.md) for
 the preview's bounds and [test status](TEST_STATUS.md) for exercised paths.
-Interactive upgrade/recovery dialogs, development migration and physical USB
-acceptance remain outstanding; this milestone is not complete.
+Development migration and physical USB acceptance remain outstanding;
+this milestone is not complete.
 
 Interactive VM checks passed on September 23–24, including firmware selection,
 cancellation, errors, elevation and confirmed removal with unrelated-printer
@@ -90,10 +90,16 @@ upgrade/rollback processes and refusal of unsafe sources or dependencies.
 See [upgrade and rollback](UPGRADE_ROLLBACK.md) and test status for the exact
 candidate and evidence.
 
-Next: exercise the new Upgrade/Roll back confirmations and recovery messages
-interactively, then run physical USB acceptance. The September 23–24 dialog
-checks predate these new operations. Public signing and development-installation
-migration remain separate release gates.
+Interactive upgrade/restart recovery and rollback also passed on September 27
+with `rc-8bd03d60`. Rollback cancellation and the confirmation/success paths were
+exercised by the user; installed builds, file hashes and preserved settings were
+verified after both operations. A misleading restart error now directs update
+users to Upgrade/Roll back; that text-only change postdates the tested package.
+
+Next: plan the development-installation migration before installing this package
+on the physical-printer machine, then run physical USB acceptance. Public signing
+remains a separate release gate. The preparation-retry picker and any unexercised
+dialog branches remain checks for the next packaged candidate.
 
 ## 3. Reliability and diagnostics
 

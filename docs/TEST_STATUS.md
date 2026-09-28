@@ -50,14 +50,49 @@ VM-tested candidate; this newer executable has not been run through the VM
 matrix. Both candidates pass all seven CTest suites, GpdCheck, Inf2Cat and
 InfVerif (the existing 1296/2083 warnings remain), import checks and archive
 manifest/hash verification (72 source entries, 13 binary entries). Current
-production source matches `rc-8bd03d60`; subsequent edits are harness retry
-handling and acceptance documentation. Formatting passes.
+production source at commit `e0921c5` matches `rc-8bd03d60`; that commit's
+subsequent edits were harness retry handling and acceptance documentation.
+Formatting passes.
+
+### Interactive upgrade and rollback (2026-09-27)
+
+The user exercised `rc-8bd03d60` through interactive lab shortcuts with offline
+file-output mode, starting from `rc-a6cc1e56`. The first upgrade stopped with
+Windows error 3008 while removing the monitor. Inspection confirmed
+`UpgradeRemoving` / `Removing`, and both saved packages, Setup executables,
+firmware and printer-settings backups passed their recorded hash checks before
+and after a guest restart. The user retried Upgrade, accepted elevation and the
+foreground confirmation, received the completion dialog, and dismissed it;
+Setup exited successfully.
+
+Inspection then verified version 0.1.1.0, exact cached/live payload hashes,
+retained Letter defaults, queue metadata/permissions and the unrelated PDF
+printer. The rollback record was available. The user confirmed that rollback
+cancellation appeared in front and closed Setup, then exercised OK, elevation
+and the success dialog. Inspection verified restoration of version 0.1.0.0 and
+the original driver-store INF, Setup/payload/firmware hashes and the same queue
+settings/permissions; the update phase was cleared. The observer was stopped
+after recording the result. The VM remains running with the restored old build.
+
+Evidence is in `artifacts/OpenZJS-Win11-25H2/interactive-upgrade-20260927`,
+including `upgrade-verified.json`, `rollback-verified.json`, their state
+snapshots and `restart-20260928-001727`. The folder uses the local test date;
+some evidence timestamps are September 28 UTC. This is interactive acceptance
+of upgrade/restart recovery and rollback in offline mode, not physical USB or
+an exhaustive repeat of every dialog/error branch. The preparation-retry picker
+condition has not been specifically exercised interactively.
+
+The 3008 dialog exposed misleading wording: it said to retry removal during an
+upgrade. The current source now tells users to restart and choose Upgrade or
+Roll back when an update cannot remove its monitor or stored package. Normal
+uninstall wording is unchanged. This text-only follow-up is newer than the
+tested candidate; it does not change transaction behavior. The Release build,
+all seven CTest suites and formatting pass after this wording change. Its new
+text has not yet been exercised through an actual failure dialog.
 
 All installation/trust changes were limited to the isolated guest, with Secure
-Boot enabled. No host installation or physical USB print was performed. The new
-Upgrade/Roll back confirmations, cancellation and recovery messages still need
-interactive acceptance. Public signing and development-installation migration
-remain separate release gates.
+Boot enabled. No host installation or physical USB print was performed. Public
+signing and development-installation migration remain separate release gates.
 
 ## Interactive installer dialogs — VM checks passed (2026-09-23–24)
 

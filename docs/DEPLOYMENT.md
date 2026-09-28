@@ -102,9 +102,12 @@ Interactive VM checks passed on September 23–24: firmware selection, both canc
 paths, invalid-firmware errors, denied/accepted elevation and confirmed removal.
 The foreground-dialog fix was retested, and removal preserved the unrelated PDF
 printer. Successful interactive installation still requires physical USB
-acceptance. The new Upgrade/Roll back dialogs need an interactive acceptance
-pass; their VM transaction tests run in quiet mode. Public signing and development
-migration also remain release gates. See `docs/TEST_STATUS.md` for build identities and scope.
+acceptance. Interactive Upgrade/restart recovery and Roll back also passed on
+September 27, including rollback cancellation and verified preservation of
+global settings and permissions. A follow-up clarifies the upgrade restart
+error; that wording and the preparation-retry picker need checking in the next
+candidate. Public signing and development migration also remain release gates.
+See `docs/TEST_STATUS.md` for build identities and scope.
 Development scripts in the matching source archive are not the clean-machine
 deployment path.
 

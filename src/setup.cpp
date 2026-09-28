@@ -720,8 +720,11 @@ namespace {
         if (Flag(L"Monitor")) {
             if (!DeleteMonitorW(nullptr, const_cast<LPWSTR>(L"Windows x64"), const_cast<LPWSTR>(MONITOR)) &&
                 GetLastError() != ERROR_UNKNOWN_PRINT_MONITOR)
-                Fail(L"Windows could not remove the firmware monitor. Try removal again after restarting Windows.",
-                     GetLastError());
+                Fail(
+                    updating
+                        ? L"Windows could not remove the firmware monitor. Restart Windows, then run this Setup again and choose Upgrade or Roll back to finish recovery."
+                        : L"Windows could not remove the firmware monitor. Try removal again after restarting Windows.",
+                    GetLastError());
             Mark(L"Monitor", false);
         }
         const auto inf = ReadSetting(STATE, L"InfPath");
@@ -730,8 +733,11 @@ namespace {
                 Fail(L"The installation record refers to an unexpected driver package.");
             const auto result = DeletePrinterDriverPackageW(nullptr, inf.c_str(), L"Windows x64");
             if (FAILED(result) && result != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
-                Fail(L"Windows could not remove the stored package. Try removal again after restarting Windows.",
-                     static_cast<DWORD>(result));
+                Fail(
+                    updating
+                        ? L"Windows could not remove the stored package. Restart Windows, then run this Setup again and choose Upgrade or Roll back to finish recovery."
+                        : L"Windows could not remove the stored package. Try removal again after restarting Windows.",
+                    static_cast<DWORD>(result));
             WriteSetting(STATE, L"InfPath", L"");
         }
         if (Flag(L"MonitorFile")) {
