@@ -1,4 +1,68 @@
-# Development verification — updated 2026-09-27
+# Development verification — updated 2026-09-29
+
+## Development migration — VM rehearsal passed (2026-09-29)
+
+The explicit replacement and recovery procedure in
+[development migration](DEVELOPMENT_MIGRATION.md) passed from the isolated VM's
+clean checkpoint. The fixture used copies of the six actual host development
+files, including the original renderer, monitor and firmware, and recreated the
+unused diagnostic driver registration. Representative VM queue metadata,
+permissions and Letter global defaults were saved and restored; these are not
+a clone of the host's account or a complete host recovery bundle.
+
+Candidate rc-90c47676 (0.1.1) matches production source at 1b980ce, including
+the corrected upgrade/restart wording. Its archived-source build passed all
+seven CTest suites, GpdCheck, Inf2Cat, InfVerif (existing warnings 1296/2083),
+binary-import checks and archive verification (72 source, 13 binary entries).
+Source ZIP SHA-256:
+e5b7d15eb555959a7bd09c1c8b06b967fa52fcdf32616a01b79e9960f9e43ce6;
+binary ZIP SHA-256:
+36de7e7313e4472727f329449c2ac4fecc6e1129a11998d43980a7c24e1dcc14.
+The migration harness and this documentation postdate that source snapshot.
+
+The final frozen-harness run passed:
+
+- Refusal of implicit Setup adoption while preserving the development build.
+- Preflight rejection of an additional dependent queue and a damaged settings
+  backup; rejection of a tampered candidate before legacy retirement.
+- Staging the valid target before removal, then restoring the original
+  development build after a fresh-install failure caused by invalid firmware.
+- Explicit replacement with the owned package, preserving the tested settings
+  and permissions and verifying exact live payload/firmware hashes.
+- Removing the owned package and restoring the original development build,
+  diagnostic registration and private files. The diagnostic registration was
+  unused; successful printing through that diagnostic driver is not claimed.
+- Preservation of Microsoft Print to PDF throughout, with Secure Boot enabled
+  and certificate trust changes confined to the disconnected guest.
+
+All three portrait captures (before, migrated and restored) passed strict ZJS
+validation, decoding, geometry/margin checks and byte-for-byte comparison with
+the Linux reference encoder. The final run required no guest restart.
+
+Evidence: artifacts/OpenZJS-Win11-25H2/migration-20260929-185336, including
+result.json, results/steps.jsonl, results/assertions.jsonl, three reference
+verification logs, runtime identity and frozen harness sources/hashes.
+The wrapper's capture checks and shutdown are recorded under
+artifacts/migration-wrapper-20260929-155336.
+The host's previously inventoried printer properties and all six original
+payload hashes still matched afterward (artifacts/migration-20260929/host-after.json).
+
+Earlier attempts exposed harness issues retained in local logs: guest script
+execution policy, missing dynamic VC++ runtime dependencies in the old DLLs,
+shared Windows-file copy flags, an unusable diagnostic queue fixture, and
+read-only imported firmware. The final harness submits commands through
+PowerShell Direct without changing execution policy, installs a verified
+Microsoft redistributable only in the guest, preserves shared core files and
+handles the read-only attribute only for hash-verified private files. An earlier
+run resumed after a restart with a fixture correction; acceptance above is based
+on the subsequent complete run with frozen sources.
+
+This verifies a maintainer-controlled offline migration rehearsal, not an
+automatic Setup migration feature or physical USB acceptance. Failure after
+partial owned installation remains subject to Setup's separately tested recovery
+paths; the migration failure case here stops at firmware validation. Host
+migration, full host settings backup, public signing, physical printing and
+unexercised interactive dialog branches remain pending.
 
 ## Different-build upgrade and rollback — VM acceptance passed (2026-09-27)
 

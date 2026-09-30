@@ -65,8 +65,9 @@ protected package cache, driver-store installation, ownership journal,
 same-build repair, different-build upgrade, rollback and removal. The maintainer selected VM-only lab signing while
 the public certificate route is unresolved. See [deployment](DEPLOYMENT.md) for
 the preview's bounds and [test status](TEST_STATUS.md) for exercised paths.
-Development migration and physical USB acceptance remain outstanding;
-this milestone is not complete.
+Development migration has a tested maintainer procedure; applying it to the
+physical-printer machine and physical USB acceptance remain outstanding.
+This milestone is not complete.
 
 Interactive VM checks passed on September 23–24, including firmware selection,
 cancellation, errors, elevation and confirmed removal with unrelated-printer
@@ -96,10 +97,19 @@ exercised by the user; installed builds, file hashes and preserved settings were
 verified after both operations. A misleading restart error now directs update
 users to Upgrade/Roll back; that text-only change postdates the tested package.
 
-Next: plan the development-installation migration before installing this package
-on the physical-printer machine, then run physical USB acceptance. Public signing
-remains a separate release gate. The preparation-retry picker and any unexercised
-dialog branches remain checks for the next packaged candidate.
+Development migration passed an isolated VM rehearsal on September 29 with
+rc-90c47676, using the actual host development binaries. Explicit replacement,
+settings/permissions preservation, refusal cases, failed-install recovery and
+restoration after successful migration passed, with three reference-matched
+captures. See [the migration procedure](DEVELOPMENT_MIGRATION.md) and test status.
+Setup still refuses automatic adoption of an unowned development installation.
+
+Next: choose the physical test machine and its signing/trust route, capture a
+fresh complete host recovery bundle, apply the reviewed migration procedure,
+then run physical USB acceptance. The existing decision permits VM-only lab
+trust; host trust changes require a separate decision. Public signing remains a
+release gate. The preparation-retry picker and any unexercised dialog branches
+remain checks for the packaged candidate.
 
 ## 3. Reliability and diagnostics
 

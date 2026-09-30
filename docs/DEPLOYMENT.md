@@ -64,7 +64,10 @@ It requires an intact Windows driver-store package; driver-store corruption is
 reported before reinstalling those files. Keep the original signed package for
 repair, including its catalog. Development-install migration and repair of older
 previews without recorded file hashes are refused. Keep using the development
-tooling for an existing development queue.
+tooling for an existing development queue. The maintainer
+[development-migration procedure](DEVELOPMENT_MIGRATION.md) describes explicit
+replacement, recovery prerequisites and the isolated VM rehearsal. It is not
+an automatic adoption feature or permission to change host certificate trust.
 
 Setup 0.1.1 adds **Upgrade** for a different complete package and **Roll back**
 for the saved previous build. Upgrade requires an intact owned installation and

@@ -171,6 +171,22 @@ foreach ($prefix in @('upgraded-', 'rolled-back-')) {
 Shut down the guest normally after evidence review; the harness leaves it running
 for inspection.
 
+## Development migration rehearsal
+
+See [development migration](DEVELOPMENT_MIGRATION.md) for the inventory,
+replacement/recovery sequence and `scripts/test-vm-migration.ps1` invocation.
+The harness restores the dedicated clean checkpoint, uses copies of the actual
+legacy private files and tests explicit retirement, owned installation and
+restoration of the original development build. It cannot migrate the host.
+The legacy DLLs require a Microsoft-signed C++ x64 runtime in the guest; the
+packaged candidate still uses its static runtime.
+
+`last-migration-run.txt` points to the evidence. Inspect the result and failure
+records, then validate/decode the three captures and independently compare them
+using `tests/verify_captures.py --scenarios portrait`, with prefixes `before-`,
+`migrated-` and `restored-`. Shut down the guest after review. Windows core files
+and firmware remain private lab inputs, outside the copied results and archives.
+
 References: [Windows image deployment](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/capture-and-apply-windows-system-and-recovery-partitions),
 [customizing Windows PE](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/winpe-mount-and-customize),
 [PowerShell Direct](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/powershell-direct),
