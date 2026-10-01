@@ -2,7 +2,8 @@ param([switch]$Check, [string]$ClangFormat)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 if (!$ClangFormat) {
-    $command = Get-Command clang-format -CommandType Application -ErrorAction SilentlyContinue
+    $command = Get-Command clang-format -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
     if ($command) { $ClangFormat = $command.Source }
 }
 if (!$ClangFormat) {
