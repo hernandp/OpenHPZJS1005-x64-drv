@@ -52,6 +52,11 @@ The bundle has no signed catalog and uses the development installer described be
 
 ## Public release preparation
 
+The [CI workflow](docs/CI.md) checks formatting, builds/tests an unsigned candidate,
+runs WDK validation and independently verifies both release archives. It publishes
+temporary engineering artifacts only; signing and physical acceptance remain
+release gates.
+
 The [release plan](docs/RELEASE_PLAN.md) tracks the installer, signing, firmware import and clean-machine acceptance work. `./scripts/package-candidate.ps1` builds matching source and production-binary archives from a fresh source snapshot, runs the automated tests and WDK checks, and generates an unsigned catalog and SHA-256 manifests. It requires the WDK in addition to the build tools. Its default catalog target is Windows 11 24H2 x64 (`10_GE_X64`).
 
 The candidate now contains a native **Setup.exe** preview. Choose **Install or repair** to open a file dialog for **sihp1005.img** from your original HP driver package. Setup validates the image before requesting elevation, installs the package, selects the USB port and configures A4. Same-build repair restores the owned queue, cache and firmware and asks Windows to reinstall driver files. Setup 0.1.1 also adds **Upgrade** and **Roll back** with a saved previous package and resumable recovery. See [Setup instructions and limitations](docs/DEPLOYMENT.md) and [upgrade/rollback](docs/UPGRADE_ROLLBACK.md). Existing development installations are not migrated by this preview.

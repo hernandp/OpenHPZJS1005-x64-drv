@@ -104,12 +104,11 @@ restoration after successful migration passed, with three reference-matched
 captures. See [the migration procedure](DEVELOPMENT_MIGRATION.md) and test status.
 Setup still refuses automatic adoption of an unowned development installation.
 
-Next: choose the physical test machine and its signing/trust route, capture a
-fresh complete host recovery bundle, apply the reviewed migration procedure,
-then run physical USB acceptance. The existing decision permits VM-only lab
-trust; host trust changes require a separate decision. Public signing remains a
-release gate. The preparation-retry picker and any unexercised dialog branches
-remain checks for the packaged candidate.
+On September 30 the maintainer chose to wait for public signing before physical
+installation and continue independent release work. Physical migration, a fresh
+complete host recovery bundle and USB acceptance are deferred until that signing
+route is ready. Lab certificate trust remains VM-only. The preparation-retry
+picker and any unexercised dialog branches remain checks for the packaged candidate.
 
 ## 3. Reliability and diagnostics
 
@@ -134,8 +133,10 @@ Inkscape Print dialog, PDF and Office output; 32/64-bit applications; paper chan
 and ResetDC; copies; empty pages; cancellations; unplug/replug; sleep/wake; no-paper
 recovery; repeated power cycles. Keep dated evidence and known limitations.
 
-Add CI for build/style/tests and package validation, consistent binary/INF/setup
-versions, protected signing and tagged releases. Publish checksums and the exact
+Build/style/test and unsigned-package CI is now implemented; see [CI](CI.md)
+for its tools, archive checks and the pending first hosted run.
+Complete consistent binary/INF/setup versions, protected signing and tagged
+releases. Publish checksums and the exact
 corresponding source alongside binaries. Static runtime security fixes require
 rebuilding and redistributing the binaries. Choose issue templates and a short
 user guide before advertising general availability.

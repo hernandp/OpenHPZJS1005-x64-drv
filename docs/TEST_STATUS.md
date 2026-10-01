@@ -1,4 +1,38 @@
-# Development verification — updated 2026-09-29
+# Development verification — updated 2026-10-01
+
+## Candidate CI — local validation passed (2026-10-01)
+
+The new GitHub Actions workflow covers C++ formatting, archive-verifier tests,
+an archived-source production build, all seven CTest suites, WDK validation,
+runtime-import checks and independent verification of both ZIPs.
+See [CI](CI.md) for the tool pins and local commands.
+
+Local candidate rc-30e0624a passed this build/packaging path with the pinned WDK
+package freshly extracted through prepare-ci-wdk.ps1. All seven CTest suites,
+GpdCheck, Inf2Cat and binary-import checks passed. InfVerif retained only the
+known 1296/2083 warnings. The verifier accepted 80 source files and 12 production
+files, plus one manifest in each ZIP. Source provenance links the binary archive
+to its exact source archive, including the new workflow and scripts.
+
+All eight archive-verifier tests passed, covering corrupted archive checksums,
+inner-manifest tampering, forbidden production files, embedded Setup test hooks,
+source/package INF disagreement, wrong source provenance, path escape and
+clean-versus-modified provenance handling. It also accepted the previously
+VM-tested rc-90c47676 candidate with --require-clean. C++ formatting passed with
+clang-format 22.1.3, PowerShell scripts parsed, and actionlint 1.7.7 accepted the
+workflow. Local evidence is in artifacts/rc-30e0624a/validation/.
+
+The new candidate accurately records modified-source provenance against base
+commit 1d6c537; CI requires a clean checkout. These results used local Visual
+Studio 2026. The first hosted Windows Server 2022 / Visual Studio 2022 run,
+network provisioning and artifact upload remain unverified until the workflow
+is pushed and run. The acceptance documentation was updated after the snapshot.
+No production driver or Setup code changed in this work.
+
+On September 30 the maintainer chose to wait for public signing before physical
+installation. No host recovery/migration operation, printer installation,
+certificate-trust change or physical printing was performed for this CI work.
+Protected signing, public releases and physical acceptance remain pending.
 
 ## Development migration — VM rehearsal passed (2026-09-29)
 

@@ -3,7 +3,8 @@
 param(
     [string]$WdkRoot = "${env:ProgramFiles(x86)}\Windows Kits\10",
     [string]$WdkVersion = '10.0.26100.0',
-    [string]$CatalogOS = '10_GE_X64'
+    [string]$CatalogOS = '10_GE_X64',
+    [string]$OutputPathFile
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -69,10 +70,10 @@ function Invoke-Check([string]$Tool, [string[]]$ToolArguments, [string]$LogName)
 # Snapshot only public source paths known to Git; ignored firmware, captures,
 # downloaded SDK files and existing build outputs cannot enter the snapshot.
 $sourcePaths = @('CMakeLists.txt', 'LICENSE', 'README.md', 'THIRD_PARTY.md', '.gitignore',
-    '.gitattributes', '.clang-format', 'driver', 'include', 'src', 'scripts', 'tests', 'vendor', 'docs')
+    '.gitattributes', '.clang-format', '.github', 'driver', 'include', 'src', 'scripts', 'tests', 'vendor', 'docs')
 $files = & git -C $projectRoot -c core.quotepath=false ls-files --cached --others --exclude-standard -- @sourcePaths
 if ($LASTEXITCODE -ne 0 -or !$files) { throw 'Source snapshot requires a Git checkout.' }
-$allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md', '.gpd', '.inf', '.ini', '.def')
+$allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md', '.gpd', '.inf', '.ini', '.def', '.yml')
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative.Contains('..') -or [IO.Path]::IsPathRooted($relative)) { throw "Invalid source path: $relative" }
     if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions) {
@@ -158,3 +159,4 @@ Get-FileHash -LiteralPath $sourceZip, $binaryZip -Algorithm SHA256 |
     Set-Content -LiteralPath (Join-Path $candidate 'SHA256SUMS.txt') -Encoding ascii
 Write-Host "Candidate: $candidate"
 Write-Host 'Unsigned engineering package only. Signing and clean-machine installation have NOT been verified.'
+if ($OutputPathFile) { $candidate | Set-Content -LiteralPath $OutputPathFile -Encoding utf8 }
