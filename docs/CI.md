@@ -10,8 +10,16 @@ runs the archive verifier's tests, then builds an unsigned engineering candidate
 using scripts/package-candidate.ps1. That builder compiles its exact source
 snapshot, runs all seven CTest suites, checks x64 PE/runtime imports and CMake/INF
 version agreement, and runs GpdCheck, InfVerif and Inf2Cat. Setup obtains its
-package version from the INF. Consistent executable version resources remain
-separate release work.
+package version from the INF. CMake generates Windows version resources for the
+four shipped EXEs/DLLs and Setup's fallback display version from the project
+version, with a fourth component of zero. Configuration rejects an inconsistent
+INF version before building.
+
+Before catalog generation, verify-binary-versions.ps1 reads the four binaries'
+numeric and text file/product versions, original filenames and product identity.
+Missing or mismatched resources, debug builds and missing prerelease flags stop
+packaging. The result is recorded in validation/binary-versions.json.
+Version strings identify the build version, not signature trust or certification.
 
 scripts/prepare-ci-wdk.ps1 downloads Microsoft's WDK x64 NuGet package
 10.0.26100.6584 and verifies a pinned SHA-256 before extracting it to a new
@@ -56,8 +64,11 @@ package, pass -PackagePath to prepare-ci-wdk.ps1; its hash is still checked.
 Add --require-clean to verification for a clean checkout, as CI does. Local
 engineering work can retain a modified-source provenance flag.
 
-The first hosted GitHub run must still be checked after this workflow is pushed.
-Local execution cannot validate hosted-runner provisioning or artifact upload.
+The [October 1 hosted run](https://github.com/hernandp/OpenHPZJS1005-x64-drv/actions/runs/36863787006)
+passed on commit f771508, including network provisioning, all validation steps
+and both artifact uploads. The first attempt exposed multiple clang-format
+executables on PATH; the lookup now selects the first application explicitly.
+Subsequent version-resource changes require their own build and validation.
 Protected signing, reviewed release tags, public certificate trust and physical
 printer acceptance remain separate release gates.
 

@@ -76,7 +76,8 @@ if ($LASTEXITCODE -ne 0 -or !$files) { throw 'Source snapshot requires a Git che
 $allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md', '.gpd', '.inf', '.ini', '.def', '.yml')
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative.Contains('..') -or [IO.Path]::IsPathRooted($relative)) { throw "Invalid source path: $relative" }
-    if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions) {
+    if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions -and
+        $relative -notin @('driver/version.rc.in', 'driver/version.hpp.in')) {
         throw "Review unexpected source file before packaging: $relative"
     }
     $original = Get-Item -LiteralPath (Join-Path $projectRoot $relative)
@@ -121,6 +122,9 @@ foreach ($file in @('LICENSE', 'THIRD_PARTY.md')) {
     Copy-Item -LiteralPath (Join-Path $source $file) -Destination $bundle
 }
 Copy-Item -LiteralPath (Join-Path $source 'docs\DEPLOYMENT.md') -Destination (Join-Path $bundle 'README.md')
+
+& (Join-Path $source 'scripts\verify-binary-versions.ps1') -PackagePath $bundle -ExpectedVersion "$version.0" |
+    ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $logs 'binary-versions.json') -Encoding utf8
 
 foreach ($file in @(Get-ChildItem -LiteralPath $payload -Filter '*.dll') +
                   @(Get-ChildItem -LiteralPath (Join-Path $bundle 'tools') -Filter '*.exe') +

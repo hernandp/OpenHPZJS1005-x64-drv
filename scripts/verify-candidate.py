@@ -99,7 +99,9 @@ def verify(candidate, require_clean=False):
     require(set(binary) == PAYLOAD, "Production payload allowlist differs")
     for name in source:
         path = PurePosixPath(name)
-        require(name in SOURCE_ROOT_FILES or (
+        require(name in SOURCE_ROOT_FILES or name in {
+            "driver/version.rc.in", "driver/version.hpp.in"
+        } or (
             len(path.parts) > 1 and path.parts[0] in SOURCE_DIRS
             and path.suffix in SOURCE_EXTENSIONS
         ), f"Unexpected source file: {name}")

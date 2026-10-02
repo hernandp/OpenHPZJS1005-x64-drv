@@ -11,6 +11,7 @@
 #include <commctrl.h>
 #include <aclapi.h>
 #include "lj1005/usb.hpp"
+#include "lj1005_version.hpp"
 #include <array>
 #include <filesystem>
 #include <fstream>
@@ -440,7 +441,7 @@ namespace {
     void RegisterUninstaller() {
         WriteSetting(ARP, L"DisplayName", L"Open ZJS - HP LaserJet 1005");
         const auto version = ReadSetting(STATE, L"Version");
-        WriteSetting(ARP, L"DisplayVersion", version.empty() ? L"0.1.0" : version);
+        WriteSetting(ARP, L"DisplayVersion", version.empty() ? OPENZJS_PACKAGE_VERSION : version);
         WriteSetting(ARP, L"Publisher", L"Open ZJS Project");
         WriteSetting(ARP, L"UninstallString", L"\"" + (InstallRoot() / L"Setup.exe").wstring() + L"\" --remove");
     }

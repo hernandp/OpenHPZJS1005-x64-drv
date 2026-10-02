@@ -1,4 +1,44 @@
-# Development verification — updated 2026-10-01
+# Development verification — updated 2026-10-02
+
+## Windows version metadata — local candidate passed (2026-10-02)
+
+Candidate rc-e5a6049a adds Windows version resources to Setup.exe, lj1005.exe,
+lj1005render.dll and lj1005monitor.dll. Numeric and text file/product versions
+are 0.1.1.0, generated from the CMake project version and checked against the INF.
+Setup's missing-state display-version fallback uses the same generated version.
+The resources identify each module and mark this build as a prerelease.
+They do not establish publisher trust or change the installed driver.
+
+The archived-source build passed all seven CTest suites, GpdCheck, Inf2Cat,
+InfVerif (existing warnings 1296/2083), x64/static-runtime import checks, and
+the new binary version/identity checks. Independent archive verification passed
+for 83 source files and 12 production files, plus the two manifests. The source
+ZIP includes both version templates and the version verifier. All eight archive
+tests and C++ formatting passed.
+
+Negative checks rejected a wrong expected version, the earlier package without
+resources, a same-version monitor substituted for the renderer, and an INF
+version different from CMake. The separately excluded Setup fault fixture still
+compiled with the generated version header and remained absent from the package.
+Evidence is in artifacts/rc-e5a6049a/validation/, especially
+binary-versions.json, version-gate-tests.json and archive-verification.json.
+
+This engineering candidate records modified-source provenance against f771508.
+The acceptance notes were added after its source snapshot. The resource changes
+and fallback text have not been installed or exercised interactively; the earlier
+VM results apply to the binaries identified in their respective sections.
+Public signing and physical installation remain deferred as requested.
+
+## Hosted candidate CI — passed (2026-10-01)
+
+The [complete hosted run](https://github.com/hernandp/OpenHPZJS1005-x64-drv/actions/runs/36863787006)
+passed on f771508, on Windows Server 2022 / Visual Studio 2022. Formatting,
+archive-verifier tests, WDK download/extraction, production build/tests, package
+validation, independent archive verification and both artifact uploads succeeded.
+The initial run on 90a21c9 failed because Get-Command returned both installed
+clang-format executables; the corrected lookup selects the first application.
+That failure was reproduced locally with two formatters before verifying the fix.
+This hosted run predates the version-resource work above.
 
 ## Candidate CI — local validation passed (2026-10-01)
 
@@ -24,9 +64,8 @@ workflow. Local evidence is in artifacts/rc-30e0624a/validation/.
 
 The new candidate accurately records modified-source provenance against base
 commit 1d6c537; CI requires a clean checkout. These results used local Visual
-Studio 2026. The first hosted Windows Server 2022 / Visual Studio 2022 run,
-network provisioning and artifact upload remain unverified until the workflow
-is pushed and run. The acceptance documentation was updated after the snapshot.
+Studio 2026. Hosted execution was pending at this checkpoint and subsequently
+passed as recorded above. The acceptance documentation was updated after the snapshot.
 No production driver or Setup code changed in this work.
 
 On September 30 the maintainer chose to wait for public signing before physical

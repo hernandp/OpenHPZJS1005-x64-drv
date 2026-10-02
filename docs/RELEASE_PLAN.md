@@ -133,10 +133,11 @@ Inkscape Print dialog, PDF and Office output; 32/64-bit applications; paper chan
 and ResetDC; copies; empty pages; cancellations; unplug/replug; sleep/wake; no-paper
 recovery; repeated power cycles. Keep dated evidence and known limitations.
 
-Build/style/test and unsigned-package CI is now implemented; see [CI](CI.md)
-for its tools, archive checks and the pending first hosted run.
-Complete consistent binary/INF/setup versions, protected signing and tagged
-releases. Publish checksums and the exact
+Build/style/test and unsigned-package CI passed its first complete hosted run
+on October 1 (f771508); see [CI](CI.md) for its tools and archive checks.
+Windows file/product version resources and Setup's fallback version now derive
+from CMake, with configuration/package checks enforcing agreement with the INF.
+Complete protected signing and tagged releases. Publish checksums and the exact
 corresponding source alongside binaries. Static runtime security fixes require
 rebuilding and redistributing the binaries. Choose issue templates and a short
 user guide before advertising general availability.
