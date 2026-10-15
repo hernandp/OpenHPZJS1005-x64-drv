@@ -107,8 +107,17 @@ Setup still refuses automatic adoption of an unowned development installation.
 On September 30 the maintainer chose to wait for public signing before physical
 installation and continue independent release work. Physical migration, a fresh
 complete host recovery bundle and USB acceptance are deferred until that signing
-route is ready. Lab certificate trust remains VM-only. The preparation-retry
-picker and any unexercised dialog branches remain checks for the packaged candidate.
+route is ready. Lab certificate trust remains VM-only.
+
+The preparation-retry picker checks passed on October 2 and 15 using clean CI
+candidate `rc-54d87b83` from commit `8f336a0`: picker cancellation, invalid firmware,
+elevation denial, upgrade-confirmation cancellation and the expected missing-USB
+error. The offline retry then exercised the corrected error 3008 restart dialog
+and successful recovery through the main menu. Installed candidate hashes,
+rollback availability and preserved settings were verified after recovery.
+See test status for evidence and scope. This closes that specific VM acceptance
+gap; physical USB/print acceptance and any other unexercised branches remain
+separate checks.
 
 ## 3. Reliability and diagnostics
 

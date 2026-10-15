@@ -1,4 +1,48 @@
-# Development verification — updated 2026-10-02
+# Development verification — updated 2026-10-15
+
+## Interactive preparation retry and restart recovery — passed (2026-10-15)
+
+The user exercised production Setup from clean CI candidate `rc-54d87b83`,
+version 0.1.1, commit `8f336a074ca8410adae831bea571fc5ecd649b26`, downloaded
+from [run 37013977734](https://github.com/hernandp/OpenHPZJS1005-x64-drv/actions/runs/37013977734).
+Independent archive verification passed with `--require-clean`. Setup SHA-256:
+`964E94FABB84AAAD4AF3173B4CA551F2CFD11A62ECCCFE3D724196E5CD515F84`.
+
+Preparation on October 2 restored the isolated VM's clean checkpoint, installed
+the older `rc-a6cc1e56` baseline, and signed package catalogs inside the VM only.
+A deliberately altered guest-only copy of the new package failed Windows catalog
+membership validation, leaving update phase `Preparing` and the old installation
+intact. All user-operated checks used the unmodified production Setup and package
+payload, with the guest lab-signed catalog.
+
+The preparation-retry firmware picker opened correctly. Picker cancellation and
+invalid firmware rejection passed without elevation on October 2. On October 15,
+the user confirmed valid-firmware elevation denial (error 1223), cancellation at
+the upgrade confirmation, and the expected missing-USB-printer error after
+confirmation. Foreground behavior passed. Inspection after these checks verified
+the old installed payload and preserved queue settings, permissions, Letter paper,
+firmware and unrelated Microsoft Print to PDF queue; update phase remained
+`Preparing`.
+
+The explicit offline upgrade shortcut then reached monitor-removal error 3008.
+The actual dialog displayed the corrected instruction to restart Windows and
+choose Upgrade or Roll back. Inspection confirmed `Removing` / `UpgradeRemoving`.
+After restarting the guest and resuming Upgrade through the main menu, the user
+provided the foreground completion dialog: the operation was complete and saved
+printer settings were restored, with no further restart requested. Fresh
+inspection verified the new Setup identity, matching cached/live driver payload,
+`Complete` installation status, `Available` rollback phase, and preserved queue
+settings/permissions, Letter paper, firmware and unrelated PDF printer.
+
+Evidence and screenshots are in
+`artifacts/OpenZJS-Win11-25H2/interactive-preparation-20261002-104831`, including
+`picker-results.json`, `valid-firmware-results-20261015.json`,
+`upgrade-restart-3008-result.json`, `upgrade-recovery-result.json` and
+`after-upgrade-recovery-20261015.json`. The observer was stopped after verification.
+Final success-dialog dismissal/process exit has not been separately confirmed.
+This closes the preparation-retry picker and corrected restart-dialog checks;
+it does not repeat every installer branch or establish physical USB/print
+acceptance. Public signing and physical installation remain deferred.
 
 ## Windows version metadata — local candidate passed (2026-10-02)
 
@@ -24,9 +68,11 @@ Evidence is in artifacts/rc-e5a6049a/validation/, especially
 binary-versions.json, version-gate-tests.json and archive-verification.json.
 
 This engineering candidate records modified-source provenance against f771508.
-The acceptance notes were added after its source snapshot. The resource changes
-and fallback text have not been installed or exercised interactively; the earlier
-VM results apply to the binaries identified in their respective sections.
+The acceptance notes were added after its source snapshot. At that stage the
+resource changes and fallback text had not been installed or exercised
+interactively. The later clean CI build's VM acceptance is recorded above;
+the missing-state display-version fallback was not specifically exercised.
+Earlier VM results apply to the binaries identified in their respective sections.
 Public signing and physical installation remain deferred as requested.
 
 ## Hosted candidate CI — passed (2026-10-01)
@@ -217,7 +263,7 @@ snapshots and `restart-20260928-001727`. The folder uses the local test date;
 some evidence timestamps are September 28 UTC. This is interactive acceptance
 of upgrade/restart recovery and rollback in offline mode, not physical USB or
 an exhaustive repeat of every dialog/error branch. The preparation-retry picker
-condition has not been specifically exercised interactively.
+was not exercised in this run; the October 15 acceptance above closes that gap.
 
 The 3008 dialog exposed misleading wording: it said to retry removal during an
 upgrade. The current source now tells users to restart and choose Upgrade or
@@ -225,7 +271,8 @@ Roll back when an update cannot remove its monitor or stored package. Normal
 uninstall wording is unchanged. This text-only follow-up is newer than the
 tested candidate; it does not change transaction behavior. The Release build,
 all seven CTest suites and formatting pass after this wording change. Its new
-text has not yet been exercised through an actual failure dialog.
+text was subsequently exercised through error 3008 in the October 15 acceptance
+above.
 
 All installation/trust changes were limited to the isolated guest, with Secure
 Boot enabled. No host installation or physical USB print was performed. Public
