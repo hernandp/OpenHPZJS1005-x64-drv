@@ -1,5 +1,39 @@
 # Completion diagnostics
 
+## Shareable support inventory
+
+`scripts/export-support-report.ps1` collects a read-only JSON inventory using
+Windows PowerShell 5.1 or PowerShell 7 in a 64-bit process:
+
+~~~powershell
+./scripts/export-support-report.ps1 -OutputPath ./openzjs-support.json
+~~~
+
+Use a new output filename. Existing files are never overwritten. The script does
+not request elevation, change execution policy, send USB commands, print, cancel
+jobs, start tracing, or modify services, printers or certificate stores. If local
+policy blocks scripts, use the manual information in [the user guide](USER_GUIDE.md)
+or ask the administrator. Some reads, including Secure Boot, can require elevated
+access; unavailable values remain null and collection errors contain only a
+section identifier and HRESULT, not raw exception messages.
+
+The report explicitly selects OS build/revision, spooler/security state, owned
+installation/update phase, anonymized Open ZJS queue status and job counts,
+paper/duplex codes, and known private-file hashes/versions. It excludes machine
+and user names, queue names, serial numbers, full paths, job names/owners,
+documents, spool captures, firmware bytes, registry exports and trace contents.
+The firmware hash identifies the installed image without copying it. False
+Secure Boot is different from null/unavailable. A null installation state may
+mean a development installation; inspect file/queue evidence and collection errors.
+
+Review the JSON before sharing it. Private migration backups must never be
+attached to an issue. The collector does not prove a package is trusted, a job
+printed correctly, or a Windows build is supported. Privacy projection tests in
+`tests/test-support-report.ps1` exercise sensitive-property canaries, unexpected
+values and missing results; CI runs them with both PowerShell versions.
+
+## Bounded completion tracing
+
 The monitor emits optional Windows TraceLogging events from provider
 `OpenZJS.LaserJet1005`, GUID `{e8d2763b-f16e-4b57-b14c-c637f7915011}`.
 Keyword 1 records lifecycle stages and errors. Keyword 2, at verbose level 5,

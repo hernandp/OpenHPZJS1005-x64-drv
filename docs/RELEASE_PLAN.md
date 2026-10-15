@@ -119,6 +119,14 @@ See test status for evidence and scope. This closes that specific VM acceptance
 gap; physical USB/print acceptance and any other unexercised branches remain
 separate checks.
 
+On October 15 the maintainer reaffirmed that physical installation stays deferred
+while the signing route is undecided. A fresh private recovery capture and a
+dated hardware/Windows test matrix are prepared; they do not authorize host lab
+trust or establish physical acceptance. See [remaining acceptance](RELEASE_ACCEPTANCE.md)
+for the initial Windows 11 Pro 25H2 x64 scope, the untested 24H2 extension, physical
+printing/recovery cases and evidence template. Independent backup storage and a
+rehearsal of the fresh recovery capture are still prerequisites to migration.
+
 ## 3. Reliability and diagnostics
 
 Validate complete ZJS framing, geometry, page count and resource limits before
@@ -134,6 +142,9 @@ the spooler continues using the native encoder and its existing monitor checks.
 Make paper-out, door-open, disconnected, cancelled and timed-out jobs actionable.
 Avoid blind retry of partially transmitted jobs. Bound memory and parser work.
 Provide a support report without document contents or firmware binaries.
+Implemented as `scripts/export-support-report.ps1`, with an explicit field
+allowlist and privacy regression checks. See [diagnostics](DIAGNOSTICS.md).
+Physical paper/door/error recovery and user-facing status remain acceptance work.
 
 ## 4. Release validation and automation
 
@@ -150,3 +161,6 @@ Complete protected signing and tagged releases. Publish checksums and the exact
 corresponding source alongside binaries. Static runtime security fixes require
 rebuilding and redistributing the binaries. Choose issue templates and a short
 user guide before advertising general availability.
+The initial [user guide](USER_GUIDE.md) and GitHub bug/compatibility issue templates
+are now prepared. Final signed-release instructions and physical acceptance
+results must still be incorporated before publication.

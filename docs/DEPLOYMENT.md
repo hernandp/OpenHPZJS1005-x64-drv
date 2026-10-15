@@ -107,12 +107,20 @@ The foreground-dialog fix was retested, and removal preserved the unrelated PDF
 printer. Successful interactive installation still requires physical USB
 acceptance. Interactive Upgrade/restart recovery and Roll back also passed on
 September 27, including rollback cancellation and verified preservation of
-global settings and permissions. A follow-up clarifies the upgrade restart
-error; that wording and the preparation-retry picker need checking in the next
-candidate. Public signing and development migration also remain release gates.
+global settings and permissions. Preparation-retry picker cancellation, firmware
+errors, elevation/confirmation handling and the corrected error 3008 restart
+dialog passed on October 2 and 15 with rc-54d87b83. Offline restart recovery then
+completed with verified new files and restored settings. Public signing and
+physical development migration remain release gates.
 See `docs/TEST_STATUS.md` for build identities and scope.
 Development scripts in the matching source archive are not the clean-machine
 deployment path.
+
+The source archive includes `docs/USER_GUIDE.md` for concise installation and
+troubleshooting instructions, `docs/RELEASE_ACCEPTANCE.md` for the pending
+Windows/application/hardware matrix, and `scripts/export-support-report.ps1`
+for a read-only support inventory. The initial beta target is Windows 11 Pro
+25H2 x64; Setup's 24H2 minimum is not an acceptance claim for that release.
 
 ## Security settings
 

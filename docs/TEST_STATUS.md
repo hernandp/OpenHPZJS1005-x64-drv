@@ -1,5 +1,50 @@
 # Development verification — updated 2026-10-15
 
+## Release preparation and x86 capture coverage (2026-10-15)
+
+The maintainer reaffirmed that physical installation stays deferred until a
+signing route is chosen. A fresh private recovery capture saved six legacy
+files, registrations, queue metadata/permissions, global DEVMODE, port/configuration,
+recovery-source references and the Microsoft-signed legacy runtime installer.
+All 28 saved files passed manifest verification. Live files, queue metadata,
+global DEVMODE and no-job state remained unchanged during capture. The six legacy
+file hashes match the September 29 rehearsal inputs. Independent private storage
+and recovery rehearsal of this fresh settings capture remain pending.
+
+The new read-only `export-support-report.ps1` passed privacy projection tests in
+PowerShell 7 and Windows PowerShell 5.1, including sensitive-property canaries,
+invalid values and missing data. Actual collection passed on the development
+host and the owned 0.1.1 VM installation. Existing report overwrite was refused.
+The host is Windows 11 Pro 25H2 26200.9457 with Secure Boot off; the VM is Windows
+11 Pro 25H2 26200.6584 with Secure Boot on. No security settings were changed.
+Host and VM reports were checked for machine/user identifiers and excluded
+private fields. Secure Boot off on the host must be addressed in acceptance
+planning; the read-only inventory is not physical production-trust acceptance.
+
+The existing `src/queue_test.cpp` was separately compiled for I386 with the static
+MSVC runtime, and its PE machine type checked. Five captures against the VM's
+idle `FILE:` queue passed: portrait, landscape, blank, multi and Letter. Each
+passed protocol validation and decoding; geometry, page count, margins and
+reference bytes matched the independent encoder. Installed Setup matched
+rc-54d87b83 (commit 8f336a0). The queue metadata/permissions and unrelated PDF
+printer were unchanged, with no remaining jobs. This validates x86 GDI file
+output, not actual x86 application dialogs or physical printing.
+
+Evidence is under `artifacts/release-preparation-20261015-164909/`, including
+the **private** `private-recovery/` bundle, host/VM support reports,
+`vm-report-validation.json`, and `x86-capture/validation-result.json` plus the
+build log, source/executable hashes, captures and reference comparison log.
+Eight archive verifier tests passed. Their first sandbox run failed on temporary
+directory permissions; rerunning with a temporary directory inside the workspace
+passed. Windows PowerShell script authorization required execution outside the
+sandbox; no execution policy was changed. Hosted CI has not yet run the added
+support-report tests. No production driver source or binary changed.
+
+[Remaining acceptance](RELEASE_ACCEPTANCE.md) defines Windows targets and the
+physical/application/recovery matrix. The [user guide](USER_GUIDE.md), diagnostics
+instructions and GitHub issue templates are prepared; hardware results, final
+signed-release instructions and Windows 24H2 acceptance are still pending.
+
 ## Interactive preparation retry and restart recovery — passed (2026-10-15)
 
 The user exercised production Setup from clean CI candidate `rc-54d87b83`,

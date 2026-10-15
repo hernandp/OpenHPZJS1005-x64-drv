@@ -34,6 +34,11 @@ jobs:
           ./scripts/format.ps1 -Check
       - name: Test archive verification
         run: python -m unittest discover -s tests -p test_verify_candidate.py -v
+      - name: Test support report privacy
+        run: |
+          ./tests/test-support-report.ps1
+          powershell.exe -NoProfile -File ./tests/test-support-report.ps1
+          if ($LASTEXITCODE) { throw 'Windows PowerShell support report tests failed.' }
       - name: Prepare pinned WDK tools
         run: |
           $wdk = ./scripts/prepare-ci-wdk.ps1 -Destination (Join-Path $env:RUNNER_TEMP 'openzjs-wdk')

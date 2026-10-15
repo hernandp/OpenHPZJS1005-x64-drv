@@ -133,3 +133,37 @@ Before maintenance, take a fresh host recovery bundle including its actual globa
 DEVMODE, compare it with the reviewed inventory, and schedule a restart if needed.
 Physical USB selection, first print, application printing, power-cycle firmware
 reload and paper/error recovery remain separate acceptance checks.
+
+## Fresh private recovery capture
+
+Physical installation remains deferred by the maintainer's October 15 decision.
+To prepare a new capture without changing printers, jobs or certificate stores,
+run this from an administrator PowerShell 7 shell with a new output directory:
+
+~~~powershell
+./scripts/backup-development-printer.ps1 -OutputDirectory ./artifacts/recovery-NEW -VcRuntimeInstaller 'C:/path/to/Microsoft/vc_redist.x64.exe'
+~~~
+
+The tool checks the expected legacy queue, both driver registrations, monitor,
+no-job condition and runtime signature. It captures the six private files,
+registrations, global DEVMODE, queue metadata/permissions, port/configuration,
+current user's default-printer name, recovery source references and runtime
+installer. It verifies copied hashes and checks that live files, global DEVMODE
+and queue metadata did not change during capture. A failure leaves a partial
+folder for investigation; only `result.json` plus a verified complete manifest
+establish a successful capture.
+
+This directory is **private recovery data**, not a support report. Do not publish
+it or import its registry exports blindly. The saved scripts retain their original
+layout assumptions; they are references for a reviewed recovery procedure, not a
+standalone restore command. Copy the bundle to independent private storage and
+rehearse recovery with the fresh files before host maintenance. Other accounts'
+per-user defaults, jobs and application settings are not included.
+
+The October 15 capture is under
+`artifacts/release-preparation-20261015-164909/private-recovery/`. All 28 manifest
+entries were verified. Independent-copy confirmation and recovery rehearsal of
+this fresh capture remain pending. The host inventory reported Windows 11 Pro
+25H2 build 26200.9457, no development jobs, and Secure Boot disabled; no security
+settings were changed. Review the Secure Boot acceptance prerequisite before
+physical installation. Earlier successful guest tests kept guest Secure Boot on.
