@@ -149,9 +149,23 @@ Physical paper/door/error recovery and user-facing status remain acceptance work
 ## 4. Release validation and automation
 
 Test fresh install, upgrade and removal across supported Windows builds; actual
-Inkscape Print dialog, PDF and Office output; 32/64-bit applications; paper changes
+Inkscape Print dialog and PDF output; 32/64-bit applications; paper changes
 and ResetDC; copies; empty pages; cancellations; unplug/replug; sleep/wake; no-paper
 recovery; repeated power cycles. Keep dated evidence and known limitations.
+
+October 15–17 packaged-driver VM testing exercised real x64 Inkscape/Edge and
+x86 SumatraPDF Print dialogs. Inkscape A4 portrait/landscape SVG and three-page
+imported-PDF captures passed. SumatraPDF 3.6.1 passed three-page and selected-page
+PDF output, with 0.033 mm maximum border deviation and identical page-2 rasters
+across the two jobs. This adds actual x86 application coverage on this candidate.
+Edge PDF content/order and completion passed, but precise geometry remains open:
+its system dialog retained the enlargement, and the Microsoft Print to PDF
+reference path reproduced it without the project driver (100 mm ruler became
+100.190 mm). Device metrics were recorded; the exact Edge/Windows cause remains
+unproven. Track this as an Edge precise-scale limitation, without a compensating
+driver change. Copies/collation and physical output remain pending. Office is
+not tested and deferred to a future release by maintainer decision; it is not
+an initial-beta gate. See [remaining acceptance](RELEASE_ACCEPTANCE.md).
 
 Build/style/test and unsigned-package CI passed its first complete hosted run
 on October 1 (f771508); see [CI](CI.md) for its tools and archive checks.

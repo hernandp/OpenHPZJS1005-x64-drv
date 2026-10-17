@@ -29,6 +29,13 @@ Keep the printer on while a job completes. Firmware is volatile and is loaded
 again when needed after power-on. The initial supported output is monochrome,
 simplex, A4 at 600 dpi. Physical Letter acceptance is still pending.
 
+For PDFs, check paper size and scaling on every print. In VM testing, Edge
+140.0.3485.66 slightly enlarged output even at Actual size or 100%; avoid relying
+on it for dimension-critical output. The tested SumatraPDF 3.6.1 32-bit viewer
+preserved the test document's scale and page order. These are file-capture
+results; physical output still needs acceptance. Microsoft Office compatibility
+is untested and deferred to a future release.
+
 ## Repair, upgrade and removal
 
 Use the same complete package and **Install or repair** to repair an owned

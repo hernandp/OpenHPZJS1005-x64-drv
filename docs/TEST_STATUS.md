@@ -1,4 +1,149 @@
-# Development verification — updated 2026-10-15
+# Development verification — updated 2026-10-17
+
+## Real application printing in the packaged-driver VM (2026-10-15–17)
+
+Inkscape 1.4.4 printed harmless A4 portrait and landscape SVG documents through
+its actual Windows Print dialog to `HP LaserJet 1005 (Open ZJS)` on `FILE:`.
+The installed 0.1.1 Setup hash matches candidate `rc-54d87b83`, commit `8f336a0`.
+Both jobs selected A4 and one copy; landscape orientation was selected explicitly.
+The VM remains Windows 11 Pro 25H2 26200.6584 with guest-only lab trust.
+
+Both captured printer streams passed protocol validation and decoded as one
+4960 by 7016 raster sheet at 600 dpi. Landscape content has the expected rotation.
+Visual inspection found complete borders, text including accented characters,
+shapes and gray patches. Measured border positions match the 15 mm inset within
+four raster pixels; the 20 mm square and 100 mm ruler match their expected scale
+within raster rounding and stroke width. The queue returned to an empty, Normal
+state; its saved Letter default and unrelated Microsoft Print to PDF remained
+unchanged. No physical job was submitted.
+
+On October 16, Microsoft Edge 140.0.3485.66 printed the harmless three-page PDF
+through its actual Print dialog to the same queue: A4 portrait, one copy, all
+three pages at Actual size, then a separate page-2 selection. A controlled
+three-page retry at explicit 100% produced a byte-identical printer stream to
+Actual size. Both Inkscape and Edge executables are x64 (PE machine `0x8664`).
+
+PDF protocol validation, page count/order, visible text/graphics and queue
+completion passed. Each decoded page is 4960 by 7016 pixels; the numbered black
+markers confirm pages 1, 2 and 3 in order, and only page 2 in the selected-page
+capture. Borders, accented text, 8-point text, vector shapes and the raster
+gradient remain visible. Final inspection found zero jobs and preserved queue
+port/defaults, unrelated PDF printer and installed Setup hash.
+
+**Edge PDF geometry acceptance remains open.** The strict four-pixel border check
+used for Inkscape failed for Edge: Actual size/100% has maximum border deviation
+0.499 mm
+and a ruler extent 0.242 mm beyond its nominal stroke-inclusive bounds. The
+page-2 capture has 0.330 mm border deviation and 0.115 mm ruler-extent deviation.
+Edge was observed resetting to Fit to printable area on reopening its dialog;
+the single-page job did not reselect Actual size, so its raster is not an
+equivalent-settings reproducibility comparison. The complete Actual size and
+100% streams match SHA-256
+`b3d8b5f21684e25eecf02e9b9b394184d2c6f04ee3db8d549dead4634a5490af`.
+
+On October 17, a controlled Edge system-dialog capture bypassed its print
+preview, with A4 portrait, all three pages and one copy explicitly checked.
+It passed protocol validation and page order, with complete visible content.
+Maximum border deviation remained 0.414 mm; the ruler extent was 2375 pixels,
+the same as the Actual size/100% captures (0.242 mm beyond nominal bounds).
+Bypassing the preview therefore does not eliminate the scale difference.
+Its stream SHA-256 is
+`424212015b5f6873117ef3b79dbb0a8347aca842042493175df040a7086372fd`.
+
+Source inspection confirmed that all three PDF pages have identical A4 MediaBox
+and CropBox values (595.2756 by 841.8898 points), zero rotation, UserUnit 1 and
+an identity initial transform. The border, square and ruler coordinates match
+the fixture's intended dimensions. Source SHA-256 is
+`baef1dbebd76771341bb84df3cba24c1c269e116198384fa24a59113a3b351e4`.
+
+The same PDF was then opened in Inkscape 1.4.4 with Internal import, all pages,
+no clipping, Draw missing fonts, Embed Images and Import Pages enabled. Its
+actual Windows Print dialog used the same installed driver and FILE: queue,
+A4 portrait, all pages and one copy. All three decoded pages passed the existing
+geometry tolerances, protocol validation and page-order checks. Visual inspection
+found complete borders, text, shapes, gradient and page markers. Each page has
+border bounds `[351, 351, 4610, 6665]`, a 473-pixel square and a 2369-pixel ruler
+extent. The captured stream SHA-256 is
+`65db06ada1f4f192cf5c9bce636b71e2c39a05fe7670f2d016b6e907dcc0ccf8`.
+
+| Same three-page PDF, A4 portrait | Maximum border deviation | Ruler extent deviation | Strict geometry |
+| --- | --- | --- | --- |
+| Edge Actual size / explicit 100% | 0.499 mm | +0.242 mm | Failed |
+| Edge system dialog | 0.414 mm | +0.242 mm | Failed |
+| Inkscape Internal import | 0.033 mm | -0.012 mm | Passed |
+| SumatraPDF 3.6.1 x86, default shrink | 0.033 mm | +0.030 mm | Passed |
+
+These are measurements of the captured 600 dpi rasters, not physical paper.
+Ruler extents include the endpoint ticks' 0.3 mm stroke width.
+
+The Edge reference-path comparison then printed the original PDF through the
+guest-local **Microsoft Print to PDF** queue: A4 portrait, Actual size, all three
+pages and one copy. All pages retained complete visible content and correct
+identity/order. The reference PDF's vector ruler is 100.189774 mm long, versus
+100.000012 mm in the source. Its rendered stroke-inclusive ruler extent is
+2375 pixels at 600 dpi, matching the enlarged Edge-to-Open-ZJS output. This
+reproduces enlargement without using the project driver. The reference PDF
+SHA-256 is
+`04fee83c29180a62e5602f1f0ee4797b1f32ec841d401a2308a52c3e49f5b5ed`.
+
+A read-only A4 portrait device-context query also recorded the reported metrics:
+
+| Metric | Open ZJS | Microsoft Print to PDF |
+| --- | --- | --- |
+| DPI X/Y | 600 / 600 | 600 / 600 |
+| Physical width/height, pixels | 4960 / 7015 | 4961 / 7016 |
+| Printable width/height, pixels | 4770 / 6826 | 4961 / 7016 |
+| Physical offset X/Y, pixels | 95 / 95 | 0 / 0 |
+| Printable width/height, integer mm | 202 / 289 | 210 / 297 |
+
+The queried Open ZJS physical height differs by one pixel from the 7016-row
+encoded canvas; the reference-path reproduction does not depend on that metric.
+Private DEVMODE buffers were used, with no default-setting changes or print jobs.
+The exact Edge/Windows component responsible remains unproven, but a general
+Open ZJS scaling correction is not justified. Keep Edge precise-scale acceptance
+open as an application-path limitation; do not advertise exact-size Edge output.
+
+SumatraPDF 3.6.1 portable x86 (PE machine `0x014C`) then printed the original PDF
+through its actual Windows Print dialog to the unchanged Open ZJS FILE: queue.
+A4 portrait and one copy were checked for both the all-pages job and a separate
+custom range of page 2. Its recorded setting was the default `PrintScale = shrink`;
+the measured fixture retained nominal scale. Both streams passed protocol,
+geometry, page count/order and visual checks. The selected page-2 raster exactly
+matches page 2 of the three-page job. All pages have border bounds
+`[350, 351, 4610, 6665]`, a 472-pixel square and a 2370-pixel ruler extent. This
+provides actual x86 PDF-viewer coverage in this VM, beyond the earlier GDI helper.
+
+The viewer came from the [official portable download](https://www.sumatrapdfreader.org/download-free-pdf-viewer).
+Its Authenticode signature verified as valid for Krzysztof Kowalczyk on the host;
+host and guest executable hashes matched
+`3793fa285bc890a5e4c263f6f9854cf425bee63c72e52f5362dbc41d60956bcf`.
+The three-page capture SHA-256 is
+`e8f091912b75df2adfa88e2e57b46061084280da6457049288c4188399f14196`;
+the selected-page capture is
+`1c5d367869f4b79f3ca4cb6952ba7afd851dbea7923c8d691ee2085135820a73`.
+After collection both local queues were empty and Normal. The Open ZJS FILE:
+port, saved Letter default, installed Setup hash and source PDF hash were
+preserved. The temporary viewer launch task was removed. Enhanced-session
+redirected host queues were not selected.
+
+Microsoft Office remains **not tested** and is explicitly deferred to a future
+release by maintainer choice; it is not an initial-beta acceptance requirement.
+Copies/collation remain untested in these application runs. These results do not
+establish physical printing, USB/firmware recovery, production signing, or broad
+compatibility with other PDF documents and application versions.
+
+Local evidence: `artifacts/application-printing-20261015/`, including fixture
+sources, the original `.prn` captures, decoded PBMs/previews,
+`application-validation.json`, `pdf-source-geometry.json`,
+`pdf-reference-comparison.json`, `pdf-reference-preparation.json`, and
+`capture-state.json`.
+Inkscape's MSI matched
+the SHA-256 linked from its official download page before guest installation:
+`2fa033e95113ae83d6430b2479e7e63e4266d0632a5b03f99ee3db9360e3b8b8`.
+The installer has a self-signed Inkscape certificate; no trust store was changed.
+The fixture generator and capture-verification script are retained with this
+local evidence. The verifier records the Edge PDF geometry failure rather than
+relaxing the Inkscape tolerance. No production driver source or binary changed.
 
 ## Release preparation and x86 capture coverage (2026-10-15)
 

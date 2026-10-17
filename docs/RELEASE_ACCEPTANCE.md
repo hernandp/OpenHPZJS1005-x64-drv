@@ -1,6 +1,6 @@
 # Remaining release acceptance
 
-Updated 2026-10-15. Physical installation stays deferred while the signing route
+Updated 2026-10-17. Physical installation stays deferred while the signing route
 is undecided. Preparing files or procedures is not a pass for hardware testing.
 Use [test status](TEST_STATUS.md) for historical results and exact candidate IDs.
 
@@ -20,7 +20,7 @@ outside the initial beta scope. Letter remains experimental until physical testi
 
 | Environment | Install/repair/remove | Upgrade/rollback | Application output | Release status |
 | --- | --- | --- | --- | --- |
-| Windows 11 Pro 25H2 x64, 26200.6584, isolated VM | Earlier lab candidates passed | Lab upgrade/recovery/rollback passed; latest retry acceptance on rc-54d87b83 | x64 captures passed on documented builds; five x86 captures passed on rc-54d87b83 | Final signed-candidate regression pending |
+| Windows 11 Pro 25H2 x64, 26200.6584, isolated VM | Earlier lab candidates passed | Lab upgrade/recovery/rollback passed; latest retry acceptance on rc-54d87b83 | Inkscape x64 SVG/imported-PDF, SumatraPDF x86 single/multiple-page PDF and five x86 GDI-helper captures passed on rc-54d87b83; Edge PDF content/order passed, precise scale remains a known limitation; Office deferred | Final signed-candidate regression pending |
 | Windows 11 Pro 25H2 x64, physical printer PC | Pending migration and production trust | Pending physical acceptance | All packaged-driver physical rows below pending | Deferred by maintainer |
 | Windows 11 Pro 24H2 x64, 26100, clean VM | Pending | Pending | Pending, including x86 application path | Media unavailable locally; no support claim |
 
@@ -35,10 +35,11 @@ candidate needs production-trust acceptance even where lab tests already passed.
 
 Record separate results for 64-bit and 32-bit Windows applications running on
 x64 Windows. An x64 capture helper does not demonstrate the x86 application path.
-Select an actual x86 application and record its bitness; use 32-bit Office when
-available. An unavailable Office edition is **not tested**, not an inferred pass.
-Use the real Inkscape Print dialog, a PDF viewer and Office with harmless test
-documents. Preserve layout references without attaching personal documents.
+Use an actual x86 application and record its bitness. Use the real Inkscape Print
+dialog and a PDF viewer with harmless test documents. Preserve layout references
+without attaching personal documents. Microsoft Office is **not tested** and,
+by maintainer decision on October 17, is deferred to a future release rather than
+required for the initial beta. Do not claim Office compatibility from other apps.
 
 On October 15 an I386 build of the existing GDI helper passed portrait,
 landscape, blank, three-page and Letter captures in the 25H2 VM against
@@ -46,6 +47,33 @@ rc-54d87b83. Protocol validation, decoded geometry and reference-byte comparison
 passed; queue metadata/permissions and the PDF printer were preserved. This
 demonstrates the x86 GDI path only. It does not mark PDF, Office, physical Letter
 or physical printing as passed.
+
+Real Inkscape 1.4.4 Print-dialog captures subsequently passed A4 portrait and
+landscape on the same packaged-driver VM. Protocol validation, decoded page
+count, orientation, full-border visibility and measured geometry passed. Edge
+140.0.3485.66 subsequently passed single/multiple-page PDF content, page order,
+protocol validation and queue completion. Its Actual size and explicit 100%
+captures are identical, but border deviation up to 0.499 mm fails the strict
+geometry check. Bypassing Edge's preview through the system dialog still gives
+0.414 mm deviation and the same ruler scale difference. On October 17, the same
+three-page PDF printed through Inkscape's Internal import path passed the same
+tolerances (0.033 mm maximum border deviation) on the unchanged packaged driver.
+Edge also enlarged the 100 mm vector ruler to 100.190 mm through the guest-local
+Microsoft Print to PDF reference printer. The difference therefore reproduces
+without the project driver; do not compensate in driver code. Device metrics
+were recorded, but the exact Edge/Windows cause remains unproven. Keep Edge
+precise-scale acceptance open as a known application-path limitation. Edge reset
+scaling to Fit to printable area when reopening its dialog; recheck each job.
+
+SumatraPDF 3.6.1 portable x86 subsequently passed all three PDF pages and a
+separate page-2 selection through the packaged driver, with A4 portrait, one
+copy and its default shrink setting. Maximum border deviation was 0.033 mm,
+and the selected page's raster exactly matched the corresponding multi-page
+raster. Protocol validation, geometry, visual content, page order and empty
+queue checks passed. This completes representative actual x86 PDF-viewer
+coverage for this VM/candidate. Inkscape and Edge are x64. Copies/collation and
+all physical output remain pending. See [test status](TEST_STATUS.md) for evidence.
+These file captures do not complete any physical acceptance row below.
 
 ## Physical migration gate
 
@@ -73,12 +101,12 @@ queue completion before moving on.
 | P01 | Fresh normal Setup install with printer connected | Correct USB port/device, one owned queue, A4 default, no unrelated changes |
 | P02 | Power off/on, then submit a one-page Windows test page | Firmware loads after cold start; one correct page; job completes |
 | P03 | Inkscape Print dialog, A4 portrait and landscape | Correct scale, orientation, margins and clipping; one page each |
-| P04 | PDF and Office, one page and a three-page document | Fonts/graphics and page order correct; three-page job completes once |
+| P04 | PDF viewer, one selected page and a three-page document | Fonts/graphics, scale and page order correct; three-page job completes once |
 | P05 | Two copies of a numbered two-page document | Exactly four pages in the application's requested order |
 | P06 | Blank page between numbered pages | Blank-page handling and page count match requested output |
 | P07 | Change A4 portrait/landscape between jobs; exercise in-job ResetDC separately | No stale paper/orientation, corruption or lost pages |
 | P08 | Load physical Letter and select Letter, then restore A4 | Correct margins and page feed on actual paper; correct A4 restoration |
-| P09 | Repeat representative PDF/Office output through an x86 application | Application version/bitness recorded; correct output and completion |
+| P09 | Repeat representative PDF output through an x86 application | Application version/bitness recorded; correct output and completion |
 | P10 | Owned repair, upgrade/rollback and removal on physical target | Correct payload/settings after each operation; unrelated resources preserved |
 
 ## Hardware recovery matrix
