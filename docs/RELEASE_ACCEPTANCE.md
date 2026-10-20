@@ -1,6 +1,6 @@
 # Remaining release acceptance
 
-Updated 2026-10-17. Physical installation stays deferred while the signing route
+Updated 2026-10-20. Physical installation stays deferred while the signing route
 is undecided. Preparing files or procedures is not a pass for hardware testing.
 Use [test status](TEST_STATUS.md) for historical results and exact candidate IDs.
 
@@ -71,8 +71,29 @@ copy and its default shrink setting. Maximum border deviation was 0.033 mm,
 and the selected page's raster exactly matched the corresponding multi-page
 raster. Protocol validation, geometry, visual content, page order and empty
 queue checks passed. This completes representative actual x86 PDF-viewer
-coverage for this VM/candidate. Inkscape and Edge are x64. Copies/collation and
-all physical output remain pending. See [test status](TEST_STATUS.md) for evidence.
+coverage for this VM/candidate. Inkscape and Edge are x64.
+
+The October 19–20 remaining VM matrix passed these bounded checks:
+
+- Edge's actual Copies 2 dialog and Sumatra's CLI `2x` request produced four
+  sheets in collated order `1,2,1,2`, with identical repeated rasters.
+- Sumatra's explicit page ranges preserved both `1,2,1,2` and `1,1,2,2`.
+  Neither tested dialog exposed an uncollated toggle; that selectable mode is
+  not accepted merely from explicit-range sequencing.
+- Sumatra's actual dialog preserved a truly blank middle sheet between two
+  marked pages. The middle raster contains zero black pixels.
+- Separate Sumatra CLI A4/Letter/A4 portrait jobs passed geometry and restored
+  an identical A4 raster. Actual dialog landscape/portrait changes passed
+  geometry; a CLI content-rotation attempt was excluded as incorrect settings.
+- The x86 GDI helper's in-job Letter/A4-landscape/Letter transition matched the
+  reference encoder byte for byte. This is helper coverage, not a mixed-paper
+  PDF application's automatic paper-selection claim.
+
+Sumatra's Windows dialog hid Copies for this queue; its successful CLI copy
+request does not establish device-side copying. Edge precise scale remains open.
+Both local queues ended empty and Normal, with saved defaults and Setup hash
+preserved. All physical output remains pending.
+See [test status](TEST_STATUS.md) for exact settings, evidence and limitations.
 These file captures do not complete any physical acceptance row below.
 
 ## Physical migration gate

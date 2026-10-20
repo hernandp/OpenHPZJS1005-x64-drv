@@ -163,7 +163,13 @@ its system dialog retained the enlargement, and the Microsoft Print to PDF
 reference path reproduced it without the project driver (100 mm ruler became
 100.190 mm). Device metrics were recorded; the exact Edge/Windows cause remains
 unproven. Track this as an Edge precise-scale limitation, without a compensating
-driver change. Copies/collation and physical output remain pending. Office is
+driver change. October 19–20 VM captures subsequently passed two collated copies
+through Edge's dialog and Sumatra's CLI, explicit repeated page ordering, a
+blank middle application page, A4/Letter/A4 jobs, actual-dialog landscape and
+portrait changes, and reference-matched in-job ResetDC. Neither tested dialog
+exposed an uncollated toggle; explicit page-order testing does not establish
+that selectable mode. Sumatra's dialog hid Copies, although its CLI `2x`
+request passed. Physical output remains pending. Office is
 not tested and deferred to a future release by maintainer decision; it is not
 an initial-beta gate. See [remaining acceptance](RELEASE_ACCEPTANCE.md).
 

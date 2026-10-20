@@ -1,4 +1,61 @@
-# Development verification — updated 2026-10-17
+# Development verification — updated 2026-10-20
+
+## Remaining VM application printing matrix (2026-10-19–20)
+
+The unchanged `rc-54d87b83` package (0.1.1, commit `8f336a0`) was tested on
+Windows 11 Pro 25H2 x64 26200.6584 using the guest-local Open ZJS `FILE:` queue.
+Setup SHA-256 remained
+`964e94fabb84aaad4af3173b4ca551f2cfd11a62ecccfe3d724196e5cd515f84`.
+Only synthetic documents were used; no physical job was sent.
+
+| Check | Execution path | Captured result |
+| --- | --- | --- |
+| Two copies of two numbered pages | Edge 140.0.3485.66 x64 actual Print dialog, A4 portrait, Actual size, Copies 2 | Four sheets, `1,2,1,2`; the repeated sets have identical rasters |
+| Two copies of the same PDF | SumatraPDF 3.6.1 x86 command-line `2x`, A4, `noscale` | Four sheets, `1,2,1,2`; repeated sets are identical |
+| Explicit repeated page ranges | Sumatra command-line `1-2,1-2`, then `1,1,2,2` | Four sheets in each requested order; this tests page sequencing, not a collation toggle |
+| Blank middle page | Sumatra actual Print dialog, A4 portrait, all pages, default shrink | Three sheets: source page 1, entirely blank sheet, source page 3; middle raster has zero black pixels |
+| A4 portrait → Letter portrait → A4 portrait | Separate Sumatra command-line jobs, explicit paper selection and `noscale` | Correct 4960×7016 / 5100×6600 / 4960×7016 canvases; first and last A4 rasters are identical |
+| A4 landscape → A4 portrait | Sumatra actual Print dialog, explicit orientation changes, A4, default shrink | Correct rotation and restored portrait geometry; complete borders, text and shapes |
+| Letter portrait → A4 landscape → Letter portrait within one job | Existing x86 `queue_test emf-reset` helper and a synthetic vector EMF | One document, three pages, correct paper dimensions and sequence; entire stream matches reference encoder bytes |
+
+All twelve captured streams passed protocol validation. Eleven are accepted
+for the checks above; the remaining CLI landscape attempt is retained as a
+settings diagnostic. Accepted Sumatra captures passed the four-pixel border
+tolerance, 20 mm square and 100 mm ruler checks. Maximum border deviation was
+0.033 mm in portrait and 0.051 mm in the explicit landscape-dialog capture.
+Decoded previews confirmed complete content and correct orientation. The dialog's
+shrink path and CLI `noscale` path are different settings; their portrait rasters
+are not byte-identical, although both pass geometry. The identical A4 restoration
+comparison above uses the same CLI settings throughout.
+
+The initial Sumatra CLI `landscape` attempt rotated content on a portrait device
+context and clipped the landscape fixture. It is **not** a landscape pass.
+The actual dialog follow-up selected Landscape in Windows printing preferences
+and passed. Sumatra's [3.6 release source](https://github.com/sumatrapdfreader/sumatrapdf/blob/3.6rel/src/Print.cpp)
+distinguishes content rotation from the device orientation; do not use that CLI
+flag as evidence that a landscape DEVMODE was selected.
+
+Sumatra's Windows Print dialog hid Copies for this queue; Advanced Options
+showed one copy, consistent with the GPD's `MaxCopies: 1`. Nevertheless, its
+command-line `2x` request produced four raster pages through Windows printing.
+This does not establish device-side copy support. Edge exposed Copies but no
+collation toggle; neither tested dialog exposed an uncollated choice. Default
+collated copies and explicit uncollated page sequencing passed; user-selectable
+uncollated-mode acceptance is not established. Edge retains its known 0.499 mm
+border deviation and is not accepted for precise scale.
+
+Final collection found both local queues empty and Normal. The owned `FILE:`
+port, saved Letter/simplex/monochrome defaults, unrelated Microsoft Print to PDF,
+Setup hash and original source PDF hash were preserved. No driver code or trust
+settings changed. Physical Letter, physical copies/page order and USB/firmware
+recovery remain pending; Office stays deferred to a future release.
+
+Evidence is local in `artifacts/application-printing-20261019/`: fixture sources
+and hashes, `matrix-run.json`, `matrix-validation.json`, `capture-state.json`,
+original streams, decoded rasters/previews and the synthetic EMF. The adjacent
+`run-print-matrix-vm.ps1` records exact CLI arguments and guards the VM identity,
+disconnected network, idle `FILE:` queue and installed package/viewer hashes.
+`tests/verify_reset_capture.py` passed the in-job reference comparison.
 
 ## Real application printing in the packaged-driver VM (2026-10-15–17)
 
@@ -128,7 +185,8 @@ redirected host queues were not selected.
 
 Microsoft Office remains **not tested** and is explicitly deferred to a future
 release by maintainer choice; it is not an initial-beta acceptance requirement.
-Copies/collation remain untested in these application runs. These results do not
+Copies/collation were not tested in these October 15–17 runs; see the later
+matrix above for the exercised paths and limits. These results do not
 establish physical printing, USB/firmware recovery, production signing, or broad
 compatibility with other PDF documents and application versions.
 

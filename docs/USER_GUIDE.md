@@ -36,6 +36,13 @@ preserved the test document's scale and page order. These are file-capture
 results; physical output still needs acceptance. Microsoft Office compatibility
 is untested and deferred to a future release.
 
+Select Landscape or Portrait explicitly in the Print dialog when changing
+orientation; Sumatra remembers the preceding choice. Its tested Windows dialog
+did not offer multiple copies for this queue. If Copies is unavailable, print
+one complete copy at a time and let each job finish. Edge's Copies control
+produced two complete collated sets in VM testing, but its scale limitation
+still applies. Check page order before relying on application collation options.
+
 ## Repair, upgrade and removal
 
 Use the same complete package and **Install or repair** to repair an owned
