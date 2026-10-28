@@ -1,4 +1,170 @@
-# Development verification — updated 2026-10-20
+# Development verification — updated 2026-10-28
+
+## Windows build 26300 offline printing (2026-10-28)
+
+After the maintainer upgraded SIRIUS, CIM reports Windows 11 Pro x64 version
+10.0.26300; the registry reports DisplayVersion 26H2 and revision 9711.
+This is an upgraded host, not a clean installation. Secure Boot remains off.
+The installed GPD, INI, renderer and monitor hashes still match the exact
+0.1.1 self-signed tester package described below (binary archive SHA-256
+`72e015b8f0ba17e0f53c62bffd7afdbd51d386d06a2405c1a467c508befde001`).
+
+With the physical printer in maintenance, a temporary FILE: queue produced
+14 captures: seven each from verified x64 and x86 GDI helpers. A4 portrait,
+landscape, blank, three-page output with a blank middle page, Letter,
+Letter/A4-landscape/Letter ResetDC, and restored A4 portrait all passed protocol
+validation. Decoded page counts, geometry, margins and reference-encoder bytes
+passed; restored portrait exactly matched the original. Every corresponding
+x86/x64 stream is byte-identical. The five overlapping scenarios also exactly
+match the October 27 captures on build 26200.9711.
+
+The diagnostic queue was removed. Original printer metadata/permissions,
+physical global DEVMODE and the one pre-existing physical queue job were
+preserved; no new physical job or USB command was submitted. The default-printer
+preservation check failed after capture: Windows selected the HP while automatic
+default management was enabled. The previous name was not saved by the harness.
+At the maintainer's explicit request, EPSON L395 Series was then set as default
+and verified. This cleanup exception is retained with the evidence rather than
+reported as an unchanged-default pass.
+
+Evidence: `artifacts/windows-26300-offline-20261028-run2`, including inventory,
+14 streams/decoded images, reference-check logs and byte comparisons. The first
+attempt stopped before capture on detecting the pre-existing physical job;
+the second preserved that job and isolated all new output on FILE:.
+Build **26300.9711 is verified only for these offline GDI scenarios**. Real
+Inkscape/PDF dialogs, copies/collation, clean install/repair/upgrade/removal and
+physical printing remain unverified on this build. Office stays deferred.
+These results neither resolve the Windows test-page incident below nor establish
+hardware recovery or physical Letter acceptance. No driver code was changed.
+
+## Physical blank-page investigation (2026-10-27)
+
+The maintainer cleared the failed Windows test-page job; a read-only check
+confirmed the HP queue was empty. Without sending USB data, a temporary FILE:
+queue using the installed signed-package driver and current global defaults
+captured A4 portrait, landscape, three-page and Letter jobs. All four captures
+passed protocol validation, geometry and byte-for-byte reference comparisons.
+The Letter/A4-landscape/Letter ResetDC regression also produced one valid
+document with three reference-matching pages. The temporary queue was removed.
+
+After the maintainer power-cycled the printer and loaded one A4 sheet, one
+bounded GDI portrait test was submitted with monitor tracing. The maintainer
+confirmed one sheet with a visible test pattern. Job 7's trace records firmware
+upload, matching setup echo, START and END with PAGES=1, successful LowerEndDoc,
+and CompletionAcknowledged. The queue emptied automatically without cancellation.
+Evidence: `artifacts/physical-print-diagnosis-20261027/hardware-133326`.
+No driver code or installed payload was changed for this successful test.
+
+This establishes one successful cold-start firmware load and GDI physical print.
+It does not explain the earlier blank Windows test page or complete application,
+paper handling, repeated-cycle or recovery acceptance.
+
+A subsequent Windows test-page retry (job 8, one sheet loaded, no power cycle
+between jobs) did not finish within the bounded 60-second observation. Its trace
+shows firmware already running, matching setup echo and START, but no END before
+the trace stopped. The helper requested cancellation of only job 8; a subsequent
+queue query found no remaining jobs. Physical appearance of this retry is still
+awaiting the maintainer's report. Evidence:
+`artifacts/physical-print-diagnosis-20261027/windows-page-133525`.
+The successful GDI job was first after a cold start and the failed Windows page
+was the next job, so these observations do not yet distinguish document-specific
+output from between-job printer state. No cause or code fix is established.
+
+An attempted offline Windows test-page capture on a separate paused FILE: queue
+did not return or create a queued job. Its helper was stopped and the diagnostic
+queue removed; no capture was accepted from that attempt. Further physical jobs
+are held pending the page observation and additional offline investigation.
+
+## Physical migration preparation (2026-10-21)
+
+The maintainer authorized dedicated tester-certificate trust and migration on
+SIRIUS. A fresh private backup is retained at
+`artifacts/physical-migration-20261021-142219/private-recovery`; all 28 manifest
+entries passed hash verification. Its six private development files match the
+October 15 capture. The host is Windows 11 Pro 25H2 build 26200.9711, with the
+development queue on USB003 and no pending development jobs during capture.
+Secure Boot was already disabled; boot configuration did not enable test signing
+or disable integrity checks. No security setting was changed. Physical results
+on this configuration cannot be presented as physical Secure Boot acceptance.
+
+The existing isolated migration harness passed using the fresh legacy files and
+the matching unsigned `rc-8806c054` candidate with a disposable guest catalog
+signature. This is recovery evidence, separate from the exact signed-archive
+trust rehearsal below. Failure recovery, successful replacement, and restoration
+of the development installation passed without a guest restart. Before,
+migrated, and restored portrait captures passed protocol validation, geometry
+and byte-for-byte reference comparisons. VM settings are representative fixture
+settings, not a restoration of the host account's permissions or USB connection.
+The local run record points to the VM evidence and contains all three comparison
+logs.
+
+The maintainer then selected `C:\temp\lj1005-rec` for a verified recovery copy
+and connected the printer. That copy is on the same volume, not independent
+protection against disk failure. All 28 entries matched. USB discovery found
+one original 1005, mapped to the backed-up USB003 port. The explicitly approved
+tester certificate was imported into LocalMachine Root and TrustedPublisher;
+all five signatures validated. Windows staged the exact package as `oem61.inf`
+without changing the live development files.
+
+Retirement removed the development queue and both reviewed legacy driver
+registrations using flags that preserve shared files. Removing the firmware
+monitor returned Windows error 3008 (in use). Migration stopped for a normal
+host restart, with the monitor and six original private files retained until
+that restart. After the maintainer restarted, cleanup completed and normal USB
+Setup installation returned 0. The new owned queue is on USB003; ownership is
+Complete. Live and cached payload hashes, firmware, catalog, restored defaults
+and permissions passed verification. Windows normalized empty Comment/Location
+strings to null; this caused the initial strict metadata comparison to stop,
+then a read-only comparison confirmed equivalent values. EPSON and Microsoft
+Print to PDF were preserved, with EPSON still the default printer. No shared
+spooler restart or forced removal of locked files was performed.
+
+**Physical Windows test page failed.** The first non-elevated PrintTestPage API
+attempt returned 5 with no queued job observed. An elevated attempt returned 0.
+The maintainer reported roughly five apparently blank sheets, stopped the
+printer and disconnected it. Windows accepting the job does not establish
+correct physical output. Do not resubmit or reconnect until the pending HP job
+has been canceled and its absence verified. Follow-up automated queue inspection
+was not executed because approval review could not run after an account usage
+limit was reached. Final queue state and exact emitted page count are therefore
+unconfirmed. Physical acceptance is blocked by this incident; application and
+hardware-recovery testing must wait for diagnosis. Keep the private recovery
+bundle and installed-state evidence intact.
+
+## Dedicated tester signing: clean VM rehearsal (2026-10-21)
+
+The exact `tester-31fee15d` 0.1.1 archive was exercised through PowerShell Direct
+on the dedicated Windows 11 Pro 25H2 x64 VM (build 26200), restored from
+`Clean-Windows-before-driver`. The previous state was preserved as
+`Before-tester-signing-20261021-110905`. Networking remained disconnected;
+Secure Boot stayed enabled and signature enforcement was not disabled.
+
+- Archive SHA-256: `72e015b8f0ba17e0f53c62bffd7afdbd51d386d06a2405c1a467c508befde001`.
+- Signer: `CN=OpenZJS Technical Tester Signing`.
+- Certificate SHA-1 thumbprint: `DEAD78F5D4F2A4D8A424726555A6C3D536E445FC`.
+- Before trust: Setup refused installation with exit 1 and Windows error
+  2148204809; no owned queue, cache or registry state appeared.
+- Explicit guest-only imports into LocalMachine Root and TrustedPublisher made
+  all four executable signatures and the catalog signature valid.
+- A separate copy with a modified GPD was rejected with exit 1 and Windows error
+  3758096971; no owned installation appeared.
+- Original-package offline installation and same-build repair both returned 0.
+  The queue used FILE:, A4, monochrome and simplex. Cached catalog bytes matched.
+- The separately copied GDI `queue_test` helper produced one validated page and
+  one sheet (4,349,920 raster bytes); the queue emptied. This is a GDI smoke test,
+  not an actual Notepad dialog or a physical print.
+- Quiet removal returned 0 without a restart. Owned queue, cache and registry
+  state were absent; Microsoft Print to PDF was unchanged.
+- Removing only the two imported certificate entries restored all four checked
+  certificate stores to their baseline. Setup and catalog were no longer trusted.
+
+Evidence is retained locally under `artifacts/tester-vm-rehearsal`, including
+`guest` and `cleanup-evidence`. No host trust was added. The frozen ZIP still
+records its original pending-rehearsal metadata; this dated evidence supplements
+it without changing the tested archive. Publication remains pending a reviewed
+source revision and final-asset validation. Interactive UAC publisher/dialog
+checks, differently signed upgrade/rollback, and physical acceptance are not
+established by this run. Restart/retry was not triggered by this removal.
 
 ## Remaining VM application printing matrix (2026-10-19–20)
 

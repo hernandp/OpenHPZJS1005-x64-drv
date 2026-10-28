@@ -62,12 +62,36 @@ the existing development monitor name and migration strategy before release.
 
 The native Setup preview now implements the firmware file picker, preflight,
 protected package cache, driver-store installation, ownership journal,
-same-build repair, different-build upgrade, rollback and removal. The maintainer selected VM-only lab signing while
-the public certificate route is unresolved. See [deployment](DEPLOYMENT.md) for
+same-build repair, different-build upgrade, rollback and removal. The initial
+trust approval covered the VM only. On October 20 the maintainer agreed to an
+opt-in self-signed testing distribution, with explicit certificate installation
+by technical testers and no security-policy bypass. See the
+[tester release procedure](TESTER_RELEASE.md) for preparation, trust disclosure,
+acceptance and cleanup. Local tester-signing tooling and a user-operated VM
+checklist are available. On October 21, the exact local tester archive passed
+clean-VM command-line trust refusal, explicit guest-only trust, tamper rejection,
+installation, repair, GDI smoke printing, removal and certificate cleanup. See
+[test status](TEST_STATUS.md) for the asset hash and evidence limits. Interactive
+publisher verification, differently signed upgrade/rollback and publication
+remain pending. The maintainer subsequently authorized this dedicated tester
+certificate and migration on SIRIUS on October 21. The recovery bundle and the
+maintainer-selected same-volume copy were verified, and migration completed
+after a restart. One cold-start GDI print passed on October 27; the Windows
+test-page blank/stall incident remains under investigation.
+Ordinary public release remains gated on publicly
+trusted signing and final acceptance. See [deployment](DEPLOYMENT.md) for
 the preview's bounds and [test status](TEST_STATUS.md) for exercised paths.
-Development migration has a tested maintainer procedure; applying it to the
-physical-printer machine and physical USB acceptance remain outstanding.
+Development migration has a tested maintainer procedure and has been applied
+to the physical-printer machine; full physical USB acceptance remains outstanding.
 This milestone is not complete.
+
+On October 28 the upgraded Windows 11 Pro host, build 26300.9711, passed 14
+FILE-only x64/x86 GDI captures using the installed tester package. This adds
+bounded offline evidence, not clean-install, real-application or physical
+acceptance for that build. The printer is in maintenance; continue with real
+Inkscape/PDF FILE-output checks while hardware testing is unavailable. See
+[test status](TEST_STATUS.md) for comparisons and the default-printer cleanup
+exception. The initial supported-build target remains unchanged.
 
 Interactive VM checks passed on September 23–24, including firmware selection,
 cancellation, errors, elevation and confirmed removal with unrelated-printer

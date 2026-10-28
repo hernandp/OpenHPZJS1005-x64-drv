@@ -126,9 +126,10 @@ three independent reference comparisons passed.
 
 ## Before physical acceptance
 
-Choose the target machine and signing/trust route explicitly. The previous
-decision was VM-only lab trust; it does not authorize importing that certificate
-on the physical-printer host. Rehearsal scripts are not a general migration tool.
+Choose the target machine and signing/trust route explicitly. On October 21 the
+maintainer authorized the dedicated technical-tester certificate and migration
+on SIRIUS, superseding the earlier VM-only restriction for this identity and
+machine. Rehearsal scripts are not a general migration tool.
 Before maintenance, take a fresh host recovery bundle including its actual global
 DEVMODE, compare it with the reviewed inventory, and schedule a restart if needed.
 Physical USB selection, first print, application printing, power-cycle firmware
@@ -136,7 +137,8 @@ reload and paper/error recovery remain separate acceptance checks.
 
 ## Fresh private recovery capture
 
-Physical installation remains deferred by the maintainer's October 15 decision.
+Physical migration was authorized on October 21; backup and recovery checks
+must complete before retiring the existing installation.
 To prepare a new capture without changing printers, jobs or certificate stores,
 run this from an administrator PowerShell 7 shell with a new output directory:
 

@@ -52,6 +52,12 @@ The bundle has no signed catalog and uses the development installer described be
 
 ## Public release preparation
 
+An opt-in [self-signed testing package](docs/TESTER_RELEASE.md) is planned for
+technical testers who explicitly choose to trust its certificate. Local rehearsal
+packaging is available; no public tester download is approved, and existing CI
+artifacts are unsigned. Setup will not import certificates or disable security protections.
+The ordinary public release still requires publicly trusted signing.
+
 The [CI workflow](docs/CI.md) checks formatting, builds/tests an unsigned candidate,
 runs WDK validation and independently verifies both release archives. It publishes
 temporary engineering artifacts only; signing and physical acceptance remain

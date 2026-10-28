@@ -5,6 +5,11 @@ physical acceptance are still pending; the current unsigned engineering ZIP is
 not ready for ordinary installation. Use the release's tested-Windows list rather
 than assuming every version accepted by Setup has been validated.
 
+An opt-in self-signed testing route is planned for technical testers. Follow the
+[tester guide](TESTER_RELEASE.md) and the exact build's published certificate
+instructions before using that package. No public tester download is approved yet.
+Setup never adds certificate trust automatically.
+
 ## Before installation
 
 - Confirm the printer is the original **HP LaserJet 1005 Series**, not P1005 or

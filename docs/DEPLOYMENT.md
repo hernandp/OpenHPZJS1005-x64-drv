@@ -12,6 +12,14 @@ this does not establish public trust or physical compatibility of this package.
 
 ## Contents and requirements
 
+An opt-in [self-signed testing distribution](TESTER_RELEASE.md) was agreed on
+October 20. Local signing/rehearsal tooling is available; publication remains
+blocked on testing the exact signed assets and explicit certificate cleanup.
+Testers must explicitly choose and install certificate trust; Setup will not
+import certificates or weaken security policy. The unsigned engineering ZIP
+described here is not that testing package. Publicly trusted signing remains a
+gate for the ordinary release.
+
 - `Setup.exe`: native x64 installer preview for Windows 11 24H2 or later.
 - `driver/`: package-aware Type 3 INF, GPD, INI, renderer, firmware monitor and
   **unsigned** catalog. The catalog is an integrity inventory, not a signature.

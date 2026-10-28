@@ -1,7 +1,13 @@
 # Remaining release acceptance
 
-Updated 2026-10-20. Physical installation stays deferred while the signing route
-is undecided. Preparing files or procedures is not a pass for hardware testing.
+Updated 2026-10-28. An opt-in [self-signed tester route](TESTER_RELEASE.md) is
+agreed; the exact local signed archive passed the clean-VM command-line
+trust/cleanup rehearsal. See [test status](TEST_STATUS.md) for its limits.
+Public signing is unresolved. On October 21 the maintainer explicitly authorized
+the dedicated tester certificate and physical migration on SIRIUS. Migration
+completed after a restart; one cold-start GDI physical print passed, but the
+Windows test-page incident remains unresolved. The printer is now in maintenance.
+Preparing files or procedures is not a pass for hardware testing.
 Use [test status](TEST_STATUS.md) for historical results and exact candidate IDs.
 
 ## Windows scope
@@ -21,7 +27,8 @@ outside the initial beta scope. Letter remains experimental until physical testi
 | Environment | Install/repair/remove | Upgrade/rollback | Application output | Release status |
 | --- | --- | --- | --- | --- |
 | Windows 11 Pro 25H2 x64, 26200.6584, isolated VM | Earlier lab candidates passed | Lab upgrade/recovery/rollback passed; latest retry acceptance on rc-54d87b83 | Inkscape x64 SVG/imported-PDF, SumatraPDF x86 single/multiple-page PDF and five x86 GDI-helper captures passed on rc-54d87b83; Edge PDF content/order passed, precise scale remains a known limitation; Office deferred | Final signed-candidate regression pending |
-| Windows 11 Pro 25H2 x64, physical printer PC | Pending migration and production trust | Pending physical acceptance | All packaged-driver physical rows below pending | Deferred by maintainer |
+| Windows 11 Pro 25H2 x64, 26200.9711, physical printer PC | Self-signed development migration completed after restart; public trust pending | Remaining physical acceptance pending | One cold-start GDI pattern printed; Windows test-page blank/stall investigation open; application and recovery acceptance pending | Incomplete hardware acceptance |
+| Windows 11 Pro x64, 26300.9711 (registry DisplayVersion 26H2), upgraded SIRIUS host | Existing installed package retained; lifecycle not tested on this build | Not tested on this build | 14 FILE-only x64/x86 GDI captures passed geometry/protocol/reference checks; real applications and copies/collation pending | Offline GDI verification only; no expanded release support claim |
 | Windows 11 Pro 24H2 x64, 26100, clean VM | Pending | Pending | Pending, including x86 application path | Media unavailable locally; no support claim |
 
 For each intended supported build, run fresh install, same-build repair,
@@ -98,8 +105,10 @@ These file captures do not complete any physical acceptance row below.
 
 ## Physical migration gate
 
-1. Choose a trusted candidate and record its exact identity. Host lab trust is
-   not authorized; no installation until the maintainer chooses a signing route.
+1. Choose a trusted candidate and record its exact identity. The maintainer
+   authorized the dedicated tester identity on SIRIUS on October 21. This does
+   not authorize unrelated certificates or machines; final public-trust
+   acceptance remains separate.
 2. Run `scripts/backup-development-printer.ps1` as described in
    [development migration](DEVELOPMENT_MIGRATION.md). Verify every backup hash.
 3. Copy the private recovery bundle to an independent private location. Confirm
