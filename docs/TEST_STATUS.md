@@ -1,4 +1,189 @@
-# Development verification — updated 2026-10-28
+# Development verification — updated 2026-11-02
+
+## Physical PDF acceptance (2026-11-02)
+
+SumatraPDF 3.6.1 portable x86 (SHA-256
+`3793fa285bc890a5e4c263f6f9854cf425bee63c72e52f5362dbc41d60956bcf`)
+printed the existing `a4-portrait.pdf` fixture through its command-line print
+path on the live USB004 queue, with A4, portrait and `noscale`. Job 12 received
+PrinterEnd and CompletionAcknowledged, and the queue cleared without
+cancellation. The maintainer confirmed correct content and all four border
+edges visible; the 100 mm ruler was not measured. Evidence:
+`artifacts/physical-print-diagnosis-20261102/pdf-single-031348438`.
+This is actual PDF-viewer physical output, not a print-dialog interaction or
+measured scale acceptance. The installed signed driver remains unchanged.
+
+The same viewer/settings then printed `blank-middle.pdf` as job 13. The printer
+reported END/PAGES=3 and CompletionAcknowledged, and the queue cleared without
+cancellation. The maintainer confirmed exactly three sheets in marked/blank/marked
+order. This passes physical multi-page output and blank-middle preservation for
+this fixture. Evidence:
+`artifacts/physical-print-diagnosis-20261102/pdf-multipage-130640871`.
+
+The next job requested two copies of `copies-two-pages.pdf` with Sumatra's `2x`
+setting (expected four sheets, 1/2/1/2). Job 14 received its setup echo and JOB
+START, but no END report within the bounded 90-second observation. The helper
+requested cancellation of only job 14. The maintainer subsequently reported a
+paper jam and requested a retry after clearing it and loading four fresh A4
+sheets. This interrupted run establishes neither a collation defect nor a pass.
+The queue was verified empty after cancellation.
+The viewer's exit code 0 and spooler's PagesPrinted=4 do not establish physical
+completion. Evidence:
+`artifacts/physical-print-diagnosis-20261102/pdf-copies-130845700`.
+
+After confirmed clearance and four fresh sheets, the same request was retried
+as job 15. Only job 15 was canceled after the maintainer reported a repeat
+failure, and the queue was verified empty. The maintainer clarified that page 1
+printed correctly and page 2 also had correct content, but paper movement stopped
+with page 2 partly inside the printer. The earlier run may have stopped at the
+same point. Record this as a paper-transport stoppage of undetermined cause,
+not a confirmed jam or a demonstrated collation defect. Warning-light details
+were not reported; further physical jobs are held pending clearance.
+
+The retry trace contains a delayed END/PAGES=4 for the canceled *previous* job
+14 during job 15 setup. It was not accepted as job 15 completion. Job 15 then
+received its own setup echo and START, but no matching END before cancellation.
+The delayed report does not prove four sheets physically emerged correctly.
+Copies/collation remains unaccepted. Evidence:
+`artifacts/physical-print-diagnosis-20261102/pdf-copies-131223729`.
+
+After another confirmed clearance/power cycle, job 16 printed a PDF containing
+four explicit pages in source order 1/2/1/2, requested as one copy. Page content
+streams and geometry were verified against the original two-page fixture.
+The maintainer reported two printed pages labelled 1/1 and a stoppage at the
+second sheet despite fully printed content. Only job 16 was canceled, and an
+immediate queue check found no remaining jobs. This reproduces a stoppage without
+the viewer's two-copy request; it does not establish whether duplicate labels
+come from rendering, printer recovery/replay, or another cause. No retry was
+submitted. A video was offered to clarify sheet movement and panel status.
+Evidence: `artifacts/physical-print-diagnosis-20261102/pdf-explicit-four-132004849`.
+
+The same four-page PDF and Sumatra A4/portrait/noscale settings were then captured
+through a temporary FILE: queue with copied live USB004 global defaults. The
+230,068-byte stream validates as four pages; decoded pages visually show 1/2/1/2.
+Raster hashes confirm pages 1=3, 2=4 and 1 differs from 2. The complete stream
+matches the independent reference encoder byte for byte. Thus the reported 1/1
+output is not reproduced in this file capture; this does not yet locate the
+physical-path failure. Evidence: `artifacts/pdf-order-capture-20261102`.
+
+After confirmed clearance, power cycle and four fresh sheets, a filmed repeat
+of the four-page single-copy job (18) again stopped paper movement according to
+the maintainer. Only job 18 was canceled after the report. Frame review of the
+32-second video shows overlapping sheets at the output and paper movement
+stopping around 19 seconds, with a sheet still in the output path and an amber
+indicator visible. The exact sheet count and all headings cannot be established
+from these frames. Multiple-sheet pickup is a hypothesis requiring inspection
+of the recovered sheets, not a confirmed diagnosis. Audio was not assessed.
+The trace records QueueCancelled and CompletionUnconfirmed; no physical pass
+is claimed. No further print was submitted. Private video SHA-256:
+`7fb941cc62eb77854a59e77ef9c17da94b7cd2b9fb654f83b175845174f5a291`.
+Evidence: `artifacts/physical-print-diagnosis-20261102/pdf-explicit-four-142833504`.
+
+## Physical Inkscape bitmap print (2026-11-02)
+
+The maintainer reported successfully printing a bitmap from Inkscape during
+the current physical-testing session. This is a user-confirmed application
+print, separate from the traced Windows test pages below. No trace or document
+capture was collected for this manual job. Inkscape version/architecture, exact
+queue, paper/orientation settings and measured scale were not recorded, so this
+does not complete the controlled portrait/landscape geometry matrix. Physical
+PDF, multi-page, copies/collation, paper-change and recovery checks remain pending.
+
+## Windows test-page isolation (2026-10-30 to 2026-11-02)
+
+Two identical physical GDI patterns (jobs 23 and 24) printed correctly on
+October 30, with no power cycle between them and no installed-driver change.
+Both queues cleared without cancellation; the second job's trace confirms
+firmware already running and matching completion. Evidence is under
+`artifacts/physical-print-diagnosis-20261030/hardware-161650979` and
+`hardware-161839631`. The latter trace also contains simulated test-fixture
+events from a concurrent local CTest run; only token `lj1005-24-266858000-5`
+belongs to the physical job. Filtered physical-job events are saved alongside
+each trace. This does not reproduce a general consecutive-job failure.
+
+An interactive Windows test page was captured on a temporary FILE: queue using
+the installed driver and copied physical global defaults. Its 34,268-byte stream
+validates as one A4 page, decodes to visible Windows test-page text/graphics, and
+matches the independent reference encoder byte for byte. Evidence:
+`artifacts/windows-test-page-capture-20261030`. It is not a capture of the failed
+physical job; the diagnostic printer name and port differ. The temporary queue
+was removed on November 2, with EPSON preserved as default.
+
+On November 2, Windows exposed a new queue, `HP LaserJet 1005 Series (Open ZJS)`,
+on USB004; the old owned USB003 queue was retained. Both were empty. Present-device
+enumeration confirmed USB004 as the live original 1005. The new queue defaulted
+to Letter and was set to A4 for the loaded sheet. Installed GPD, INI, renderer
+and monitor hashes still match the original signed tester package; Windows is
+still build 26300.9711. No proposed PJL code change is installed.
+
+After the maintainer confirmed a power cycle and one A4 sheet, Windows test
+page job 10 completed with firmware upload, matching setup echo, START and
+END/PAGES=1, successful LowerEndDoc and CompletionAcknowledged. The queue
+emptied without cancellation. The maintainer confirmed correct Windows test-page
+text and graphics ("100% correct"). Evidence:
+`artifacts/physical-print-diagnosis-20261102/windows-page-030442271`.
+The changed USB port/queue and paper defaults prevent attributing any improvement
+solely to cold-start versus consecutive-job state.
+
+Without a power cycle or installed-driver change, the maintainer loaded one more
+A4 sheet and a second Windows test page (job 11) printed correctly. Its trace
+records firmware already running, matching PrinterEnd and CompletionAcknowledged;
+the queue cleared without cancellation. Evidence:
+`artifacts/physical-print-diagnosis-20261102/windows-page-030656339`.
+The maintainer confirmed both pages' appearance. Two consecutive Windows test
+pages therefore pass on the current USB004/A4 configuration with the original
+signed package. The prior USB003 failure's cause remains unproven; this is not
+hardware validation of the uninstalled source correction below. Application,
+multi-page, paper-change and recovery acceptance remain separate.
+Both HP queues were empty at the final check. Windows had automatically selected
+the tested HP queue as default; EPSON was restored to the maintainer's previously
+requested preference and verified.
+
+A separate, uninstalled PJL boundary correction replaces the trailer's language
+re-entry after EOJ with a final bare UEL, following HP's
+[PJL Technical Reference, chapter 3](https://h10032.www1.hp.com/ctg/Manual/bpl13208.pdf).
+New PJL and same-handle two-job monitor regressions failed before the correction;
+all seven CTest suites passed afterward. This is protocol-boundary hardening,
+not a demonstrated fix for the physical blank-sheet incident. Hardware acceptance
+of this source change remains pending.
+
+## Physical GDI print after fuser repair (2026-10-30)
+
+The maintainer reported repairing the fuser. With explicit permission, the old
+queued document was canceled and an empty queue verified. After a power cycle
+and loading one A4 sheet, the unchanged installed tester package printed one
+x64 GDI portrait pattern on SIRIUS. The maintainer confirmed visible output
+headed "HP Laserjet 1005 Windows x64 C++ driver". Detailed geometry and warning
+light observations were not reported.
+
+Job 21 completed without cancellation; the queue emptied automatically. The
+monitor trace records FirmwareReady (uploaded), PrinterEnd, successful
+LowerEndDoc and CompletionAcknowledged. Evidence:
+`artifacts/physical-print-diagnosis-20261030/hardware-160953197`.
+This establishes a successful cold-start GDI physical print after the repair.
+It does not yet resolve the earlier Windows test-page failure or establish
+warm-state printing, application output, repeated-cycle or recovery acceptance.
+No driver code, installed payload or security policy was changed.
+
+The maintainer then loaded one A4 sheet without power-cycling. The Windows
+test-page retry (job 22) returned 0 from PrintTestPage, but the maintainer
+reported one blank sheet and a blinking yellow light. It is a physical failure,
+not a pass based on the API return. The trace shows firmware already running,
+matching setup echo and JOB START, followed by QueueCancelled and
+CompletionUnconfirmed, with no printer END/completion acknowledgement.
+After the report, only job 22 was canceled; the queue was verified empty.
+The collector's `cancelledAfterDeadline` is empty because cancellation was
+requested separately before its deadline, not because the printer completed.
+The maintainer was asked to switch the printer off and leave the tray empty.
+No further print was submitted. Evidence and the user's observation are in
+`artifacts/physical-print-diagnosis-20261030/windows-page-161222741`.
+
+This reproduces the Windows test-page failure after the reported fuser repair
+on build 26300.9711. It does not establish the cause: the successful GDI job was
+the first after power-on, while the failed Windows page followed it. Document
+content/rendering and between-job printer state remain confounded. Physical
+acceptance remains blocked pending isolation; do not treat the repair or the
+successful GDI pattern as resolution of this incident.
 
 ## Windows build 26300 offline printing (2026-10-28)
 

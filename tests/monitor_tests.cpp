@@ -24,6 +24,7 @@ namespace {
         unsigned starts = 0, ends = 0, closes = 0, queries = 0;
         DWORD writeLimit = 3; // Force partial writes in the lower transport.
         bool writeFails = false, queryFails = false, echoDelivered = false;
+        std::size_t jobOffset = 0;
     };
 
     BOOL WINAPI Open(HANDLE instance, LPWSTR, PHANDLE out) {
@@ -32,7 +33,10 @@ namespace {
     }
 
     BOOL WINAPI Start(HANDLE h, LPWSTR, DWORD, DWORD, LPBYTE) {
-        ++static_cast<FakePort*>(h)->starts;
+        auto& p = *static_cast<FakePort*>(h);
+        ++p.starts;
+        p.jobOffset = p.bytes.size();
+        p.echoDelivered = false;
         return TRUE;
     }
 
@@ -55,7 +59,7 @@ namespace {
         }
         *written = std::min(p.writeLimit, size);
         p.bytes.insert(p.bytes.end(), data, data + *written);
-        const std::string output(p.bytes.begin(), p.bytes.end());
+        const std::string output(p.bytes.begin() + p.jobOffset, p.bytes.end());
         if (output.starts_with("\x1b") && output.find("JZJZ") != std::string::npos && !p.echoDelivered) {
             SetLastError(ERROR_INVALID_DATA);
             return FALSE;
@@ -65,7 +69,7 @@ namespace {
 
     BOOL WINAPI Read(HANDLE h, LPBYTE data, DWORD size, LPDWORD received) {
         auto& p = *static_cast<FakePort*>(h);
-        const std::string output(p.bytes.begin(), p.bytes.end());
+        const std::string output(p.bytes.begin() + p.jobOffset, p.bytes.end());
         const auto start = output.find("@PJL JOB NAME=\"");
         if (start == std::string::npos)
             return FALSE;
@@ -172,6 +176,52 @@ int wmain(int argc, wchar_t** argv) {
             Require(acknowledgements() == (name == file ? 0u : 1u), "Incorrect completion acknowledgement count");
             Require(fake.starts == 1 && fake.ends == 1 && fake.closes == 1, "Unbalanced port lifecycle");
             Require(fake.queries == (name == file ? 0u : 1u), "Unexpected identity query count");
+        }
+        // Reuse the same lower and language-monitor handles. Each job must
+        // synchronize with its own token, send one body, end at a PJL boundary,
+        // and acknowledge exactly once without relying on ClosePort to reset it.
+        for (auto name : {usb, lpt, file}) {
+            setScenario(0);
+            FakePort repeated;
+            HANDLE reused = nullptr;
+            Require(monitor->pfnOpenPortEx(instance, &repeated, name, printer, &reused, &lower),
+                    "Open consecutive-job fixture");
+            std::string previousToken;
+            for (DWORD id : {10u, 11u}) {
+                const auto offset = repeated.bytes.size();
+                Require(monitor->pfnStartDocPort(reused, printer, id, 1, reinterpret_cast<LPBYTE>(&doc)),
+                        "Start consecutive job");
+                auto body = job;
+                DWORD written = 0;
+                Require(monitor->pfnWritePort(reused, body.data(), static_cast<DWORD>(body.size()), &written) &&
+                            written == body.size(),
+                        "Write consecutive job");
+                Require(monitor->pfnEndDocPort(reused), "End consecutive job");
+                const std::string output(repeated.bytes.begin() + offset, repeated.bytes.end());
+                const std::string raster(job.begin(), job.end());
+                if (name == file) {
+                    Require(output == raster, "Consecutive file job changed");
+                }
+                else {
+                    const auto tokenStart = output.find("@PJL JOB NAME=\"");
+                    Require(tokenStart != std::string::npos, "Consecutive job has no JOB token");
+                    const auto first = tokenStart + 15;
+                    const auto token = output.substr(first, output.find('"', first) - first);
+                    Require(!token.empty() && token != previousToken, "Reused previous job token");
+                    previousToken = token;
+                    Require(output.ends_with("\x1b%-12345X"), "Consecutive job left an open language context");
+                    const auto bodyAt = output.find(raster);
+                    Require(bodyAt != std::string::npos &&
+                                output.find(raster, bodyAt + raster.size()) == std::string::npos,
+                            "Consecutive job lost or replayed raster");
+                    Require(output.find("@PJL EOJ NAME=\"" + token + "\"", bodyAt + raster.size()) != std::string::npos,
+                            "Consecutive job has no matching EOJ");
+                }
+                Require(acknowledgements() == (name == file ? 0u : id - 9), "Consecutive job acknowledgement lost");
+            }
+            Require(repeated.starts == 2 && repeated.ends == 2 && repeated.closes == 0,
+                    "Consecutive jobs depended on closing the port");
+            Require(monitor->pfnClosePort(reused), "Close consecutive-job fixture");
         }
         for (unsigned scenario = 0; scenario < 5; ++scenario) {
             setScenario(0);

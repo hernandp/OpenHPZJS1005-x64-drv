@@ -1,12 +1,19 @@
 # Remaining release acceptance
 
-Updated 2026-10-28. An opt-in [self-signed tester route](TESTER_RELEASE.md) is
+Updated 2026-11-02. An opt-in [self-signed tester route](TESTER_RELEASE.md) is
 agreed; the exact local signed archive passed the clean-VM command-line
 trust/cleanup rehearsal. See [test status](TEST_STATUS.md) for its limits.
 Public signing is unresolved. On October 21 the maintainer explicitly authorized
 the dedicated tester certificate and physical migration on SIRIUS. Migration
 completed after a restart; one cold-start GDI physical print passed, but the
-Windows test-page incident remains unresolved. The printer is now in maintenance.
+Windows test-page incident remains unresolved. After the maintainer's fuser
+repair, another cold-start GDI pattern printed successfully on October 30.
+The following Windows test page produced one blank sheet and a blinking yellow
+light; its job was canceled and the queue cleared. On November 2, two consecutive
+Windows test pages printed correctly on the new live USB004 queue, set to A4,
+with the original signed driver unchanged. This passes that bounded check on
+the current configuration; the older USB003 failure's cause remains unproven.
+Broader physical application and recovery acceptance remains pending.
 Preparing files or procedures is not a pass for hardware testing.
 Use [test status](TEST_STATUS.md) for historical results and exact candidate IDs.
 
@@ -28,7 +35,7 @@ outside the initial beta scope. Letter remains experimental until physical testi
 | --- | --- | --- | --- | --- |
 | Windows 11 Pro 25H2 x64, 26200.6584, isolated VM | Earlier lab candidates passed | Lab upgrade/recovery/rollback passed; latest retry acceptance on rc-54d87b83 | Inkscape x64 SVG/imported-PDF, SumatraPDF x86 single/multiple-page PDF and five x86 GDI-helper captures passed on rc-54d87b83; Edge PDF content/order passed, precise scale remains a known limitation; Office deferred | Final signed-candidate regression pending |
 | Windows 11 Pro 25H2 x64, 26200.9711, physical printer PC | Self-signed development migration completed after restart; public trust pending | Remaining physical acceptance pending | One cold-start GDI pattern printed; Windows test-page blank/stall investigation open; application and recovery acceptance pending | Incomplete hardware acceptance |
-| Windows 11 Pro x64, 26300.9711 (registry DisplayVersion 26H2), upgraded SIRIUS host | Existing installed package retained; lifecycle not tested on this build | Not tested on this build | 14 FILE-only x64/x86 GDI captures passed geometry/protocol/reference checks; real applications and copies/collation pending | Offline GDI verification only; no expanded release support claim |
+| Windows 11 Pro x64, 26300.9711 (registry DisplayVersion 26H2), upgraded SIRIUS host | Existing installed package retained; lifecycle not tested on this build | Not tested on this build | 14 FILE-only x64/x86 GDI captures and consecutive physical GDI patterns passed; two consecutive Windows test pages passed on USB004/A4 November 2; maintainer confirmed an Inkscape bitmap print (settings unrecorded); prior USB003 blank-page cause unproven; controlled application matrix and copies/collation pending | Bounded physical checks passed; full release acceptance incomplete |
 | Windows 11 Pro 24H2 x64, 26100, clean VM | Pending | Pending | Pending, including x86 application path | Media unavailable locally; no support claim |
 
 For each intended supported build, run fresh install, same-build repair,

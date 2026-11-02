@@ -31,7 +31,9 @@ namespace lj1005 {
 
     std::string PjlEndJob(std::string_view token) {
         ValidateToken(token);
-        return "\x1b%-12345X@PJL\r\n@PJL EOJ NAME=\"" + std::string(token) + "\"\r\n@PJL ENTER LANGUAGE=ZJS\r\n";
+        // Close the PJL job with a bare UEL. Re-entering ZJS after EOJ leaves
+        // an empty language context for the next document to inherit.
+        return "\x1b%-12345X@PJL\r\n@PJL EOJ NAME=\"" + std::string(token) + "\"\r\n\x1b%-12345X";
     }
 
     PjlJobStatus::PjlJobStatus(std::string_view token) : token_(token) {

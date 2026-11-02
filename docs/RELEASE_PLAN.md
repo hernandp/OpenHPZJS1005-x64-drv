@@ -88,8 +88,14 @@ This milestone is not complete.
 On October 28 the upgraded Windows 11 Pro host, build 26300.9711, passed 14
 FILE-only x64/x86 GDI captures using the installed tester package. This adds
 bounded offline evidence, not clean-install, real-application or physical
-acceptance for that build. The printer is in maintenance; continue with real
-Inkscape/PDF FILE-output checks while hardware testing is unavailable. See
+acceptance for that build. After the reported fuser repair on October 30, one
+cold-start physical GDI pattern passed, but the following Windows test page
+produced a blank sheet and blinking yellow light. Its job was canceled and the
+queue cleared. Subsequent identical GDI patterns printed consecutively. On
+November 2, two consecutive Windows test pages also passed on the new live
+USB004 queue set to A4, without changing the installed driver. The prior USB003
+failure's cause is not established; retain its evidence while continuing bounded
+application testing on the working configuration. See
 [test status](TEST_STATUS.md) for comparisons and the default-printer cleanup
 exception. The initial supported-build target remains unchanged.
 

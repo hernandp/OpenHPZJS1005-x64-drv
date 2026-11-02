@@ -70,6 +70,12 @@ int main() {
         Rejects([] { PjlBeginJob("bad\"\r\n@PJL"); });
         Require(PjlBeginJob("token").ends_with("@PJL ENTER LANGUAGE=ZJS\r\n"), "Missing ZJS language selection");
         Require(PjlEndJob("token").find("@PJL EOJ NAME=\"token\"") != std::string::npos, "Missing EOJ token");
+        // HP PJL job boundaries (Technical Reference, chapter 3): finish in PJL,
+        // with a bare UEL last. Entering a language here starts another context
+        // with no document; the next job must select its own language instead.
+        Require(PjlEndJob("token").ends_with("\x1b%-12345X"), "Job trailer has no final UEL boundary");
+        Require(PjlEndJob("token").find("ENTER LANGUAGE") == std::string::npos,
+                "Job trailer re-enters a print language after EOJ");
         std::cout << "PJL completion: fragmented frames, matching jobs, malformed reports and cancellation passed\n";
         return 0;
     }
