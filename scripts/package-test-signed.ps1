@@ -1,4 +1,4 @@
-#requires -Version 7.0
+#requires -Version 7.5
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$CandidatePath,
@@ -37,7 +37,7 @@ Expand-Archive -LiteralPath $unsignedZip[0].FullName -DestinationPath $out
 Expand-Archive -LiteralPath $sourceZip[0].FullName -DestinationPath (Join-Path $out 'snapshot')
 $bundle = Join-Path $out 'HPLJ1005x64'
 $source = Join-Path $out 'snapshot\source'
-$info = Get-Content -LiteralPath (Join-Path $bundle 'BUILD-INFO.json') -Raw | ConvertFrom-Json
+$info = Get-Content -LiteralPath (Join-Path $bundle 'BUILD-INFO.json') -Raw | ConvertFrom-Json -DateKind String
 $inf2cat = Join-Path $WdkRoot "bin\$($info.wdkVersion)\x86\Inf2Cat.exe"
 if (!(Test-Path -LiteralPath $inf2cat -PathType Leaf)) { throw 'Matching Inf2Cat is missing.' }
 

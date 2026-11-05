@@ -52,6 +52,14 @@ The bundle has no signed catalog and uses the development installer described be
 
 ## Public release preparation
 
+The `mini-install` branch adds a [minimal Have Disk ZIP](docs/MINI_INSTALL.md).
+The generator validates a privately supplied firmware image and includes its
+hash in the signed catalog, then excludes the image from the ZIP. Users supply
+the exact `sihp1005.img` beside the INF before installing through Windows.
+This tester route has no Setup executable. Have Disk installation and five offline
+print captures passed in the VM; ordinary driver removal leaves monitor/firmware
+remnants requiring separate cleanup. See the guide for acceptance limits.
+
 An opt-in [self-signed testing package](docs/TESTER_RELEASE.md) is planned for
 technical testers who explicitly choose to trust its certificate. Local rehearsal
 packaging is available; no public tester download is approved, and existing CI

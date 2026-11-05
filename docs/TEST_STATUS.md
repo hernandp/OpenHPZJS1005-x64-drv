@@ -1,4 +1,72 @@
-# Development verification — updated 2026-11-02
+# Development verification — updated 2026-11-05
+
+## Minimal Have Disk package (2026-11-04)
+
+On branch `mini-install`, `package-mini.ps1` creates a separate tester ZIP from
+a verified candidate. The generated INF copies user-supplied `sihp1005.img` to
+the monitor's existing `System32/lj1005-firmware.img` location. The firmware is
+validated by size and SHA-256, included during catalog generation/signing, then
+removed from staging before archive creation. No firmware, Setup executable,
+diagnostic executable or private key is included in the mini ZIP.
+
+A fresh source build passed all seven CTest tests, binary checks, GPD validation,
+INF validation and catalog generation. The modified INF was accepted by InfVerif
+(existing Type 3 warnings 1296/2083) and Inf2Cat (no warnings/errors). The signed
+catalog's CMS signature was checked against the dedicated tester identity.
+Independent archive/provenance verification passed. Mutation tests rejected
+an added firmware file, changed renderer, changed INF and incorrect firmware
+hash even after recalculating manifests/checksums. Invalid firmware input was
+rejected before staging/signing. Read-only source firmware cleanup was exercised.
+
+The existing signing script now preserves JSON date strings exactly instead of
+allowing PowerShell to normalize build timestamps; signing scripts require
+PowerShell 7.5 or later. No driver runtime changes were made for this packaging.
+
+On November 5, Windows 11 Pro 25H2 (26200) with Secure Boot enabled verified
+the correct firmware and all five driver payload files against the signed catalog.
+PnPUtil rejected missing firmware (exit 2, file not found) and an incorrect image
+(exit -536870325, catalog hash mismatch). Neither negative test staged a package.
+The actual Add Printer Wizard accepted the INF selected using Browse and showed
+the Open ZJS model with an Authenticode signature. FILE: was selected for the VM
+test. Following explicit approval, the wizard installed the printer successfully;
+sharing was disabled and the success page was observed. No Setup executable was
+used. Installed firmware and all four project driver files matched the package,
+and no Setup ownership key existed. Five captures (portrait, landscape, blank,
+multi and Letter) passed protocol validation, geometry/page-count/margin checks
+and byte-for-byte reference encoding. The source folder was temporarily renamed
+during printing, and the queue cleared. The initial paper setting was Letter;
+A4 was explicitly selected for the captures. These are VM FILE: results, not
+physical USB/firmware-upload or physical Letter acceptance.
+
+Standard Windows queue and driver/package removal succeeded without error, but
+left the language monitor registration, monitor DLL and firmware. DeleteMonitor
+then succeeded, but deleting the DLL returned access denied, including after a
+guest restart. ACL inspection showed both files owned by SYSTEM, with full access
+for SYSTEM and read/execute access for Everyone/application packages; administrator
+delete access was absent. The initial loaded-DLL hypothesis was not established.
+After checking hashes and absence of dependent Open ZJS drivers, targeted ownership
+and permission changes to those two files allowed deletion. This limitation is
+documented in the minimal package guide; ordinary removal is not complete cleanup.
+
+Final inspection confirmed the queue, driver, driver-store INF, monitor registration
+and installed monitor/firmware files were absent. The exact tester certificate
+was removed from both local-machine stores; the catalog was no longer trusted.
+Secure Boot remained enabled and the unrelated Microsoft Print to PDF queue was
+unchanged. See `results/cleanup-verification.json` and `results/leftover-acls.jsonl`
+under the evidence directory. Cleanup used Windows APIs and maintenance commands;
+the graphical Print Server Properties removal path was not exercised.
+
+The exercised archive was `artifacts/mini-afa32dca/HPLJ1005x64-0.1.1-mini-self-signed-test.zip`,
+SHA-256 `67b3000cf91fd5b9d52902a2160b178bcdc6aca8c8fb51f98dda4d290af0b9b8`.
+Its bundled README and build metadata retain the pre-rehearsal pending labels;
+this dated record supplies acceptance for that exact archive, not a rebuilt ZIP.
+The previous
+lab VM state was preserved in a `Before-mini-install-*` checkpoint before restoring
+the clean baseline. After recovering the lab login, PowerShell Direct access
+was verified and the active encrypted credential was updated. Certificate trust
+was added only inside the guest using certutil; Import-Certificate had returned
+access denied. Local evidence: `artifacts/mini-vm-rehearsal/results`.
+This is not a public release or a completed physical acceptance test.
 
 ## Physical PDF acceptance (2026-11-02)
 
