@@ -1,4 +1,4 @@
-param([string]$QueueName = 'HP LaserJet 1005 Open ZJS (development)', [string]$Python = 'python')
+param([string]$QueueName = 'HP LaserJet 1005 Series (Open ZJS)', [string]$Python = 'python')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $outputDirectory = Join-Path $projectRoot 'artifacts'

@@ -22,8 +22,7 @@ $extracted = Join-Path $Destination 'extracted'
 [IO.Compression.ZipFile]::ExtractToDirectory((Resolve-Path -LiteralPath $PackagePath).Path, $extracted)
 $wdk = Join-Path $extracted 'c'
 foreach ($relative in @('tools\10.0.26100.0\x64\infverif.exe',
-                        'tools\10.0.26100.0\x64\gpdcheck.exe',
-                        'bin\10.0.26100.0\x86\Inf2Cat.exe')) {
+                        'tools\10.0.26100.0\x64\gpdcheck.exe')) {
     if (!(Test-Path -LiteralPath (Join-Path $wdk $relative) -PathType Leaf)) {
         throw "Missing WDK tool: $relative"
     }
