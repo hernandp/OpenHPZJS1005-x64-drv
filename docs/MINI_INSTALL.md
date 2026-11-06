@@ -24,6 +24,10 @@ under investigation. Use a disposable VM for the initial installation rehearsal.
    a private key or disable signature enforcement. No certificate is imported
    automatically. This build has no timestamp; do not assume validity after expiry.
 
+   Open `certlm.msc` as administrator. In each of the two stores above,
+   right-click **Certificates**, choose **All Tasks > Import**, select the
+   verified CER and confirm the destination store. Save the thumbprint for cleanup.
+
 The catalog was generated with this exact firmware image present. Supplying
 the matching file completes the package without changing its signature.
 The ZIP's SHA256-MANIFEST lists distributed files only; BUILD-INFO records the
@@ -54,6 +58,13 @@ Windows installs the image as `%SystemRoot%\System32\lj1005-firmware.img`.
 The monitor uses this installed copy, so the extracted folder can be moved
 after successful installation. Retain the original ZIP for future reinstalls.
 The firmware loads when needed for printing after printer power-on.
+
+## Troubleshooting
+
+- **Missing file or catalog hash error.** Cancel the wizard, extract a fresh ZIP and check the name, size and SHA-256 of the image before retrying.
+- **Signature rejected.** Check the catalog signer, expiry and both local-computer stores against the independently supplied tester identity. Stop if the identity differs.
+- **Blank sheet or paper stops partway.** Record which sheets actually emerged, the lights and selected USB port. Cancel any remaining job before reloading paper. A four-sheet job repeatedly stopped on sheet two on the earlier physical installation.
+- **Reporting a problem.** Include the Windows build, package digest, application, paper settings and exact error. Keep firmware, spool data and private documents out of reports.
 
 ## Removal and limitations
 

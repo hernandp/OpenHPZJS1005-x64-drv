@@ -1,132 +1,10 @@
-# Remaining release acceptance
+# Physical acceptance for the Have Disk package
 
-Updated 2026-11-02. An opt-in [self-signed tester route](TESTER_RELEASE.md) is
-agreed; the exact local signed archive passed the clean-VM command-line
-trust/cleanup rehearsal. See [test status](TEST_STATUS.md) for its limits.
-Public signing is unresolved. On October 21 the maintainer explicitly authorized
-the dedicated tester certificate and physical migration on SIRIUS. Migration
-completed after a restart; one cold-start GDI physical print passed, but the
-Windows test-page incident remains unresolved. After the maintainer's fuser
-repair, another cold-start GDI pattern printed successfully on October 30.
-The following Windows test page produced one blank sheet and a blinking yellow
-light; its job was canceled and the queue cleared. On November 2, two consecutive
-Windows test pages printed correctly on the new live USB004 queue, set to A4,
-with the original signed driver unchanged. This passes that bounded check on
-the current configuration; the older USB003 failure's cause remains unproven.
-Broader physical application and recovery acceptance remains pending.
-Preparing files or procedures is not a pass for hardware testing.
-Use [test status](TEST_STATUS.md) for historical results and exact candidate IDs.
+Target Windows 11 Pro 25H2 x64 (build family 26200), one original LaserJet 1005 on USB, A4 monochrome simplex at 600 dpi. Record the full build, revision, package SHA-256 and signer for each test. Build 26300 has offline evidence only. Other editions, ARM64, parallel ports, shared printers and multiple devices are outside the initial target. Office is deferred.
 
-## Windows scope
+Use a clean physical target with an independently verified private recovery backup. Migration from earlier Setup or development installations requires a separate procedure. Earlier USB and application results guide these tests. The rebuilt wizard package still needs its own physical acceptance, especially the repeatable four-sheet stop. [Earlier results](TEST_STATUS.md)
 
-The initial beta target is **Windows 11 Pro 25H2 x64, build family 26200**, one
-original HP LaserJet 1005 over USB, A4 monochrome simplex at 600 dpi. Record the
-complete build and revision for every run. An OS build family is not a claim
-that every cumulative update was tested. Lab certificate results do not establish
-production trust. Home, Enterprise and Education are unvalidated editions.
-
-Setup currently allows Windows 11 24H2 or later. This technical minimum is wider
-than the accepted release scope. Do not advertise 24H2 until its separate matrix
-passes. Do not infer support for later releases from the installer's version check.
-ARM64, Windows Server, parallel connections, sharing and multiple printers are
-outside the initial beta scope. Letter remains experimental until physical testing.
-
-| Environment | Install/repair/remove | Upgrade/rollback | Application output | Release status |
-| --- | --- | --- | --- | --- |
-| Windows 11 Pro 25H2 x64, 26200.6584, isolated VM | Earlier lab candidates passed | Lab upgrade/recovery/rollback passed; latest retry acceptance on rc-54d87b83 | Inkscape x64 SVG/imported-PDF, SumatraPDF x86 single/multiple-page PDF and five x86 GDI-helper captures passed on rc-54d87b83; Edge PDF content/order passed, precise scale remains a known limitation; Office deferred | Final signed-candidate regression pending |
-| Windows 11 Pro 25H2 x64, 26200.9711, physical printer PC | Self-signed development migration completed after restart; public trust pending | Remaining physical acceptance pending | One cold-start GDI pattern printed; Windows test-page blank/stall investigation open; application and recovery acceptance pending | Incomplete hardware acceptance |
-| Windows 11 Pro x64, 26300.9711 (registry DisplayVersion 26H2), upgraded SIRIUS host | Existing installed package retained; lifecycle not tested on this build | Not tested on this build | 14 FILE-only x64/x86 GDI captures and consecutive physical GDI patterns passed; two consecutive Windows test pages passed on USB004/A4 November 2; maintainer confirmed an Inkscape bitmap print (settings unrecorded); prior USB003 blank-page cause unproven; controlled application matrix and copies/collation pending | Bounded physical checks passed; full release acceptance incomplete |
-| Windows 11 Pro 24H2 x64, 26100, clean VM | Pending | Pending | Pending, including x86 application path | Media unavailable locally; no support claim |
-
-For each intended supported build, run fresh install, same-build repair,
-different-build upgrade, explicit rollback and removal on clean snapshots, with
-Secure Boot and normal signature enforcement. Recheck unrelated printers and
-pending-deletion recovery. Record OS edition/build/revision, candidate commit,
-archive hash, signature identity and application version/architecture. The final
-candidate needs production-trust acceptance even where lab tests already passed.
-
-### Application coverage
-
-Record separate results for 64-bit and 32-bit Windows applications running on
-x64 Windows. An x64 capture helper does not demonstrate the x86 application path.
-Use an actual x86 application and record its bitness. Use the real Inkscape Print
-dialog and a PDF viewer with harmless test documents. Preserve layout references
-without attaching personal documents. Microsoft Office is **not tested** and,
-by maintainer decision on October 17, is deferred to a future release rather than
-required for the initial beta. Do not claim Office compatibility from other apps.
-
-On October 15 an I386 build of the existing GDI helper passed portrait,
-landscape, blank, three-page and Letter captures in the 25H2 VM against
-rc-54d87b83. Protocol validation, decoded geometry and reference-byte comparison
-passed; queue metadata/permissions and the PDF printer were preserved. This
-demonstrates the x86 GDI path only. It does not mark PDF, Office, physical Letter
-or physical printing as passed.
-
-Real Inkscape 1.4.4 Print-dialog captures subsequently passed A4 portrait and
-landscape on the same packaged-driver VM. Protocol validation, decoded page
-count, orientation, full-border visibility and measured geometry passed. Edge
-140.0.3485.66 subsequently passed single/multiple-page PDF content, page order,
-protocol validation and queue completion. Its Actual size and explicit 100%
-captures are identical, but border deviation up to 0.499 mm fails the strict
-geometry check. Bypassing Edge's preview through the system dialog still gives
-0.414 mm deviation and the same ruler scale difference. On October 17, the same
-three-page PDF printed through Inkscape's Internal import path passed the same
-tolerances (0.033 mm maximum border deviation) on the unchanged packaged driver.
-Edge also enlarged the 100 mm vector ruler to 100.190 mm through the guest-local
-Microsoft Print to PDF reference printer. The difference therefore reproduces
-without the project driver; do not compensate in driver code. Device metrics
-were recorded, but the exact Edge/Windows cause remains unproven. Keep Edge
-precise-scale acceptance open as a known application-path limitation. Edge reset
-scaling to Fit to printable area when reopening its dialog; recheck each job.
-
-SumatraPDF 3.6.1 portable x86 subsequently passed all three PDF pages and a
-separate page-2 selection through the packaged driver, with A4 portrait, one
-copy and its default shrink setting. Maximum border deviation was 0.033 mm,
-and the selected page's raster exactly matched the corresponding multi-page
-raster. Protocol validation, geometry, visual content, page order and empty
-queue checks passed. This completes representative actual x86 PDF-viewer
-coverage for this VM/candidate. Inkscape and Edge are x64.
-
-The October 19–20 remaining VM matrix passed these bounded checks:
-
-- Edge's actual Copies 2 dialog and Sumatra's CLI `2x` request produced four
-  sheets in collated order `1,2,1,2`, with identical repeated rasters.
-- Sumatra's explicit page ranges preserved both `1,2,1,2` and `1,1,2,2`.
-  Neither tested dialog exposed an uncollated toggle; that selectable mode is
-  not accepted merely from explicit-range sequencing.
-- Sumatra's actual dialog preserved a truly blank middle sheet between two
-  marked pages. The middle raster contains zero black pixels.
-- Separate Sumatra CLI A4/Letter/A4 portrait jobs passed geometry and restored
-  an identical A4 raster. Actual dialog landscape/portrait changes passed
-  geometry; a CLI content-rotation attempt was excluded as incorrect settings.
-- The x86 GDI helper's in-job Letter/A4-landscape/Letter transition matched the
-  reference encoder byte for byte. This is helper coverage, not a mixed-paper
-  PDF application's automatic paper-selection claim.
-
-Sumatra's Windows dialog hid Copies for this queue; its successful CLI copy
-request does not establish device-side copying. Edge precise scale remains open.
-Both local queues ended empty and Normal, with saved defaults and Setup hash
-preserved. All physical output remains pending.
-See [test status](TEST_STATUS.md) for exact settings, evidence and limitations.
-These file captures do not complete any physical acceptance row below.
-
-## Physical migration gate
-
-1. Choose a trusted candidate and record its exact identity. The maintainer
-   authorized the dedicated tester identity on SIRIUS on October 21. This does
-   not authorize unrelated certificates or machines; final public-trust
-   acceptance remains separate.
-2. Run `scripts/backup-development-printer.ps1` as described in
-   [development migration](DEVELOPMENT_MIGRATION.md). Verify every backup hash.
-3. Copy the private recovery bundle to an independent private location. Confirm
-   it can be read there. Rehearse recovery with this fresh bundle in the isolated
-   VM before retiring the host installation.
-4. Recheck jobs, dependencies, hashes and saved settings immediately before the
-   change. Stage the trusted candidate before removing the working installation.
-5. Follow the reviewed replacement/recovery procedure. Do not delete jobs,
-   restart the shared spooler, or infer file ownership from a printer name.
-
-## Packaged-driver physical matrix
+## Physical printing matrix
 
 All rows below are **pending**. Earlier development-driver output is supporting
 history, not acceptance of the packaged driver. Submit one controlled job at a
@@ -135,7 +13,7 @@ queue completion before moving on.
 
 | ID | Procedure | Pass evidence |
 | --- | --- | --- |
-| P01 | Fresh normal Setup install with printer connected | Correct USB port/device, one owned queue, A4 default, no unrelated changes |
+| P01 | Fresh Have Disk install with printer connected | Correct USB port/device, one intended queue, A4 selected, no unrelated changes |
 | P02 | Power off/on, then submit a one-page Windows test page | Firmware loads after cold start; one correct page; job completes |
 | P03 | Inkscape Print dialog, A4 portrait and landscape | Correct scale, orientation, margins and clipping; one page each |
 | P04 | PDF viewer, one selected page and a three-page document | Fonts/graphics, scale and page order correct; three-page job completes once |
@@ -144,7 +22,7 @@ queue completion before moving on.
 | P07 | Change A4 portrait/landscape between jobs; exercise in-job ResetDC separately | No stale paper/orientation, corruption or lost pages |
 | P08 | Load physical Letter and select Letter, then restore A4 | Correct margins and page feed on actual paper; correct A4 restoration |
 | P09 | Repeat representative PDF output through an x86 application | Application version/bitness recorded; correct output and completion |
-| P10 | Owned repair, upgrade/rollback and removal on physical target | Correct payload/settings after each operation; unrelated resources preserved |
+| P10 | Windows queue and package removal on the physical target | Record leftover monitor/firmware and the state of unrelated printers |
 
 ## Hardware recovery matrix
 
