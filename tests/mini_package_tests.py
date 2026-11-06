@@ -14,11 +14,11 @@ mini = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mini)
 
 
-def test_packages(directory, signed_input, candidate):
-    mini.verify(directory, signed_input, candidate)
+def test_packages(directory, candidate):
+    mini.verify(directory, candidate)
     results = []
-    cases = {"firmware-leak": "Mini payload differs", "modified-dll": "Changed driver payload",
-             "altered-inf": "Unexpected INF changes", "wrong-firmware-hash": "Wrong firmware contract"}
+    cases = {"firmware-leak": "Mini payload differs", "modified-dll": "Invalid added certificate table",
+             "altered-inf": "Changed driver payload", "wrong-firmware-hash": "Wrong firmware contract"}
     for case, expected in cases.items():
         with tempfile.TemporaryDirectory(prefix="negative-test-", dir=directory) as temporary:
             target = Path(temporary)
@@ -49,7 +49,7 @@ def test_packages(directory, signed_input, candidate):
                 hashlib.sha256(p.read_bytes()).hexdigest() + "  " + p.name + "\n"
                 for p in target.glob("*.zip")))
             try:
-                mini.verify(target, signed_input, candidate)
+                mini.verify(target, candidate)
             except ValueError as error:
                 if expected not in str(error):
                     raise AssertionError(f"{case}: wrong rejection: {error}") from error
@@ -62,7 +62,6 @@ def test_packages(directory, signed_input, candidate):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
-    parser.add_argument("signed_input", type=Path)
     parser.add_argument("candidate", type=Path)
     args = parser.parse_args()
-    print(json.dumps(test_packages(args.directory, args.signed_input, args.candidate), indent=2))
+    print(json.dumps(test_packages(args.directory, args.candidate), indent=2))

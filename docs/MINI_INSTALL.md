@@ -75,6 +75,8 @@ from both local-computer stores if no other installed tester package needs it.
 ## Build locally
 
 Run `scripts/package-candidate.ps1` to build and validate a fresh source snapshot.
+This engineering candidate contains the driver files and build provenance. It can
+be built without HP firmware. The catalog is created during the signing step.
 Then run `scripts/package-mini.ps1 -CandidatePath <candidate-directory>
 -CertificateThumbprint <dedicated-tester-thumbprint> -FirmwarePath <private-img>`.
 If FirmwarePath is omitted, the generator prompts for it. Use PowerShell 7.5+, the

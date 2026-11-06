@@ -17,7 +17,7 @@ PnpLockdown=1
 %Model%=Install,LPTENUM\Hewlett-Packardhp_LaBE8D
 
 [Install]
-CopyFiles=DriverFiles,MonitorFiles
+CopyFiles=DriverFiles,MonitorFiles,FirmwareFiles
 LanguageMonitor="HP LaserJet 1005 Firmware Monitor (development),lj1005monitor.dll"
 DataFile=lj1005.gpd
 DefaultDataType=RAW
@@ -35,7 +35,11 @@ lj1005render.dll
 [MonitorFiles]
 lj1005monitor.dll,,,0x00000020
 
+[FirmwareFiles]
+lj1005-firmware.img,sihp1005.img
+
 [DestinationDirs]
+FirmwareFiles=11
 DriverFiles=66000
 MonitorFiles=66002
 
@@ -43,6 +47,7 @@ MonitorFiles=66002
 1=%Disk%,,,
 
 [SourceDisksFiles]
+sihp1005.img=1
 lj1005.gpd=1
 lj1005.ini=1
 lj1005render.dll=1

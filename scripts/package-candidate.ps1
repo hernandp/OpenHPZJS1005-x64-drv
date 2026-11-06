@@ -11,8 +11,7 @@ Set-StrictMode -Version Latest
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $infVerif = Join-Path $WdkRoot "tools\$WdkVersion\x64\infverif.exe"
 $gpdCheck = Join-Path $WdkRoot "tools\$WdkVersion\x64\gpdcheck.exe"
-$inf2Cat = Join-Path $WdkRoot "bin\$WdkVersion\x86\Inf2Cat.exe"
-foreach ($tool in @($infVerif, $gpdCheck, $inf2Cat)) {
+foreach ($tool in @($infVerif, $gpdCheck)) {
     if (!(Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Required WDK tool missing: $tool" }
 }
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -77,7 +76,7 @@ $allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative.Contains('..') -or [IO.Path]::IsPathRooted($relative)) { throw "Invalid source path: $relative" }
     if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions -and
-        $relative -notin @('driver/version.rc.in', 'driver/version.hpp.in')) {
+        $relative -ne 'driver/version.rc.in') {
         throw "Review unexpected source file before packaging: $relative"
     }
     $original = Get-Item -LiteralPath (Join-Path $projectRoot $relative)
@@ -115,20 +114,15 @@ $binaryRoot = Join-Path $source 'build\Release'
 foreach ($file in @('lj1005.inf', 'lj1005.gpd', 'lj1005.ini', 'lj1005render.dll', 'lj1005monitor.dll')) {
     Copy-Item -LiteralPath (Join-Path $binaryRoot $file) -Destination $payload
 }
-New-Item -ItemType Directory -Path (Join-Path $bundle 'tools') | Out-Null
-Copy-Item -LiteralPath (Join-Path $binaryRoot 'lj1005.exe') -Destination (Join-Path $bundle 'tools')
-Copy-Item -LiteralPath (Join-Path $binaryRoot 'lj1005setup.exe') -Destination (Join-Path $bundle 'Setup.exe')
 foreach ($file in @('LICENSE', 'THIRD_PARTY.md')) {
     Copy-Item -LiteralPath (Join-Path $source $file) -Destination $bundle
 }
-Copy-Item -LiteralPath (Join-Path $source 'docs\DEPLOYMENT.md') -Destination (Join-Path $bundle 'README.md')
+Copy-Item -LiteralPath (Join-Path $source 'docs\MINI_INSTALL.md') -Destination (Join-Path $bundle 'README.md')
 
 & (Join-Path $source 'scripts\verify-binary-versions.ps1') -PackagePath $bundle -ExpectedVersion "$version.0" |
     ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $logs 'binary-versions.json') -Encoding utf8
 
-foreach ($file in @(Get-ChildItem -LiteralPath $payload -Filter '*.dll') +
-                  @(Get-ChildItem -LiteralPath (Join-Path $bundle 'tools') -Filter '*.exe') +
-                  @(Get-ChildItem -LiteralPath $bundle -Filter '*.exe')) {
+foreach ($file in (Get-ChildItem -LiteralPath $payload -Filter '*.dll')) {
     $bytes = [IO.File]::ReadAllBytes($file.FullName)
     $peOffset = [BitConverter]::ToInt32($bytes, 0x3c)
     if ([BitConverter]::ToUInt32($bytes, $peOffset) -ne 0x4550 -or
@@ -140,9 +134,6 @@ foreach ($file in @(Get-ChildItem -LiteralPath $payload -Filter '*.dll') +
 }
 $null = Invoke-Check $infVerif @('/v', (Join-Path $payload 'lj1005.inf')) 'infverif.log'
 $null = Invoke-Check $gpdCheck @('-n', '-x', (Join-Path $payload 'lj1005.gpd')) 'gpdcheck.log'
-$null = Invoke-Check $inf2Cat @("/driver:$payload", "/os:$CatalogOS", '/verbose') 'inf2cat.log'
-if (!(Test-Path -LiteralPath (Join-Path $payload 'lj1005.cat'))) { throw 'Inf2Cat did not create the catalog.' }
-
 [ordered]@{
     version = $version
     baseCommit = $revision

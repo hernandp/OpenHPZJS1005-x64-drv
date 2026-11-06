@@ -9,8 +9,8 @@ import zipfile
 
 
 PAYLOAD = {
-    "Setup.exe", "tools/lj1005.exe", "driver/lj1005.inf",
-    "driver/lj1005.gpd", "driver/lj1005.ini", "driver/lj1005.cat",
+    "driver/lj1005.inf",
+    "driver/lj1005.gpd", "driver/lj1005.ini",
     "driver/lj1005render.dll", "driver/lj1005monitor.dll",
     "LICENSE", "THIRD_PARTY.md", "README.md", "BUILD-INFO.json",
 }
@@ -99,9 +99,7 @@ def verify(candidate, require_clean=False):
     require(set(binary) == PAYLOAD, "Production payload allowlist differs")
     for name in source:
         path = PurePosixPath(name)
-        require(name in SOURCE_ROOT_FILES or name in {
-            "driver/version.rc.in", "driver/version.hpp.in"
-        } or (
+        require(name in SOURCE_ROOT_FILES or name == "driver/version.rc.in" or (
             len(path.parts) > 1 and path.parts[0] in SOURCE_DIRS
             and path.suffix in SOURCE_EXTENSIONS
         ), f"Unexpected source file: {name}")
@@ -118,7 +116,7 @@ def verify(candidate, require_clean=False):
                 f"Packaged {name} differs from source")
     for name in ("LICENSE", "THIRD_PARTY.md"):
         require(binary[name] == source[name], f"Packaged {name} differs from source")
-    require(binary["README.md"] == source["docs/DEPLOYMENT.md"], "Packaged instructions differ")
+    require(binary["README.md"] == source["docs/MINI_INSTALL.md"], "Packaged instructions differ")
     info = json.loads(binary["BUILD-INFO.json"].decode("utf-8-sig"))
     require(info["version"] == version, "Build provenance version mismatch")
     require(info["sourceArchive"] == sources[0]
@@ -133,9 +131,6 @@ def verify(candidate, require_clean=False):
             "Invalid source revision")
     require(isinstance(info["workingTreeModified"], bool), "Invalid dirty-tree flag")
     require(not require_clean or not info["workingTreeModified"], "Dirty source candidate")
-    for hook in ("OPENZJS_SETUP_STOP_AT", "OPENZJS_SETUP_FAIL_AT"):
-        require(all(hook.encode(encoding) not in binary["Setup.exe"]
-                    for encoding in ("ascii", "utf-16-le")), "Production Setup contains test hooks")
     return {
         "status": "passed", "version": version, "baseCommit": info["baseCommit"],
         "workingTreeModified": info["workingTreeModified"],

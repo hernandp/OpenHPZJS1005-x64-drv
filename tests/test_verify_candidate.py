@@ -22,7 +22,7 @@ class CandidateVerification(unittest.TestCase):
             "CMakeLists.txt": b"project(HPLJ1005x64 VERSION 0.1.1 LANGUAGES C CXX)",
             "driver/lj1005.inf": b"DriverVer=09/27/2026,0.1.1.0\n",
             "driver/lj1005.gpd": b"gpd", "driver/lj1005.ini": b"ini",
-            "docs/DEPLOYMENT.md": b"engineering preview",
+            "docs/MINI_INSTALL.md": b"engineering preview",
             "LICENSE": b"license", "THIRD_PARTY.md": b"third party",
         }
         # These bytes model archive contents, not runnable PE files. PE/import
@@ -31,7 +31,7 @@ class CandidateVerification(unittest.TestCase):
         for name in ("driver/lj1005.inf", "driver/lj1005.gpd", "driver/lj1005.ini",
                      "LICENSE", "THIRD_PARTY.md"):
             self.binary[name] = self.source[name]
-        self.binary["README.md"] = self.source["docs/DEPLOYMENT.md"]
+        self.binary["README.md"] = self.source["docs/MINI_INSTALL.md"]
         self.info = {
             "version": "0.1.1", "baseCommit": "a" * 40, "workingTreeModified": False,
             "packageState": "unsigned-engineering-candidate", "cleanMachineTested": False,
@@ -85,21 +85,13 @@ class CandidateVerification(unittest.TestCase):
             verifier.verify(self.root)
 
     def test_firmware_and_test_binary_are_rejected(self):
-        for name in ("driver/firmware.img", "tools/lj1005setup_fault.exe"):
+        for name in ("driver/firmware.img", "Setup.exe", "tools/lj1005.exe", "driver/lj1005.cat"):
             with self.subTest(name=name):
                 self.binary[name] = b"unshippable"
                 self.build()
                 with self.assertRaisesRegex(ValueError, "payload allowlist"):
                     verifier.verify(self.root)
                 del self.binary[name]
-
-    def test_test_hooks_are_rejected(self):
-        for encoding in ("ascii", "utf-16-le"):
-            with self.subTest(encoding=encoding):
-                self.binary["Setup.exe"] = "OPENZJS_SETUP_FAIL_AT".encode(encoding)
-                self.build()
-                with self.assertRaisesRegex(ValueError, "test hooks"):
-                    verifier.verify(self.root)
 
     def test_packaged_inf_must_match_source(self):
         self.binary["driver/lj1005.inf"] += b"; changed"
