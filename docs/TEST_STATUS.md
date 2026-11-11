@@ -2,6 +2,61 @@
 
 ## Have Disk package
 
+### November 10–11, 2026: installation and manual maintenance
+
+Windows 11 Pro 25H2 x64 build 26200.6584, Secure Boot enabled, passed the
+maintenance rehearsal in the isolated `OpenZJS-Win11-25H2` VM. Checkpoint
+`Before-manual-maintenance-20261110` was preserved before testing. Local evidence
+is in `artifacts/maintenance-20261110`, including `cycles.log`,
+`reinstall-0.1.1.json`, `reinstall-0.1.2.json` and `final-verification.json`.
+
+The actual Add Printer Wizard installed the INF on FILE: with sharing disabled.
+Initial preferences were Letter, monochrome and simplex; A4 was selected explicitly.
+Portrait, landscape, blank, multi-page and Letter file captures passed protocol
+validation with the extracted source folder temporarily moved aside. Settings
+removed the queue, and Print Server Properties removed the driver and package.
+The first package-removal attempt reported the driver in use; the dialog succeeded
+after a normal guest restart.
+
+The guide's manual blocks refused cleanup with a dependent queue or registered
+driver, and rejected a signed but wrong-version monitor reference. The cleanup
+block also refused to run after failed preflight. DeleteMonitor returned error
+3008 until another restart. Deleting SYSTEM-owned leftovers required the narrowly
+scoped ownership and access commands. Windows PowerShell reported access denial
+as `RemoveFileSystemItemArgumentError`; the documented fallback handles this as
+well as the unauthorized-access error ID. Complete cleanup and a repeated run
+with both files already absent passed.
+
+Scripted Windows INF installation then exercised the same 0.1.1 package and a
+private 0.1.2 fixture, using complete removal between versions. Installed monitor
+versions were 0.1.1.0 and 0.1.2.0; installed monitor, renderer, GPD, INI and firmware
+hashes matched their respective packages. A4, monochrome and simplex were restored,
+and each version produced a valid three-page capture with an empty queue afterward.
+These reinstall/update cycles used Windows APIs, not a second wizard walkthrough.
+Windows changed the default printer during both cycles; explicit restoration of
+Microsoft Print to PDF passed. Its driver and PORTPROMPT: port remained correct.
+
+Final verification found no Open ZJS queue, registered driver, driver-store package,
+monitor registration or designated monitor/firmware file. The exact tester identity
+`DEAD78F5D4F2A4D8A424726555A6C3D536E445FC` was removed separately from the guest's
+Root and TrustedPublisher stores, and the catalog was no longer trusted. Secure
+Boot remained enabled. The VM was left cleaned rather than reverted to its checkpoint.
+
+Exercised binary ZIP SHA-256 values:
+
+- 0.1.1, `artifacts/mini-b94a4c0a/HPLJ1005x64-0.1.1-mini-self-signed-test.zip`:
+  `9e97318ee1169c5de9398f478098140e372cc99e896a1f8c3303b1ed89fbe5f6`.
+- Private 0.1.2 fixture, under `artifacts/maintenance-20261110/update-fixture/source/artifacts/mini-583985f2`:
+  `48d170f86e0600566323499c8856c5874255bcaa85938231ddecf7f01855152f`.
+
+The first archive contained draft instructions; the corrected guide blocks were
+staged separately for the rehearsal. A subsequent ZIP rebuild includes the verified
+instructions. These VM results apply to the exact archives above and do not claim
+another wizard run against that rebuild. Physical USB, paper handling, the four-sheet
+stop and public signing remain separate release prerequisites.
+
+### November 5, 2026: initial wizard rehearsal
+
 On November 5, Windows 11 Pro 25H2 (26200) with Secure Boot enabled verified
 the correct firmware and all five driver payload files against the signed catalog.
 PnPUtil rejected missing firmware (exit 2, file not found) and an incorrect image

@@ -2,8 +2,8 @@
 
 For the original HP LaserJet 1005 Series on Windows 11 x64. P1005 and M1005
 are different printers. This is a tester package, not a publicly trusted release.
-Wizard installation and five file-output scenarios passed in a Windows 11 Pro
-25H2 x64 VM on November 5, 2026. Physical multi-page recovery remains
+Wizard installation, file output and manual removal/reinstallation passed in a
+Windows 11 Pro 25H2 x64 VM on November 10–11, 2026. Physical multi-page recovery remains
 under investigation. Use a disposable VM for the initial installation rehearsal.
 
 ## Prepare the extracted folder
@@ -35,15 +35,18 @@ required, omitted firmware. No Setup executable or diagnostic utility is needed.
 
 ## Install with Windows
 
-Start with no previous Open ZJS installation. This package shares the existing
-driver and monitor identities; installing it over a Setup-managed installation
-is not an accepted migration or upgrade path.
+For reinstallation or an update, first complete the removal procedure below.
+Retain the currently installed version's extracted package until cleanup is verified.
 
 1. Connect and power on the printer. Windows protected print mode must be off;
    this legacy third-party driver cannot operate in that mode.
 2. Open Printers & scanners, Add device, then the option to add manually.
    Choose a local printer with manual settings and the USB virtual printer port
-   corresponding to the connected HP. Do not guess USB001 if several exist.
+   corresponding to the connected HP. Record the port from an existing working
+   queue when available. With several USB devices, compare the device entries in
+   Device Manager before and after reconnecting this printer. Its hardware ID
+   includes `VID_03F0&PID_1317`. If the port association remains unclear, stop and
+   collect a support report before submitting jobs to a guessed port.
 3. Choose Have Disk, browse to `lj1005.inf`, and select
    **HP LaserJet 1005 Series (Open ZJS)**. Approve administrator prompts.
    If firmware is missing or incorrect, cancel, correct the extracted folder,
@@ -66,22 +69,209 @@ The firmware loads when needed for printing after printer power-on.
 - **Blank sheet or paper stops partway.** Record which sheets actually emerged, the lights and selected USB port. Cancel any remaining job before reloading paper. A four-sheet job repeatedly stopped on sheet two on the earlier physical installation.
 - **Reporting a problem.** Include the Windows build, package digest, application, paper settings and exact error. Keep firmware, spool data and private documents out of reports.
 
-## Removal and limitations
+## Record settings before maintenance
 
-Remove the queue in Windows, then remove the driver/package through Print Server
-Properties (Drivers) once no queue or job uses it. Windows may request a restart.
-Do not run the full Setup uninstaller: it does not own this wizard installation.
-The VM rehearsal confirmed that normal queue/driver removal leaves the language
-monitor registration, monitor DLL and firmware image. Complete cleanup requires
-unregistering the unused monitor through Windows' DeleteMonitor API, then removing
-only the verified leftover files. In the VM, both files were SYSTEM-owned and
-administrators lacked delete access; a restart did not resolve this. Cleanup
-required narrowly granting access to those two files after verifying their hashes.
-This ZIP has no cleanup helper. Do not delete shared system files on a working
-PC or remove the monitor while another driver depends on it. The tested manual
-maintenance procedure is an engineering operation, not an automatic uninstall.
-After all tester packages have been removed, remove the exact tester certificate
-from both local-computer stores if no other installed tester package needs it.
+Keep the extracted package for the **currently installed version**, including its
+catalog and monitor DLL. An update needs the old package for cleanup and the new
+package for installation. Keep your original firmware privately.
+
+In Printer properties and Printing preferences, record the queue name, selected
+port, bidirectional support, paper size, orientation, monochrome/simplex settings
+and custom preferences. Record the current default printer and whether Windows
+manages the default automatically. Screenshots are sufficient for restoring these
+settings manually. Close printing applications and finish or cancel this printer's
+pending jobs before removal.
+
+## Remove the queue and driver package
+
+1. In Settings, Printers & scanners, select the Open ZJS queue and choose **Remove**.
+   Repeat for any other queue using this driver.
+2. Open **Print server properties**, choose **Drivers**, select
+   **HP LaserJet 1005 Series (Open ZJS)**, and click **Remove**. Choose
+   **Remove driver and driver package** and approve administrator prompts.
+   Confirm the named Open ZJS package, then choose **Delete** on the file-list
+   page. Read the final result before closing the dialog.
+   An administrator can also open this dialog with the command below.
+
+```powershell
+rundll32.exe printui.dll,PrintUIEntry /s /t2
+```
+
+3. If Windows reports that the driver is in use, close applications and printer
+   dialogs, restart Windows, and repeat package removal.
+4. Continue below to remove the monitor and firmware left behind by Windows.
+
+## Clean up the remaining monitor and firmware
+
+Open **64-bit Windows PowerShell as administrator**. Set `$package` below to the
+extracted folder for the version you just removed. Run the entire first block,
+then keep that window open for the second block. Stop on an error and retain the
+console output. The original firmware can be absent from the extracted folder
+during cleanup.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$openZjsPreflight = $false
+$package = (Resolve-Path -LiteralPath 'C:\path\to\HPLJ1005-mini').Path
+$monitorName = 'HP LaserJet 1005 Firmware Monitor (development)'
+$monitorKey = "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\$monitorName"
+$firmwareHash = '638B9AD4A2CF6888208926EF7C7DE073DA8BA4CDED25D31000A585C4526A9CA1'
+if (![Environment]::Is64BitProcess) { throw 'Open 64-bit Windows PowerShell.' }
+$principal = New-Object Security.Principal.WindowsPrincipal(
+    [Security.Principal.WindowsIdentity]::GetCurrent())
+if (!$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    throw 'Open Windows PowerShell as administrator.'
+}
+function Assert-OpenZjsUnused {
+    if (@(Get-Printer | Where-Object DriverName -eq 'HP LaserJet 1005 Series (Open ZJS)').Count) {
+        throw 'Remove all queues using this driver first.'
+    }
+    $drivers = Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Environments' -Recurse |
+        ForEach-Object { Get-ItemProperty -LiteralPath $_.PSPath }
+    foreach ($driver in $drivers) {
+        if ($driver.Monitor -eq $monitorName -or
+            $driver.'Language Monitor' -eq $monitorName -or
+            $driver.PSChildName -eq 'HP LaserJet 1005 Series (Open ZJS)' -or
+            [string]$driver.'Configuration File' -match 'lj1005' -or
+            [string]$driver.'Dependent Files' -match 'lj1005') {
+            throw 'A registered driver still references Open ZJS. Remove its package first.'
+        }
+    }
+    $packages = @(Get-WindowsDriver -Online | Where-Object ProviderName -eq 'Open ZJS Project')
+    if ($packages.Count) {
+        $packages | Format-Table Driver,OriginalFileName,ProviderName
+        throw 'An Open ZJS driver-store package remains. Finish Windows package removal first.'
+    }
+}
+Assert-OpenZjsUnused
+$catalog = Join-Path $package 'lj1005.cat'
+$reference = Join-Path $package 'lj1005monitor.dll'
+$catSignature = Get-AuthenticodeSignature -LiteralPath $catalog
+$dllSignature = Get-AuthenticodeSignature -LiteralPath $reference
+if ($catSignature.Status -ne 'Valid' -or $dllSignature.Status -ne 'Valid' -or
+    $catSignature.SignerCertificate.Thumbprint -ne $dllSignature.SignerCertificate.Thumbprint) {
+    throw 'Use the intact, trusted package for the installed version.'
+}
+$files = @(
+    @{Path=(Join-Path $env:windir 'System32\lj1005monitor.dll');
+      Hash=(Get-FileHash -LiteralPath $reference -Algorithm SHA256).Hash},
+    @{Path=(Join-Path $env:windir 'System32\lj1005-firmware.img'); Hash=$firmwareHash}
+)
+foreach ($file in $files) {
+    if (Test-Path -LiteralPath $file.Path) {
+        $item = Get-Item -LiteralPath $file.Path -Force
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            throw 'Unexpected redirected file. Stop for review.'
+        }
+        if ((Get-FileHash -LiteralPath $file.Path -Algorithm SHA256).Hash -ne $file.Hash) {
+            throw "File identity differs from the retained package: $($file.Path)"
+        }
+    }
+}
+if (Test-Path -LiteralPath $monitorKey) {
+    if ((Get-ItemProperty -LiteralPath $monitorKey).Driver -ne 'lj1005monitor.dll') {
+        throw 'Unexpected monitor registration. Stop for review.'
+    }
+}
+$openZjsPreflight = $true
+'Preflight passed. Both designated files have been checked.'
+```
+
+After preflight succeeds, run the next block in the same window. It unregisters
+the monitor and deletes the two verified files. If Windows returns error 3008,
+restart Windows and repeat both blocks. This can require another restart even
+if you already restarted to remove the driver package. Keep printing applications closed and
+avoid concurrent printer installation during cleanup.
+
+```powershell
+if ($openZjsPreflight -ne $true) { throw 'Run the complete preflight block successfully first.' }
+Assert-OpenZjsUnused
+if (Test-Path -LiteralPath $monitorKey) {
+    if (!('OpenZjsManualRemoval' -as [type])) {
+        Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public static class OpenZjsManualRemoval {
+    [DllImport("winspool.drv", CharSet=CharSet.Unicode, SetLastError=true)]
+    public static extern bool DeleteMonitor(string server, string environment, string name);
+}
+'@
+    }
+    if (![OpenZjsManualRemoval]::DeleteMonitor($null, 'Windows x64', $monitorName)) {
+        $code = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw "Monitor removal failed (Windows error $code). Restart and repeat if it is in use."
+    }
+}
+foreach ($file in $files) {
+    if (!(Test-Path -LiteralPath $file.Path)) { continue }
+    Assert-OpenZjsUnused
+    if (Test-Path -LiteralPath $monitorKey) { throw 'Monitor is registered again.' }
+    $item = Get-Item -LiteralPath $file.Path -Force
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+        (Get-FileHash -LiteralPath $file.Path -Algorithm SHA256).Hash -ne $file.Hash) {
+        throw 'File changed after preflight. Stop for review.'
+    }
+    try {
+        Remove-Item -LiteralPath $file.Path -Force -ErrorAction Stop
+    } catch {
+        # Windows PowerShell also reports this protected-file denial as ArgumentError.
+        $errorId = $_.FullyQualifiedErrorId.Split(',')[0]
+        if ($errorId -notin @('RemoveFileSystemItemUnAuthorizedAccess', 'RemoveFileSystemItemArgumentError')) {
+            throw
+        }
+        # Windows may leave these exact files owned by SYSTEM without admin delete access.
+        $acl = Get-Acl -LiteralPath $file.Path
+        $aclBackup = Join-Path $env:TEMP ([guid]::NewGuid().ToString() + '-openzjs-acl.xml')
+        $acl | Export-Clixml -LiteralPath $aclBackup
+        try {
+            & takeown.exe /f $file.Path /a
+            if ($LASTEXITCODE) { throw 'Ownership change failed.' }
+            & icacls.exe $file.Path /grant '*S-1-5-32-544:F'
+            if ($LASTEXITCODE) { throw 'Permission change failed.' }
+            Remove-Item -LiteralPath $file.Path -Force -ErrorAction Stop
+        } catch {
+            $failure = $_
+            try { Set-Acl -LiteralPath $file.Path -AclObject $acl } catch {
+                Write-Warning "ACL restoration needs administrator review. Saved ACL: $aclBackup"
+            }
+            throw $failure
+        }
+    }
+}
+Assert-OpenZjsUnused
+if ((Test-Path -LiteralPath $monitorKey) -or
+    @($files | Where-Object { Test-Path -LiteralPath $_.Path }).Count) {
+    throw 'Cleanup is incomplete.'
+}
+'Queue, driver package, monitor registration and designated files are absent.'
+```
+
+Both blocks can be repeated after partial cleanup. A hash mismatch requires the
+matching old package or a reviewed diagnosis. Keep the files and report the error.
+Other failures can require a restart. Never delete the spooler directory or remove
+unrelated packages to resolve this printer's problem.
+
+## Reinstall or update
+
+After complete removal, extract the desired package, supply the firmware and
+follow **Install with Windows**. Select the recorded port and restore the queue
+name, printing preferences and bidirectional support. Restore the recorded default
+printer and automatic-default setting in Printers & scanners. Windows can change
+the default during installation or printing, so check it again after the test.
+Reopen applications and test one page with paper
+ready. Keep the old package until the replacement works.
+
+## Remove tester certificate trust
+
+For permanent removal, first verify that all packages using this tester identity
+have been removed. For immediate reinstallation using the same signing identity,
+retain trust until testing is finished.
+
+Open `certlm.msc` as administrator. In **Trusted Publishers > Certificates** and
+**Trusted Root Certification Authorities > Certificates**, inspect the certificate
+details and match its full SHA-1 thumbprint to `signing.thumbprintSha1` in the
+retained package's `BUILD-INFO.json`. Remove only that certificate from each store.
+Match the complete thumbprint and confirm its absence in both stores afterward.
 
 ## Build locally
 

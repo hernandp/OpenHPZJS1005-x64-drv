@@ -2,7 +2,7 @@
 
 Target Windows 11 Pro 25H2 x64 (build family 26200), one original LaserJet 1005 on USB, A4 monochrome simplex at 600 dpi. Record the full build, revision, package SHA-256 and signer for each test. Build 26300 has offline evidence only. Other editions, ARM64, parallel ports, shared printers and multiple devices are outside the initial target. Office is deferred.
 
-Use a clean physical target with an independently verified private recovery backup. Migration from earlier Setup or development installations requires a separate procedure. Earlier USB and application results guide these tests. The rebuilt wizard package still needs its own physical acceptance, especially the repeatable four-sheet stop. [Earlier results](TEST_STATUS.md)
+Use a clean physical target with an independently verified private recovery backup. Follow the documented complete removal procedure before reinstalling or updating. Earlier USB and application results guide these tests. The rebuilt wizard package still needs its own physical acceptance, especially the repeatable four-sheet stop. [Earlier results](TEST_STATUS.md)
 
 ## Physical printing matrix
 
