@@ -1,6 +1,6 @@
-# Benteveo
+# Benteveo Project
 
-HP Laserjet 1005 driver for Windows 11 x64.
+## HP Laserjet 1005 driver for Windows 11 x64.
 
 <p align="center">
   <img src="docs/benteveo-and-hp.png" alt="A benteveo bird perched on an HP LaserJet 1005 printer" width="720">
