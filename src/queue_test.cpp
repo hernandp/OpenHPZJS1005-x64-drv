@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// See LICENSE in the repository root for license terms.
 #include <windows.h>
 #include <winspool.h>
 #include <iostream>
@@ -60,7 +61,7 @@ int wmain(int argc, wchar_t** argv) {
                   << GetDeviceCaps(dc, LOGPIXELSX) << " dpi\n";
         DOCINFOW doc{};
         doc.cbSize = sizeof(doc);
-        doc.lpszDocName = L"LaserJet 1005 GDI integration test";
+        doc.lpszDocName = L"Benteveo GDI integration test";
         doc.lpszOutput = std::wstring(argv[2]) == L"-" ? nullptr : argv[2];
         if (StartDocW(dc, &doc) <= 0)
             throw std::runtime_error("StartDoc failed");
@@ -108,7 +109,7 @@ int wmain(int argc, wchar_t** argv) {
                     CreateFontW(-100, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
                                 CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"Arial");
                 auto previous = SelectObject(dc, font);
-                std::wstring text = L"HP LaserJet 1005 - Windows x64 C++ driver";
+                std::wstring text = L"Benteveo - HP Laserjet 1005 driver for Windows 11 x64";
                 if (bold && multi)
                     text += L" - Page " + std::to_wstring(page + 1) + L" of 3";
                 TextOutW(dc, 200, 300, text.c_str(), static_cast<int>(text.size()));

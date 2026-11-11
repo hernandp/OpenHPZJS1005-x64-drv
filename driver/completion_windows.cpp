@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// See LICENSE in the repository root for license terms.
 #include "completion_backend.hpp"
 #include "lj1005/usb.hpp"
 #include <array>

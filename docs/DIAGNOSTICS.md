@@ -12,19 +12,17 @@ Windows PowerShell 5.1 or PowerShell 7 in a 64-bit process:
 Use a new output filename. Existing files are never overwritten. The script does
 not request elevation, change execution policy, send USB commands, print, cancel
 jobs, start tracing, or modify services, printers or certificate stores. If local
-policy blocks scripts, use the manual information in [the user guide](USER_GUIDE.md)
+policy blocks scripts, use the manual information in [the installation guide](MINI_INSTALL.md)
 or ask the administrator. Some reads, including Secure Boot, can require elevated
 access; unavailable values remain null and collection errors contain only a
 section identifier and HRESULT, not raw exception messages.
 
-The report explicitly selects OS build/revision, spooler/security state, owned
-installation/update phase, anonymized Open ZJS queue status and job counts,
+The report explicitly selects OS build/revision, spooler/security state, anonymized Benteveo queue status and job counts,
 paper/duplex codes, and known private-file hashes/versions. It excludes machine
 and user names, queue names, serial numbers, full paths, job names/owners,
 documents, spool captures, firmware bytes, registry exports and trace contents.
 The firmware hash identifies the installed image without copying it. False
-Secure Boot is different from null/unavailable. A null installation state may
-mean a development installation; inspect file/queue evidence and collection errors.
+Secure Boot is different from null/unavailable. Report schema 2 lists the live driver and firmware files.
 
 Review the JSON before sharing it. Private migration backups must never be
 attached to an issue. The collector does not prove a package is trusted, a job

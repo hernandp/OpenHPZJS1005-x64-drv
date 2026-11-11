@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// See LICENSE in the repository root for license terms.
 #include "lj1005/pjl.hpp"
 #include <algorithm>
 #include <charconv>

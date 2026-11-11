@@ -1,4 +1,6 @@
-param([ValidateSet('Debug','Release')][string]$Configuration = 'Release', [switch]$BuildSetupFaultFixture)
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
+param([ValidateSet('Debug','Release')][string]$Configuration = 'Release')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -30,7 +32,4 @@ function Invoke-BuildTool([string]$Tool, [string[]]$ToolArguments) {
 $generator = if ($vs -match '\\18\\') { 'Visual Studio 18 2026' } else { 'Visual Studio 17 2022' }
 Invoke-BuildTool $cmake @('-S', '.', '-B', 'build', '-G', $generator, '-A', 'x64')
 Invoke-BuildTool $cmake @('--build', 'build', '--config', $Configuration, '--parallel')
-if ($BuildSetupFaultFixture) {
-    Invoke-BuildTool $cmake @('--build', 'build', '--config', $Configuration, '--target', 'lj1005setup_fault')
-}
 Invoke-BuildTool $ctest @('--test-dir', 'build', '-C', $Configuration, '--output-on-failure')

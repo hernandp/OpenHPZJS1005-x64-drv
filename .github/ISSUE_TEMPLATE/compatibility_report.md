@@ -11,8 +11,8 @@ assignees: ''
 - Result: passed / failed / not tested / blocked
 - Candidate version, commit and archive SHA-256:
 - Windows edition, full build and x64 architecture:
-- Production signature or isolated lab certificate:
-- Printer model and USB connection:
+- Publicly trusted signature or dedicated tester certificate:
+- Have Disk wizard or scripted INF install; FILE: or physical USB connection:
 - Application version and x86/x64:
 - Paper, orientation, copies and expected page count:
 - Actions and exact messages:

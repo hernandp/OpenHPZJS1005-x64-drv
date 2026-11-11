@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 #requires -Version 5.1
 # Read-only support inventory. Never serialize raw printer, job or registry objects.
 [CmdletBinding()]
@@ -15,7 +17,7 @@ function ConvertTo-ReportToken($Value, [string]$Pattern) {
 function New-OpenZjsSupportReport($Data) {
     # An explicit projection keeps future properties, paths and error messages private.
     [ordered]@{
-        schemaVersion = 1
+        schemaVersion = 2
         generatedUtc = [DateTime]::UtcNow.ToString('o')
         os = [ordered]@{
             build = ConvertTo-ReportNumber $Data.os.CurrentBuildNumber
@@ -27,10 +29,6 @@ function New-OpenZjsSupportReport($Data) {
         spooler = ConvertTo-ReportToken $Data.spooler '^(Running|Stopped|Paused|StartPending|StopPending|ContinuePending|PausePending)$'
         secureBoot = $(if ($Data.secureBoot -is [bool]) { $Data.secureBoot } else { $null })
         protectedPrintMode = $(if ($Data.protectedPrintMode -is [bool]) { $Data.protectedPrintMode } else { $null })
-        installation = [ordered]@{
-            status = ConvertTo-ReportToken $Data.installation.Status '^(Installing|Complete|Removing|Repairing|NeedsRepair|NeedsRemoval|RebootPending)$'
-            updatePhase = ConvertTo-ReportToken $Data.update.Phase '^(Preparing|Available|UpgradeRemoving|UpgradeInstalling|UpgradeRestoringQueue|RollbackRemoving|RollbackInstalling|RollbackRestoringQueue|RollbackComplete)$'
-        }
         queues = @($Data.queues | ForEach-Object {
             [ordered]@{
                 # Ordinals identify queues only within this report; custom names are excluded.
@@ -45,8 +43,8 @@ function New-OpenZjsSupportReport($Data) {
         })
         files = @($Data.files | ForEach-Object {
             [ordered]@{
-                role = ConvertTo-ReportToken $_.role '^(live|cache|firmware)$'
-                name = ConvertTo-ReportToken $_.name '^(Setup\.exe|lj1005\.(gpd|ini|inf|cat)|lj1005(render|monitor)\.dll|lj1005-firmware\.img)$'
+                role = ConvertTo-ReportToken $_.role '^(live|firmware)$'
+                name = ConvertTo-ReportToken $_.name '^(lj1005\.(gpd|ini)|lj1005(render|monitor)\.dll|lj1005-firmware\.img)$'
                 present = [bool]$_.present
                 bytes = ConvertTo-ReportNumber $_.bytes
                 sha256 = ConvertTo-ReportToken $_.sha256 '^[A-Fa-f0-9]{64}$'
@@ -55,14 +53,14 @@ function New-OpenZjsSupportReport($Data) {
         })
         collectionErrors = @($Data.errors | ForEach-Object {
             [ordered]@{
-                section = ConvertTo-ReportToken $_.section '^(os|spooler|secureBoot|protectedPrintMode|installation|queues|files)$'
+                section = ConvertTo-ReportToken $_.section '^(os|spooler|secureBoot|protectedPrintMode|queues|files)$'
                 hresult = ConvertTo-ReportToken $_.hresult '^0x[A-Fa-f0-9]{8}$'
             }
         })
     }
 }
 function Get-OpenZjsSupportData {
-    $data = @{os=@{};is64Bit=[Environment]::Is64BitOperatingSystem;spooler=$null;secureBoot=$null;protectedPrintMode=$null;installation=@{};update=@{};queues=@();files=@();errors=@()}
+    $data = @{os=@{};is64Bit=[Environment]::Is64BitOperatingSystem;spooler=$null;secureBoot=$null;protectedPrintMode=$null;queues=@();files=@();errors=@()}
     function Add-CollectionError([string]$Section, $Failure) {
         $data.errors += @{section=$Section;hresult=('0x{0:X8}' -f $Failure.Exception.HResult)}
     }
@@ -78,14 +76,8 @@ function Get-OpenZjsSupportData {
         }
     } catch { $data.protectedPrintMode = $null; Add-CollectionError 'protectedPrintMode' $_ }
     try {
-        $key = 'HKLM:\SOFTWARE\OpenZJS\LaserJet1005'
-        if (Test-Path $key -ErrorAction Stop) { $data.installation = Get-ItemProperty $key -ErrorAction Stop }
-        $key = 'HKLM:\SOFTWARE\OpenZJS\LaserJet1005Update'
-        if (Test-Path $key -ErrorAction Stop) { $data.update = Get-ItemProperty $key -ErrorAction Stop }
-    } catch { Add-CollectionError 'installation' $_ }
-    try {
         $ordinal = 0
-        foreach ($queue in @(Get-Printer -ErrorAction Stop | Where-Object DriverName -EQ 'HP LaserJet 1005 Series (Open ZJS)')) {
+        foreach ($queue in @(Get-Printer -ErrorAction Stop | Where-Object DriverName -EQ 'HP Laserjet 1005 (Benteveo Driver)')) {
             $ordinal++
             $item = @{ordinal=$ordinal;portKind='other';statusCode=[int]$queue.PrinterStatus;jobCount=$null;paperSizeCode=$null;duplexCode=$null;color=$null}
             if ($queue.PortName -match '^USB\d+$') { $item.portKind = 'USB' }
@@ -102,14 +94,11 @@ function Get-OpenZjsSupportData {
         }
     } catch { Add-CollectionError 'queues' $_ }
     $spool = Join-Path $env:windir 'System32\spool\drivers\x64\3'
-    $cache = Join-Path $env:ProgramFiles 'OpenZJS LaserJet 1005'
     $files = @(
         @{role='firmware';path=(Join-Path $env:windir 'System32\lj1005-firmware.img')},
-        @{role='live';path=(Join-Path $env:windir 'System32\lj1005monitor.dll')},
-        @{role='cache';path=(Join-Path $cache 'Setup.exe')}
+        @{role='live';path=(Join-Path $env:windir 'System32\lj1005monitor.dll')}
     )
     foreach ($name in @('lj1005.gpd','lj1005.ini','lj1005render.dll')) { $files += @{role='live';path=(Join-Path $spool $name)} }
-    foreach ($name in @('lj1005.gpd','lj1005.ini','lj1005render.dll','lj1005monitor.dll','lj1005.inf','lj1005.cat')) { $files += @{role='cache';path=(Join-Path $cache ('driver\' + $name))} }
     foreach ($file in $files) {
         $item = @{role=$file.role;name=[IO.Path]::GetFileName($file.path);present=$false;bytes=$null;sha256=$null;fileVersion=$null}
         try {
@@ -118,7 +107,7 @@ function Get-OpenZjsSupportData {
                 $item.present = $true
                 $item.bytes = $info.Length
                 $item.sha256 = (Get-FileHash -LiteralPath $file.path -Algorithm SHA256 -ErrorAction Stop).Hash
-                if ($info.Extension -in @('.exe','.dll')) { $item.fileVersion = $info.VersionInfo.FileVersion }
+                if ($info.Extension -eq '.dll') { $item.fileVersion = $info.VersionInfo.FileVersion }
             }
         } catch { Add-CollectionError 'files' $_ }
         $data.files += $item

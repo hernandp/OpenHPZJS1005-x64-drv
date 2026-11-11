@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// See LICENSE in the repository root for license terms.
 // Protocol behavior adapted from OpenPrinting/foo2zjs; see THIRD_PARTY.md.
 #include "lj1005/protocol.hpp"
 extern "C" {

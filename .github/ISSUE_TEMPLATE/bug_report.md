@@ -1,6 +1,6 @@
 ---
 name: Installation or printing problem
-about: Report a reproducible installer, printing or recovery problem
+about: Report a reproducible Have Disk installation, printing or recovery problem
 title: ''
 labels: ''
 assignees: ''
@@ -11,11 +11,12 @@ assignees: ''
 - Windows edition and full build (Settings > System > About):
 - Printer model (original 1005, not P1005/M1005) and connection:
 - Application version and 32-bit/64-bit, if applicable:
-- Fresh packaged install, owned upgrade, or development installation:
+- Fresh Have Disk install, reinstallation or update (include the previous package version):
 
 **Steps and result**
 1.
 
+- Selected model/port and firmware hash check (for installation issues):
 - Expected result:
 - Actual result and exact error code:
 - Expected/actual printed pages, copies, paper size and orientation:

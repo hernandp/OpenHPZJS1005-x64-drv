@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 BasedOnStyle: Microsoft
 Language: Cpp
 Standard: c++20

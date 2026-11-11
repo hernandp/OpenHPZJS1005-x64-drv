@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 if(NOT DEFINED CLI OR NOT DEFINED OUTPUT_DIR)
   message(FATAL_ERROR "CLI and OUTPUT_DIR are required")
 endif()

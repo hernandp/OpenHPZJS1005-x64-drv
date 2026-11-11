@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 """Verify queue_test captures offline. Requires Pillow and the optional reference build."""
 from io import BytesIO
 from pathlib import Path

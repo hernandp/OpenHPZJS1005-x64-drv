@@ -1,0 +1,290 @@
+# Benteveo Have Disk package — self-signed testing build
+
+For the original HP LaserJet 1005 Series on Windows 11 x64. P1005 and M1005
+are different printers. This is a tester package, not a publicly trusted release.
+The earlier Open ZJS package passed wizard installation, file output and manual
+removal/reinstallation in a Windows 11 Pro 25H2 x64 VM on November 10–11, 2026.
+The Benteveo-branded package awaits its own VM installation acceptance. Physical multi-page recovery remains
+under investigation. Use a disposable VM for the initial installation rehearsal.
+
+## Prepare the extracted folder
+
+1. Extract the ZIP completely. Keep all files together.
+2. Obtain the original `sihp1005.img` from your own HP software package and copy
+   it beside `lj1005.inf`. Keep that exact filename; do not modify the INF or CAT.
+   Firmware is not included in this download and is not covered by our GPL license.
+3. Check that the image is 116892 bytes and its SHA-256 is:
+   `638b9ad4a2cf6888208926ef7c7de073da8ba4cded25d31000a585c4526a9ca1`.
+   PowerShell: `Get-FileHash -Algorithm SHA256 .\sihp1005.img`.
+4. For this self-signed tester build, explicitly trust `TEST-CERTIFICATE.cer`
+   in the local computer Trusted Root Certification Authorities and Trusted
+   Publishers stores, after verifying its identity against the separately supplied
+   release identity. The subject must be `OpenZJS Technical Tester Signing`;
+   this retained signing identity predates the Benteveo branding.
+   Compare the thumbprint and expiry in `BUILD-INFO.json`, not just the name.
+   Certificate installation requires administrator permission. Never install
+   a private key or disable signature enforcement. No certificate is imported
+   automatically. This build has no timestamp; do not assume validity after expiry.
+
+   Open `certlm.msc` as administrator. In each of the two stores above,
+   right-click **Certificates**, choose **All Tasks > Import**, select the
+   verified CER and confirm the destination store. Save the thumbprint for cleanup.
+
+The catalog was generated with this exact firmware image present. Supplying
+the matching file completes the package without changing its signature.
+The ZIP's SHA256-MANIFEST lists distributed files only; BUILD-INFO records the
+required, omitted firmware. No Setup executable or diagnostic utility is needed.
+
+## Install with Windows
+
+For reinstallation or an update, first complete the removal procedure below.
+Retain the currently installed version's extracted package until cleanup is verified.
+
+1. Connect and power on the printer. Windows protected print mode must be off;
+   this legacy third-party driver cannot operate in that mode.
+2. Open Printers & scanners, Add device, then the option to add manually.
+   Choose a local printer with manual settings and the USB virtual printer port
+   corresponding to the connected HP. Record the port from an existing working
+   queue when available. With several USB devices, compare the device entries in
+   Device Manager before and after reconnecting this printer. Its hardware ID
+   includes `VID_03F0&PID_1317`. If the port association remains unclear, stop and
+   collect a support report before submitting jobs to a guessed port.
+3. Choose Have Disk, browse to `lj1005.inf`, and select
+   **HP Laserjet 1005 (Benteveo Driver)**. Approve administrator prompts.
+   If firmware is missing or incorrect, cancel, correct the extracted folder,
+   and retry; do not skip files or accept an altered package.
+4. In Printer properties, Ports, confirm the correct USB port and enable
+   bidirectional support. In Printing preferences, confirm A4, portrait,
+   monochrome and simplex. Windows selected Letter initially in the VM rehearsal,
+   despite the GPD's A4 default. Keep your preferred default printer selected.
+5. Print one test page only when the physical printer and paper are ready.
+
+Windows installs the image as `%SystemRoot%\System32\lj1005-firmware.img`.
+The monitor uses this installed copy, so the extracted folder can be moved
+after successful installation. Retain the original ZIP for future reinstalls.
+The firmware loads when needed for printing after printer power-on.
+
+## Troubleshooting
+
+- **Missing file or catalog hash error.** Cancel the wizard, extract a fresh ZIP and check the name, size and SHA-256 of the image before retrying.
+- **Signature rejected.** Check the catalog signer, expiry and both local-computer stores against the independently supplied tester identity. Stop if the identity differs.
+- **Blank sheet or paper stops partway.** Record which sheets actually emerged, the lights and selected USB port. Cancel any remaining job before reloading paper. A four-sheet job repeatedly stopped on sheet two on the earlier physical installation.
+- **Reporting a problem.** Include the Windows build, package digest, application, paper settings and exact error. Keep firmware, spool data and private documents out of reports.
+
+## Record settings before maintenance
+
+Keep the extracted package for the **currently installed version**, including its
+catalog and monitor DLL. An update needs the old package for cleanup and the new
+package for installation. Keep your original firmware privately.
+
+In Printer properties and Printing preferences, record the queue name, selected
+port, bidirectional support, paper size, orientation, monochrome/simplex settings
+and custom preferences. Record the current default printer and whether Windows
+manages the default automatically. Screenshots are sufficient for restoring these
+settings manually. Close printing applications and finish or cancel this printer's
+pending jobs before removal.
+
+## Remove the queue and driver package
+
+1. In Settings, Printers & scanners, select the Benteveo queue and choose **Remove**.
+   Repeat for any other queue using this driver.
+2. Open **Print server properties**, choose **Drivers**, select
+   **HP Laserjet 1005 (Benteveo Driver)**, and click **Remove**. Choose
+   **Remove driver and driver package** and approve administrator prompts.
+   Confirm the named Benteveo package, then choose **Delete** on the file-list
+   page. Read the final result before closing the dialog.
+   An administrator can also open this dialog with the command below.
+
+```powershell
+rundll32.exe printui.dll,PrintUIEntry /s /t2
+```
+
+3. If Windows reports that the driver is in use, close applications and printer
+   dialogs, restart Windows, and repeat package removal.
+4. Continue below to remove the monitor and firmware left behind by Windows.
+
+## Clean up the remaining monitor and firmware
+
+Open **64-bit Windows PowerShell as administrator**. Set `$package` below to the
+extracted folder for the version you just removed. Run the entire first block,
+then keep that window open for the second block. Stop on an error and retain the
+console output. The original firmware can be absent from the extracted folder
+during cleanup.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$openZjsPreflight = $false
+$package = (Resolve-Path -LiteralPath 'C:\path\to\HPLJ1005-mini').Path
+$monitorName = 'HP LaserJet 1005 Firmware Monitor (development)'
+$monitorKey = "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\$monitorName"
+$firmwareHash = '638B9AD4A2CF6888208926EF7C7DE073DA8BA4CDED25D31000A585C4526A9CA1'
+if (![Environment]::Is64BitProcess) { throw 'Open 64-bit Windows PowerShell.' }
+$principal = New-Object Security.Principal.WindowsPrincipal(
+    [Security.Principal.WindowsIdentity]::GetCurrent())
+if (!$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    throw 'Open Windows PowerShell as administrator.'
+}
+function Assert-OpenZjsUnused {
+    if (@(Get-Printer | Where-Object DriverName -eq 'HP Laserjet 1005 (Benteveo Driver)').Count) {
+        throw 'Remove all queues using this driver first.'
+    }
+    $drivers = Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Environments' -Recurse |
+        ForEach-Object { Get-ItemProperty -LiteralPath $_.PSPath }
+    foreach ($driver in $drivers) {
+        if ($driver.Monitor -eq $monitorName -or
+            $driver.'Language Monitor' -eq $monitorName -or
+            $driver.PSChildName -eq 'HP Laserjet 1005 (Benteveo Driver)' -or
+            [string]$driver.'Configuration File' -match 'lj1005' -or
+            [string]$driver.'Dependent Files' -match 'lj1005') {
+            throw 'A registered driver still references Benteveo. Remove its package first.'
+        }
+    }
+    $packages = @(Get-WindowsDriver -Online | Where-Object ProviderName -eq 'Benteveo Project')
+    if ($packages.Count) {
+        $packages | Format-Table Driver,OriginalFileName,ProviderName
+        throw 'A Benteveo driver-store package remains. Finish Windows package removal first.'
+    }
+}
+Assert-OpenZjsUnused
+$catalog = Join-Path $package 'lj1005.cat'
+$reference = Join-Path $package 'lj1005monitor.dll'
+$catSignature = Get-AuthenticodeSignature -LiteralPath $catalog
+$dllSignature = Get-AuthenticodeSignature -LiteralPath $reference
+if ($catSignature.Status -ne 'Valid' -or $dllSignature.Status -ne 'Valid' -or
+    $catSignature.SignerCertificate.Thumbprint -ne $dllSignature.SignerCertificate.Thumbprint) {
+    throw 'Use the intact, trusted package for the installed version.'
+}
+$files = @(
+    @{Path=(Join-Path $env:windir 'System32\lj1005monitor.dll');
+      Hash=(Get-FileHash -LiteralPath $reference -Algorithm SHA256).Hash},
+    @{Path=(Join-Path $env:windir 'System32\lj1005-firmware.img'); Hash=$firmwareHash}
+)
+foreach ($file in $files) {
+    if (Test-Path -LiteralPath $file.Path) {
+        $item = Get-Item -LiteralPath $file.Path -Force
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            throw 'Unexpected redirected file. Stop for review.'
+        }
+        if ((Get-FileHash -LiteralPath $file.Path -Algorithm SHA256).Hash -ne $file.Hash) {
+            throw "File identity differs from the retained package: $($file.Path)"
+        }
+    }
+}
+if (Test-Path -LiteralPath $monitorKey) {
+    if ((Get-ItemProperty -LiteralPath $monitorKey).Driver -ne 'lj1005monitor.dll') {
+        throw 'Unexpected monitor registration. Stop for review.'
+    }
+}
+$openZjsPreflight = $true
+'Preflight passed. Both designated files have been checked.'
+```
+
+After preflight succeeds, run the next block in the same window. It unregisters
+the monitor and deletes the two verified files. If Windows returns error 3008,
+restart Windows and repeat both blocks. This can require another restart even
+if you already restarted to remove the driver package. Keep printing applications closed and
+avoid concurrent printer installation during cleanup.
+
+```powershell
+if ($openZjsPreflight -ne $true) { throw 'Run the complete preflight block successfully first.' }
+Assert-OpenZjsUnused
+if (Test-Path -LiteralPath $monitorKey) {
+    if (!('OpenZjsManualRemoval' -as [type])) {
+        Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public static class OpenZjsManualRemoval {
+    [DllImport("winspool.drv", CharSet=CharSet.Unicode, SetLastError=true)]
+    public static extern bool DeleteMonitor(string server, string environment, string name);
+}
+'@
+    }
+    if (![OpenZjsManualRemoval]::DeleteMonitor($null, 'Windows x64', $monitorName)) {
+        $code = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw "Monitor removal failed (Windows error $code). Restart and repeat if it is in use."
+    }
+}
+foreach ($file in $files) {
+    if (!(Test-Path -LiteralPath $file.Path)) { continue }
+    Assert-OpenZjsUnused
+    if (Test-Path -LiteralPath $monitorKey) { throw 'Monitor is registered again.' }
+    $item = Get-Item -LiteralPath $file.Path -Force
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+        (Get-FileHash -LiteralPath $file.Path -Algorithm SHA256).Hash -ne $file.Hash) {
+        throw 'File changed after preflight. Stop for review.'
+    }
+    try {
+        Remove-Item -LiteralPath $file.Path -Force -ErrorAction Stop
+    } catch {
+        # Windows PowerShell also reports this protected-file denial as ArgumentError.
+        $errorId = $_.FullyQualifiedErrorId.Split(',')[0]
+        if ($errorId -notin @('RemoveFileSystemItemUnAuthorizedAccess', 'RemoveFileSystemItemArgumentError')) {
+            throw
+        }
+        # Windows may leave these exact files owned by SYSTEM without admin delete access.
+        $acl = Get-Acl -LiteralPath $file.Path
+        $aclBackup = Join-Path $env:TEMP ([guid]::NewGuid().ToString() + '-openzjs-acl.xml')
+        $acl | Export-Clixml -LiteralPath $aclBackup
+        try {
+            & takeown.exe /f $file.Path /a
+            if ($LASTEXITCODE) { throw 'Ownership change failed.' }
+            & icacls.exe $file.Path /grant '*S-1-5-32-544:F'
+            if ($LASTEXITCODE) { throw 'Permission change failed.' }
+            Remove-Item -LiteralPath $file.Path -Force -ErrorAction Stop
+        } catch {
+            $failure = $_
+            try { Set-Acl -LiteralPath $file.Path -AclObject $acl } catch {
+                Write-Warning "ACL restoration needs administrator review. Saved ACL: $aclBackup"
+            }
+            throw $failure
+        }
+    }
+}
+Assert-OpenZjsUnused
+if ((Test-Path -LiteralPath $monitorKey) -or
+    @($files | Where-Object { Test-Path -LiteralPath $_.Path }).Count) {
+    throw 'Cleanup is incomplete.'
+}
+'Queue, driver package, monitor registration and designated files are absent.'
+```
+
+Both blocks can be repeated after partial cleanup. A hash mismatch requires the
+matching old package or a reviewed diagnosis. Keep the files and report the error.
+Other failures can require a restart. Never delete the spooler directory or remove
+unrelated packages to resolve this printer's problem.
+
+## Reinstall or update
+
+After complete removal, extract the desired package, supply the firmware and
+follow **Install with Windows**. Select the recorded port and restore the queue
+name, printing preferences and bidirectional support. Restore the recorded default
+printer and automatic-default setting in Printers & scanners. Windows can change
+the default during installation or printing, so check it again after the test.
+Reopen applications and test one page with paper
+ready. Keep the old package until the replacement works.
+
+## Remove tester certificate trust
+
+For permanent removal, first verify that all packages using this tester identity
+have been removed. For immediate reinstallation using the same signing identity,
+retain trust until testing is finished.
+
+Open `certlm.msc` as administrator. In **Trusted Publishers > Certificates** and
+**Trusted Root Certification Authorities > Certificates**, inspect the certificate
+details and match its full SHA-1 thumbprint to `signing.thumbprintSha1` in the
+retained package's `BUILD-INFO.json`. Remove only that certificate from each store.
+Match the complete thumbprint and confirm its absence in both stores afterward.
+
+## Build locally
+
+Run `scripts/package-candidate.ps1` to build and validate a fresh source snapshot.
+This engineering candidate contains the driver files and build provenance. It can
+be built without HP firmware. The catalog is created during the signing step.
+Then run `scripts/package-mini.ps1 -CandidatePath <candidate-directory>
+-CertificateThumbprint <dedicated-tester-thumbprint> -FirmwarePath <private-img>`.
+If FirmwarePath is omitted, the generator prompts for it. Use PowerShell 7.5+, the
+WDK and Python as for the existing package scripts. The supplied image is checked
+before signing, staged only while generating the catalog, and removed before ZIP
+creation, including on catalog failure. The original firmware file is untouched.
+Only the dedicated tester identity is currently supported; public signing remains
+a separate release task. Distribute the matching source ZIP with the binary ZIP.

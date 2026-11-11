@@ -1,3 +1,5 @@
+; SPDX-License-Identifier: GPL-2.0-or-later
+; See LICENSE in the repository root for license terms.
 ; Package-aware Type 3 driver. The generated catalog must be signed before deployment.
 [Version]
 Signature="$Windows NT$"
@@ -17,7 +19,7 @@ PnpLockdown=1
 %Model%=Install,LPTENUM\Hewlett-Packardhp_LaBE8D
 
 [Install]
-CopyFiles=DriverFiles,MonitorFiles
+CopyFiles=DriverFiles,MonitorFiles,FirmwareFiles
 LanguageMonitor="HP LaserJet 1005 Firmware Monitor (development),lj1005monitor.dll"
 DataFile=lj1005.gpd
 DefaultDataType=RAW
@@ -35,7 +37,11 @@ lj1005render.dll
 [MonitorFiles]
 lj1005monitor.dll,,,0x00000020
 
+[FirmwareFiles]
+lj1005-firmware.img,sihp1005.img
+
 [DestinationDirs]
+FirmwareFiles=11
 DriverFiles=66000
 MonitorFiles=66002
 
@@ -43,12 +49,13 @@ MonitorFiles=66002
 1=%Disk%,,,
 
 [SourceDisksFiles]
+sihp1005.img=1
 lj1005.gpd=1
 lj1005.ini=1
 lj1005render.dll=1
 lj1005monitor.dll=1
 
 [Strings]
-Provider="Open ZJS Project"
-Model="HP LaserJet 1005 Series (Open ZJS)"
-Disk="HP LaserJet 1005 Open ZJS driver"
+Provider="Benteveo Project"
+Model="HP Laserjet 1005 (Benteveo Driver)"
+Disk="HP Laserjet 1005 (Benteveo Driver)"
