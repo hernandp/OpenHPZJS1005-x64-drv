@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 #requires -Version 7.0
 [CmdletBinding()]
 param(
@@ -17,8 +19,8 @@ foreach ($relative in @('driver/lj1005render.dll', 'driver/lj1005monitor.dll')) 
         throw "Version resource missing or mismatched in $relative (expected $ExpectedVersion)."
     }
     if ($info.OriginalFilename -cne [IO.Path]::GetFileName($path) -or
-        $info.ProductName -cne 'Open ZJS LaserJet 1005 Driver' -or
-        $info.CompanyName -cne 'Open ZJS Project' -or
+        $info.ProductName -cne 'Benteveo' -or
+        $info.CompanyName -cne 'Benteveo Project' -or
         !$info.FileDescription -or !$info.InternalName) {
         throw "Version resource identity missing or mismatched in $relative."
     }

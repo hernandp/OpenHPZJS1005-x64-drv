@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 #requires -Version 7.0
 #requires -RunAsAdministrator
 # Internal provisioning stage: only use with the fresh VHDX prepared by new-test-vm.ps1.

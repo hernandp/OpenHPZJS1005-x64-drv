@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 """Check queue_test emf-reset output against foo2zjs for Letter/A4/Letter.
 
 Usage: python tests/verify_reset_capture.py artifacts/venteveos-reset-fixed.zjs

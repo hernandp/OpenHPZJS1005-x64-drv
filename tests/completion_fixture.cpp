@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// See LICENSE in the repository root for license terms.
 // Linked only into the test fixture DLL, never the installed monitor.
 #include "../driver/completion_backend.hpp"
 #include <stdexcept>

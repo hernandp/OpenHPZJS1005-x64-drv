@@ -1,6 +1,6 @@
 # Verify a Have Disk tester ZIP in the VM
 
-Use an isolated Windows 11 Pro x64 VM with Secure Boot enabled. Preserve the starting VM state. Record the Windows build and revision, archive SHA-256, signer identity and source commit. Start with the Open ZJS driver, firmware and tester certificate absent. Record the existing printers and default queue.
+Use an isolated Windows 11 Pro x64 VM with Secure Boot enabled. Preserve the starting VM state. Record the Windows build and revision, archive SHA-256, signer identity and source commit. Start with the Benteveo driver, firmware and tester certificate absent. Record the existing printers and default queue.
 
 1. Verify the release checksums, extract the entire ZIP inside the guest and compare the tester certificate with its separately recorded identity. Grant tester trust only inside the disposable guest as described in the [installation guide](MINI_INSTALL.md).
 2. Check that a missing image and a wrong image each prevent staging. Supply the original image beside the INF, verify its hash, and check catalog membership for the image, INF, GPD, INI and both DLLs using SignTool.

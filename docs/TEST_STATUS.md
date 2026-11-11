@@ -1,8 +1,14 @@
 # Test evidence by deployment path
 
+## Benteveo branding checkpoint — November 11, 2026
+
+The project and visible driver model have been renamed to Benteveo. The rebuilt
+package requires fresh VM installation acceptance. All VM and physical results
+below predate that change and retain their original names and archive digests.
+
 ## Have Disk package
 
-### November 10–11, 2026: installation and manual maintenance
+### November 10â€“11, 2026: installation and manual maintenance
 
 Windows 11 Pro 25H2 x64 build 26200.6584, Secure Boot enabled, passed the
 maintenance rehearsal in the isolated `OpenZJS-Win11-25H2` VM. Checkpoint

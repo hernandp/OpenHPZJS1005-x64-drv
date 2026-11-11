@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 import importlib.util
 import json
 from pathlib import Path
@@ -71,6 +73,15 @@ class CandidateVerification(unittest.TestCase):
         verifier.verify(self.root)
         with self.assertRaisesRegex(ValueError, "Dirty source"):
             verifier.verify(self.root, True)
+
+    def test_only_official_picture_is_allowed_in_source(self):
+        self.source["docs/benteveo-and-hp.png"] = b"picture fixture"
+        self.build()
+        self.assertEqual(verifier.verify(self.root)["status"], "passed")
+        self.source["docs/unreviewed.png"] = b"unexpected picture"
+        self.build()
+        with self.assertRaisesRegex(ValueError, "Unexpected source"):
+            verifier.verify(self.root)
 
     def test_checksum_tampering(self):
         self.build()

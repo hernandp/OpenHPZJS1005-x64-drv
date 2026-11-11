@@ -1,3 +1,5 @@
+; SPDX-License-Identifier: GPL-2.0-or-later
+; See LICENSE in the repository root for license terms.
 ; Package-aware Type 3 driver. The generated catalog must be signed before deployment.
 [Version]
 Signature="$Windows NT$"
@@ -54,6 +56,6 @@ lj1005render.dll=1
 lj1005monitor.dll=1
 
 [Strings]
-Provider="Open ZJS Project"
-Model="HP LaserJet 1005 Series (Open ZJS)"
-Disk="HP LaserJet 1005 Open ZJS driver"
+Provider="Benteveo Project"
+Model="HP Laserjet 1005 (Benteveo Driver)"
+Disk="HP Laserjet 1005 (Benteveo Driver)"

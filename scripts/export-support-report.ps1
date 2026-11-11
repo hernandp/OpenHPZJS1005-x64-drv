@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 #requires -Version 5.1
 # Read-only support inventory. Never serialize raw printer, job or registry objects.
 [CmdletBinding()]
@@ -75,7 +77,7 @@ function Get-OpenZjsSupportData {
     } catch { $data.protectedPrintMode = $null; Add-CollectionError 'protectedPrintMode' $_ }
     try {
         $ordinal = 0
-        foreach ($queue in @(Get-Printer -ErrorAction Stop | Where-Object DriverName -EQ 'HP LaserJet 1005 Series (Open ZJS)')) {
+        foreach ($queue in @(Get-Printer -ErrorAction Stop | Where-Object DriverName -EQ 'HP Laserjet 1005 (Benteveo Driver)')) {
             $ordinal++
             $item = @{ordinal=$ordinal;portKind='other';statusCode=[int]$queue.PrinterStatus;jobCount=$null;paperSizeCode=$null;duplexCode=$null;color=$null}
             if ($queue.PortName -match '^USB\d+$') { $item.portKind = 'USB' }

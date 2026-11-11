@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 """Mutation tests against a real generated mini package; no signing key or firmware needed."""
 import argparse
 import hashlib

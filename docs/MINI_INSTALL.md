@@ -1,9 +1,10 @@
-# Minimal Have Disk package — self-signed testing build
+# Benteveo Have Disk package — self-signed testing build
 
 For the original HP LaserJet 1005 Series on Windows 11 x64. P1005 and M1005
 are different printers. This is a tester package, not a publicly trusted release.
-Wizard installation, file output and manual removal/reinstallation passed in a
-Windows 11 Pro 25H2 x64 VM on November 10–11, 2026. Physical multi-page recovery remains
+The earlier Open ZJS package passed wizard installation, file output and manual
+removal/reinstallation in a Windows 11 Pro 25H2 x64 VM on November 10–11, 2026.
+The Benteveo-branded package awaits its own VM installation acceptance. Physical multi-page recovery remains
 under investigation. Use a disposable VM for the initial installation rehearsal.
 
 ## Prepare the extracted folder
@@ -19,7 +20,8 @@ under investigation. Use a disposable VM for the initial installation rehearsal.
    in the local computer Trusted Root Certification Authorities and Trusted
    Publishers stores, after verifying its identity against the separately supplied
    release identity. The subject must be `OpenZJS Technical Tester Signing`;
-   compare the thumbprint and expiry in `BUILD-INFO.json`, not just the name.
+   this retained signing identity predates the Benteveo branding.
+   Compare the thumbprint and expiry in `BUILD-INFO.json`, not just the name.
    Certificate installation requires administrator permission. Never install
    a private key or disable signature enforcement. No certificate is imported
    automatically. This build has no timestamp; do not assume validity after expiry.
@@ -48,7 +50,7 @@ Retain the currently installed version's extracted package until cleanup is veri
    includes `VID_03F0&PID_1317`. If the port association remains unclear, stop and
    collect a support report before submitting jobs to a guessed port.
 3. Choose Have Disk, browse to `lj1005.inf`, and select
-   **HP LaserJet 1005 Series (Open ZJS)**. Approve administrator prompts.
+   **HP Laserjet 1005 (Benteveo Driver)**. Approve administrator prompts.
    If firmware is missing or incorrect, cancel, correct the extracted folder,
    and retry; do not skip files or accept an altered package.
 4. In Printer properties, Ports, confirm the correct USB port and enable
@@ -84,12 +86,12 @@ pending jobs before removal.
 
 ## Remove the queue and driver package
 
-1. In Settings, Printers & scanners, select the Open ZJS queue and choose **Remove**.
+1. In Settings, Printers & scanners, select the Benteveo queue and choose **Remove**.
    Repeat for any other queue using this driver.
 2. Open **Print server properties**, choose **Drivers**, select
-   **HP LaserJet 1005 Series (Open ZJS)**, and click **Remove**. Choose
+   **HP Laserjet 1005 (Benteveo Driver)**, and click **Remove**. Choose
    **Remove driver and driver package** and approve administrator prompts.
-   Confirm the named Open ZJS package, then choose **Delete** on the file-list
+   Confirm the named Benteveo package, then choose **Delete** on the file-list
    page. Read the final result before closing the dialog.
    An administrator can also open this dialog with the command below.
 
@@ -123,7 +125,7 @@ if (!$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     throw 'Open Windows PowerShell as administrator.'
 }
 function Assert-OpenZjsUnused {
-    if (@(Get-Printer | Where-Object DriverName -eq 'HP LaserJet 1005 Series (Open ZJS)').Count) {
+    if (@(Get-Printer | Where-Object DriverName -eq 'HP Laserjet 1005 (Benteveo Driver)').Count) {
         throw 'Remove all queues using this driver first.'
     }
     $drivers = Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Environments' -Recurse |
@@ -131,16 +133,16 @@ function Assert-OpenZjsUnused {
     foreach ($driver in $drivers) {
         if ($driver.Monitor -eq $monitorName -or
             $driver.'Language Monitor' -eq $monitorName -or
-            $driver.PSChildName -eq 'HP LaserJet 1005 Series (Open ZJS)' -or
+            $driver.PSChildName -eq 'HP Laserjet 1005 (Benteveo Driver)' -or
             [string]$driver.'Configuration File' -match 'lj1005' -or
             [string]$driver.'Dependent Files' -match 'lj1005') {
-            throw 'A registered driver still references Open ZJS. Remove its package first.'
+            throw 'A registered driver still references Benteveo. Remove its package first.'
         }
     }
-    $packages = @(Get-WindowsDriver -Online | Where-Object ProviderName -eq 'Open ZJS Project')
+    $packages = @(Get-WindowsDriver -Online | Where-Object ProviderName -eq 'Benteveo Project')
     if ($packages.Count) {
         $packages | Format-Table Driver,OriginalFileName,ProviderName
-        throw 'An Open ZJS driver-store package remains. Finish Windows package removal first.'
+        throw 'A Benteveo driver-store package remains. Finish Windows package removal first.'
     }
 }
 Assert-OpenZjsUnused

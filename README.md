@@ -1,4 +1,10 @@
-# HP LaserJet 1005 Series driver for Windows x64
+# Benteveo
+
+HP Laserjet 1005 driver for Windows 11 x64.
+
+<p align="center">
+  <img src="docs/benteveo-and-hp.png" alt="A benteveo bird perched on an HP LaserJet 1005 printer" width="720">
+</p>
 
 A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `03f0:1317`). The initial target is Windows 11 Pro 25H2 x64 with one USB printer and A4 paper. The P1005 and M1005 use different drivers.
 
@@ -6,7 +12,7 @@ A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `0
 
 The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` from your HP software beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. Select the USB port assigned to the connected printer. Follow the guide for firmware verification, tester certificate trust, paper settings and removal. [Installation guide](docs/MINI_INSTALL.md)
 
-**Release status:** the available local builds use a dedicated self-signed tester certificate. Public distribution awaits trusted signing and release acceptance. CI produces unsigned engineering archives. The wizard route has passed VM testing. A physical four-sheet job on the earlier packaged driver repeatedly stopped with sheet two partly ejected. Physical copies/collation, recovery and Letter remain open. [Test evidence](docs/TEST_STATUS.md) · [Release plan](docs/RELEASE_PLAN.md)
+**Release status:** the available local builds use a dedicated self-signed tester certificate. Public distribution awaits trusted signing and release acceptance. CI produces unsigned engineering archives. The earlier Open ZJS package passed VM testing; the Benteveo-branded package awaits its own VM installation acceptance. A physical four-sheet job on the earlier packaged driver repeatedly stopped with sheet two partly ejected. Physical copies/collation, recovery and Letter remain open. [Test evidence](docs/TEST_STATUS.md) · [Release plan](docs/RELEASE_PLAN.md)
 
 ## Build and test
 

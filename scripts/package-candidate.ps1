@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 #requires -Version 7.0
 [CmdletBinding()]
 param(
@@ -76,7 +78,7 @@ $allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative.Contains('..') -or [IO.Path]::IsPathRooted($relative)) { throw "Invalid source path: $relative" }
     if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions -and
-        $relative -ne 'driver/version.rc.in') {
+        $relative -notin @('driver/version.rc.in', 'docs/benteveo-and-hp.png')) {
         throw "Review unexpected source file before packaging: $relative"
     }
     $original = Get-Item -LiteralPath (Join-Path $projectRoot $relative)

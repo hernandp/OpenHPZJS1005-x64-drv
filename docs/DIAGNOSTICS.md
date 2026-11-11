@@ -17,7 +17,7 @@ or ask the administrator. Some reads, including Secure Boot, can require elevate
 access; unavailable values remain null and collection errors contain only a
 section identifier and HRESULT, not raw exception messages.
 
-The report explicitly selects OS build/revision, spooler/security state, anonymized Open ZJS queue status and job counts,
+The report explicitly selects OS build/revision, spooler/security state, anonymized Benteveo queue status and job counts,
 paper/duplex codes, and known private-file hashes/versions. It excludes machine
 and user names, queue names, serial numbers, full paths, job names/owners,
 documents, spool captures, firmware bytes, registry exports and trace contents.

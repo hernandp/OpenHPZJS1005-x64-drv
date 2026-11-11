@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# See LICENSE in the repository root for license terms.
 """Verify the firmware-free mini ZIP against its unsigned build candidate."""
 import argparse
 import importlib.util
