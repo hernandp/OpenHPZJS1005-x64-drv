@@ -6,7 +6,16 @@
   <img src="docs/benteveo-and-hp.png" alt="A benteveo bird perched on an HP LaserJet 1005 printer" width="720">
 </p>
 
-A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `03f0:1317`). The initial target is Windows 11 Pro 25H2 x64 with one USB printer and A4 paper. The P1005 and M1005 use different drivers.
+A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `03f0:1317`). 
+⚠️ The initial target is Windows 11 Pro 25H2 x64 with one USB printer and A4 paper. 
+⚠️ The P1005 and M1005 use different drivers.
+
+## Purpose of this project
+
+I purchased this printer back in the beginning of the 2000s and served it me well until HP decided to phase it out ending software support in the XP era. In the following two decades, I moved on between houses, jobs, machines and operating systems. This good old battleship went abandoned in the back of my parents' house, until I decided to rescue it from under a ball of dirt, spiderweb and dead insects to pursue some toner transfer printing for my girlfriend; we wanted to transfer a benteveo bird image (the one that brands this project) so thats where the name comes from.  The printer got a new toner, some mechanical fixes, and it works quite well but it was lacking a printer driver for Windows 11, so I decided it code it using Codex using specs from the web and the Zenographics Zjs open protocol implementation for CUPS.  
+It successfully prints text, bitmaps, multiple page documents without a hassle.  
+
+Lesson: Do not throw your old hardware!  With current AI tools you can do vibe software and hardware hacking to _hopefully_ suit your needs.
 
 ## Install with Have Disk
 
