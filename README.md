@@ -7,15 +7,24 @@
 </p>
 
 A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `03f0:1317`). 
-⚠️ The initial target is Windows 11 Pro 25H2 x64 with one USB printer and A4 paper. 
-⚠️ The P1005 and M1005 use different drivers.
+
+⚠️ The initial target is Windows 11 x64 with one USB printer and A4 paper. 
+
+⚠️ The **Laserjet P1005 / M1005** use different drivers.
 
 ## Purpose of this project
 
-I purchased this printer back in the beginning of the 2000s and served it me well until HP decided to phase it out ending software support in the XP era. In the following two decades, I moved on between houses, jobs, machines and operating systems. This good old battleship went abandoned in the back of my parents' house, until I decided to rescue it from under a ball of dirt, spiderweb and dead insects to pursue some toner transfer printing for my girlfriend; we wanted to transfer a benteveo bird image (the one that brands this project) so thats where the name comes from.  The printer got a new toner, some mechanical fixes, and it works quite well but it was lacking a printer driver for Windows 11, so I decided it code it using Codex using specs from the web and the Zenographics Zjs open protocol implementation for CUPS.  
-It successfully prints text, bitmaps, multiple page documents without a hassle.  
+I purchased this printer back in the early 2000s, and it served me well until HP decided to phase it out, ending software support in the Windows XP era.
 
-Lesson: Do not throw your old hardware!  With current AI tools you can do vibe software and hardware hacking to _hopefully_ suit your needs.
+Over the following two decades, I moved between houses, jobs, machines, and operating systems. This good old battleship ended up abandoned in the back of my parents' house, until I decided to rescue it from under a pile of dirt, spiderwebs, and dead insects to pursue some toner transfer printing for my girlfriend.
+
+We wanted to transfer an image of a benteveo bird (the one that brands this project), so that's where the name comes from.
+
+The printer got a new toner cartridge and some mechanical fixes, and it works quite well. But it was lacking a printer driver for Windows 11, so I decided to code one using Codex, relying on specs from the web and the Zenographics ZjStream open protocol implementation for CUPS.
+
+It successfully prints text, bitmaps, and multiple-page documents without a hassle.
+
+**Lesson:** Don't throw away your old hardware! With current AI tools, you can do some vibe software and hardware hacking to *hopefully* suit your needs.
 
 ## Install with Have Disk
 
