@@ -65,6 +65,18 @@ or lower-port Win32 error. `QueueCancelled` identifies deletion/cancellation;
 The status bytes distinguish a missing response from a response rejected by
 the parser. A trace alone does not prove the printed page looks correct.
 
+While awaiting job completion, a disconnect-related USB read error produces
+`CompletionUsbDisconnected`. The monitor retries reads from the original USB
+interface for up to 30 seconds per interruption, still checking cancellation.
+`CompletionUsbReconnected` means a read succeeded again, not that printing
+completed. Only the matching printer END report permits acknowledgement.
+`CompletionUsbReconnectTimeout` leaves completion unconfirmed. No raster or
+PJL trailer is resent, and the monitor does not switch to another USB port.
+Access errors and other non-disconnect failures remain immediate failures.
+If the printer lost its END report during disconnection, reconnection cannot
+prove ejection: inspect the output and cancel the unconfirmed job rather than
+blindly resubmitting it. The exact signed 0.1.2 package passed a stopwatch-timed interruption and follow-up on build 26300.9974; see [test evidence](TEST_STATUS.md). Longer interruptions are not covered by that pass.
+
 Before page transmission, the monitor waits up to 30 seconds for the unique
 `@PJL ECHO READY-<token>` response included in its setup commands. This confirms
 setup parsing, not page completion. `SetupEchoTimeout` means no raster data was

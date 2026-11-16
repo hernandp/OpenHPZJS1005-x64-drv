@@ -263,7 +263,7 @@ int wmain(int argc, wchar_t** argv) {
             Require(acknowledgements() == 0, "Failed job was acknowledged as printed");
             Require(monitor->pfnClosePort(port), "Close failure fixture");
         }
-        for (DWORD scenario : {1u, 2u}) {
+        for (DWORD scenario : {1u, 2u, 3u, 4u, 5u}) {
             setScenario(0);
             FakePort fake;
             HANDLE port = nullptr;
@@ -276,8 +276,18 @@ int wmain(int argc, wchar_t** argv) {
             Require(monitor->pfnWritePort(port, bytes.data(), static_cast<DWORD>(bytes.size()), &written),
                     "Write completion failure fixture");
             setScenario(scenario);
+            const auto beforeCompletion = fake.bytes.size();
+            const auto startedCompletion = GetTickCount64();
             Require(monitor->pfnEndDocPort(port), "Status failure requested a replay of submitted data");
-            Require(acknowledgements() == 0 && fake.ends == 1, "Cancelled or unconfirmed job acknowledged");
+            if (scenario == 5)
+                Require(GetTickCount64() - startedCompletion < 35000, "Disconnect retry exceeded its bound");
+            Require(acknowledgements() == (scenario == 3 ? 1u : 0u) && fake.ends == 1,
+                    "Incorrect acknowledgement after completion recovery");
+            const std::string trailer(fake.bytes.begin() + beforeCompletion, fake.bytes.end());
+            Require(trailer.find("JZJZ") == std::string::npos, "Recovery replayed raster data");
+            const auto endMarker = trailer.find("@PJL EOJ");
+            Require(endMarker != std::string::npos && trailer.find("@PJL EOJ", endMarker + 1) == std::string::npos,
+                    "Recovery replayed the end-of-job trailer");
             Require(monitor->pfnClosePort(port), "Close completion failure fixture");
         }
         for (DWORD scenario : {1u, 2u}) {

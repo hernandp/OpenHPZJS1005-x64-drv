@@ -36,6 +36,16 @@ namespace lj1005 {
                            [](wchar_t c) { return static_cast<wchar_t>(std::towupper(c)); });
             return id.find(L"USB\\VID_03F0&PID_1317") == 0;
         }
+
+        [[noreturn]] void ThrowUsbReadError(const char* action) {
+            const auto code = GetLastError();
+            if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND || code == ERROR_DEVICE_NOT_CONNECTED ||
+                code == ERROR_NOT_READY || code == ERROR_GEN_FAILURE) {
+                throw UsbReadUnavailable(std::string(action) + " (Win32 error " + std::to_string(code) + ")");
+            }
+            SetLastError(code);
+            ThrowUsbError(action);
+        }
     }
 
     std::vector<UsbDevice> GetUsbDevices() {
@@ -126,7 +136,7 @@ namespace lj1005 {
         Handle file(CreateFileW(device.path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
                                 OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr));
         if (file.value == INVALID_HANDLE_VALUE)
-            ThrowUsbError("Opening USB status reader");
+            ThrowUsbReadError("Opening USB status reader");
         Handle event(CreateEventW(nullptr, TRUE, FALSE, nullptr));
         if (!event.value)
             ThrowUsbError("Creating USB read event");
@@ -136,17 +146,17 @@ namespace lj1005 {
         op.hEvent = event.value;
         if (!ReadFile(file.value, bytes.data(), static_cast<DWORD>(bytes.size()), &received, &op)) {
             if (GetLastError() != ERROR_IO_PENDING)
-                ThrowUsbError("Reading USB status");
+                ThrowUsbReadError("Reading USB status");
             if (WaitForSingleObject(event.value, timeoutMs) != WAIT_OBJECT_0) {
                 CancelIoEx(file.value, &op);
                 if (!GetOverlappedResult(file.value, &op, &received, TRUE)) {
                     if (GetLastError() == ERROR_OPERATION_ABORTED)
                         return {};
-                    ThrowUsbError("Completing cancelled USB status read");
+                    ThrowUsbReadError("Completing cancelled USB status read");
                 }
             }
             else if (!GetOverlappedResult(file.value, &op, &received, FALSE))
-                ThrowUsbError("Completing USB status read");
+                ThrowUsbReadError("Completing USB status read");
         }
         if (received > bytes.size())
             throw std::runtime_error("Invalid USB read length");

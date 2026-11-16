@@ -70,7 +70,7 @@ function Invoke-Check([string]$Tool, [string[]]$ToolArguments, [string]$LogName)
 
 # Snapshot only public source paths known to Git; ignored firmware, captures,
 # downloaded SDK files and existing build outputs cannot enter the snapshot.
-$sourcePaths = @('CMakeLists.txt', 'LICENSE', 'README.md', 'THIRD_PARTY.md', '.gitignore',
+$sourcePaths = @('CMakeLists.txt', 'LICENSE', 'README.md', 'CHANGELOG.md', 'THIRD_PARTY.md', '.gitignore',
     '.gitattributes', '.clang-format', '.github', 'driver', 'include', 'src', 'scripts', 'tests', 'vendor', 'docs')
 $files = & git -C $projectRoot -c core.quotepath=false ls-files --cached --others --exclude-standard -- @sourcePaths
 if ($LASTEXITCODE -ne 0 -or !$files) { throw 'Source snapshot requires a Git checkout.' }

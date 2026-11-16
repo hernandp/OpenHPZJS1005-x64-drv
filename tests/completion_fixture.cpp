@@ -2,10 +2,11 @@
 // See LICENSE in the repository root for license terms.
 // Linked only into the test fixture DLL, never the installed monitor.
 #include "../driver/completion_backend.hpp"
+#include "lj1005/usb.hpp"
 #include <stdexcept>
 
 namespace {
-    DWORD acknowledgements = 0, scenario = 0;
+    DWORD acknowledgements = 0, scenario = 0, reads = 0;
 
     class Fixture final : public lj1005::CompletionBackend {
         HANDLE handle_;
@@ -15,6 +16,9 @@ namespace {
         Fixture(HANDLE handle, const MONITOR2& lower) : handle_(handle), lower_(lower) {}
 
         lj1005::Bytes Read() override {
+            ++reads;
+            if ((scenario == 3 && reads <= 3) || scenario == 4 || scenario == 5)
+                throw lj1005::UsbReadUnavailable("Simulated USB disconnect");
             if (scenario == 2)
                 throw std::runtime_error("Simulated status-read failure");
             lj1005::Bytes bytes(4096);
@@ -27,7 +31,7 @@ namespace {
         }
 
         bool IsCancelled() override {
-            return scenario == 1;
+            return scenario == 1 || (scenario == 4 && reads >= 2);
         }
 
         void Acknowledge() override {
@@ -43,6 +47,7 @@ extern "C" __declspec(dllexport) DWORD WINAPI TestAcknowledgements() {
 extern "C" __declspec(dllexport) void WINAPI TestCompletionScenario(DWORD value) {
     scenario = value;
     acknowledgements = 0;
+    reads = 0;
 }
 
 namespace lj1005 {

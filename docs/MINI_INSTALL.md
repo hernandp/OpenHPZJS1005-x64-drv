@@ -4,8 +4,8 @@ For the original HP LaserJet 1005 Series on Windows 11 x64. P1005 and M1005
 are different printers. This is a tester package, not a publicly trusted release.
 The earlier Open ZJS package passed wizard installation, file output and manual
 removal/reinstallation in a Windows 11 Pro 25H2 x64 VM on November 10–11, 2026.
-The Benteveo-branded package awaits its own VM installation acceptance. Physical multi-page recovery remains
-under investigation. Use a disposable VM for the initial installation rehearsal.
+The Benteveo-branded package awaits its own VM installation acceptance. Physical A4 printing has passed on build 26300.9974 for the exact tester ZIP recorded in [test status](TEST_STATUS.md); the signed 0.1.2 USB retry fix also passed a timed interruption and follow-up on that build. Interruptions beyond the 30-second retry window remain unconfirmed; sleep/wake and physical Letter remain untested.
+Use a disposable VM for the initial installation rehearsal.
 
 ## Prepare the extracted folder
 
@@ -68,7 +68,7 @@ The firmware loads when needed for printing after printer power-on.
 
 - **Missing file or catalog hash error.** Cancel the wizard, extract a fresh ZIP and check the name, size and SHA-256 of the image before retrying.
 - **Signature rejected.** Check the catalog signer, expiry and both local-computer stores against the independently supplied tester identity. Stop if the identity differs.
-- **Blank sheet or paper stops partway.** Record which sheets actually emerged, the lights and selected USB port. Cancel any remaining job before reloading paper. A four-sheet job repeatedly stopped on sheet two on the earlier physical installation.
+- **Blank sheet or paper stops partway.** Record which sheets actually emerged, the lights and selected USB port. Cancel any remaining job before reloading paper. The earlier four-sheet stoppage was attributed by the maintainer to a paper-loading solenoid problem; a retry passed after hardware repair.
 - **Reporting a problem.** Include the Windows build, package digest, application, paper settings and exact error. Keep firmware, spool data and private documents out of reports.
 
 ## Record settings before maintenance

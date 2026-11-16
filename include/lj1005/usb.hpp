@@ -3,8 +3,14 @@
 #pragma once
 #include "protocol.hpp"
 #include <string>
+#include <stdexcept>
 
 namespace lj1005 {
+    // A read-only USB transport interruption; never permission to replay document data.
+    struct UsbReadUnavailable : std::runtime_error {
+        using std::runtime_error::runtime_error;
+    };
+
     struct UsbDevice {
         std::wstring path, instance;
     };

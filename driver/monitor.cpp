@@ -8,6 +8,7 @@
 #include <ntddpar.h>
 #include "lj1005/firmware.hpp"
 #include "lj1005/pjl.hpp"
+#include "lj1005/usb.hpp"
 #include "completion_backend.hpp"
 #include "trace.hpp"
 #include <algorithm>
@@ -278,12 +279,33 @@ namespace {
                     lj1005::TraceState("AwaitCompletion", p.token.c_str());
                     lj1005::PjlJobStatus status(p.token);
                     const auto deadline = GetTickCount64() + 30ull * 60 * 1000;
+                    ULONGLONG reconnectDeadline = 0;
                     while (GetTickCount64() < deadline) {
                         if (p.completion->IsCancelled()) {
                             lj1005::TraceState("QueueCancelled", p.token.c_str());
                             break;
                         }
-                        const auto response = p.completion->Read();
+                        lj1005::Bytes response;
+                        try {
+                            response = p.completion->Read();
+                        }
+                        catch (const lj1005::UsbReadUnavailable& error) {
+                            if (!reconnectDeadline) {
+                                reconnectDeadline = GetTickCount64() + 30000;
+                                lj1005::TraceState("CompletionUsbDisconnected", p.token.c_str(), error.what());
+                            }
+                            if (GetTickCount64() >= reconnectDeadline) {
+                                lj1005::TraceState("CompletionUsbReconnectTimeout", p.token.c_str());
+                                break;
+                            }
+                            // Reopen only the original interface on the next read. No writes or job replay.
+                            Sleep(100);
+                            continue;
+                        }
+                        if (reconnectDeadline) {
+                            lj1005::TraceState("CompletionUsbReconnected", p.token.c_str());
+                            reconnectDeadline = 0;
+                        }
                         lj1005::TraceStatus(p.token.c_str(), response);
                         status.Feed(response);
                         if (status.GetCompletion()) {

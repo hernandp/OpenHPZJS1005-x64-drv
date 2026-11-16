@@ -25,6 +25,7 @@ class CandidateVerification(unittest.TestCase):
             "driver/lj1005.inf": b"DriverVer=09/27/2026,0.1.1.0\n",
             "driver/lj1005.gpd": b"gpd", "driver/lj1005.ini": b"ini",
             "docs/MINI_INSTALL.md": b"engineering preview",
+            "CHANGELOG.md": b"# Changelog\n\nDevelopment version history.\n",
             "LICENSE": b"license", "THIRD_PARTY.md": b"third party",
         }
         # These bytes model archive contents, not runnable PE files. PE/import

@@ -17,7 +17,7 @@ PAYLOAD = {
     "LICENSE", "THIRD_PARTY.md", "README.md", "BUILD-INFO.json",
 }
 SOURCE_ROOT_FILES = {
-    "CMakeLists.txt", "LICENSE", "README.md", "THIRD_PARTY.md",
+    "CMakeLists.txt", "LICENSE", "README.md", "CHANGELOG.md", "THIRD_PARTY.md",
     ".gitignore", ".gitattributes", ".clang-format",
 }
 SOURCE_DIRS = {"driver", "include", "src", "scripts", "tests", "vendor", "docs", ".github"}
