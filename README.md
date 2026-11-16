@@ -45,6 +45,17 @@ Through standard Windows Settings:
 * As Administrator:
   - Open Command Prompt as Administrator, then run `rundll32 printui.dll,PrintUIEntry /il` to install a printer with elevated privileges without logging out the current user.
 
+* Choose local installation:
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/0ff1a57e-048a-49af-94a3-29887dd23ffe" />
+
+* Make sure the printer is connected to your desired USB port:
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/99d19c1e-21e0-4735-b881-de62963bd23d" />
+
+* Press the Have Disk button and browse to the folder where you extracted the Project Benteveo ZIP:
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/fa1c124b-f872-4fb3-a425-728c9019559a" />
+
+
+
 
 Select the USB port assigned to the connected printer. Follow the guide for firmware verification, tester certificate trust, paper settings and removal. [Installation guide](docs/MINI_INSTALL.md)
 
