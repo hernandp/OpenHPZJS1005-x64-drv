@@ -30,6 +30,11 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` from your HP software beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. 
 
+Make sure you import the Test Certificate to your target system.
+
+<img width="500" height="541" alt="image" src="https://github.com/user-attachments/assets/5e443cfe-5eb0-4750-b6e7-0b0dc880cf7e" />
+
+
 To launch the classic Add Printer Wizard in Windows, use one of these quick methods:
 
 Through standard Windows Settings:
