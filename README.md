@@ -28,7 +28,25 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 ## Install with Have Disk
 
-The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` from your HP software beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. Select the USB port assigned to the connected printer. Follow the guide for firmware verification, tester certificate trust, paper settings and removal. [Installation guide](docs/MINI_INSTALL.md)
+The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` from your HP software beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. 
+
+To launch the classic Add Printer Wizard in Windows, use one of these quick methods:
+
+Through standard Windows Settings:
+
+* Navigate to Start > Settings > Bluetooth & devices > Printers & scanners > Add a printer & scanner > Add device (or select Add a new device manually if the printer isn't listed automatically).
+
+* Command Prompt / Run Command:
+  - Press `Windows Key + R` to open the Run dialog box.
+  - Type `rundll32 printui.dll,PrintUIEntry /il` and press Enter.
+  
+* Open the Run dialog box (Windows Key + R) and type `printui /im` to jump straight to the manual setup options.
+  
+* As Administrator:
+  - Open Command Prompt as Administrator, then run `rundll32 printui.dll,PrintUIEntry /il` to install a printer with elevated privileges without logging out the current user.
+
+
+Select the USB port assigned to the connected printer. Follow the guide for firmware verification, tester certificate trust, paper settings and removal. [Installation guide](docs/MINI_INSTALL.md)
 
 **Release status:** the available local builds use a dedicated self-signed tester certificate. Public distribution awaits trusted signing and release acceptance. CI produces unsigned engineering archives. The earlier Open ZJS package passed VM testing; the Benteveo-branded package awaits its own VM installation acceptance. After the paper-loading solenoid repair, the exact Benteveo tester package passed A4 physical printing, copies/collation, paper-out, front-cover recovery and five cold cycles on build 26300.9974. The signed 0.1.2 USB retry fix passed a timed interruption and follow-up on the same build; interruptions beyond its 30-second retry window remain unconfirmed. Sleep/wake and physical Letter remain untested. [Test evidence](docs/TEST_STATUS.md) · [Release plan](docs/RELEASE_PLAN.md) · [Changelog](CHANGELOG.md)
 
