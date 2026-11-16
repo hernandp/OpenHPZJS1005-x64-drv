@@ -37,20 +37,36 @@ The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, pl
 Install Visual Studio Desktop development with C++, the Windows SDK and PowerShell 7. From the repository root run:
 
 ```powershell
-./scripts/build.ps1
+pwsh -NoProfile -File ./scripts/build.ps1
 ```
 
-The Release build runs seven driver tests. It produces the two driver DLLs, printer descriptions, a development CLI and the queue capture helper in `build/Release`. For the source and driver archives, use the WDK candidate build and then the dedicated tester signing step. [CI and local build](docs/CI.md) · [Tester package build](docs/MINI_INSTALL.md#build-locally)
+The Release build runs seven driver tests. It produces the two driver DLLs, printer descriptions, a development CLI and the queue capture helper in `build/Release`. [CI and local build](docs/CI.md)
 
 The optional Linux-reference checkout is excluded from Git; to enable its comparison executables:
 
 ```powershell
 git clone https://github.com/OpenPrinting/foo2zjs.git third_party/foo2zjs
 git -C third_party/foo2zjs checkout 80499ed5bf6caa2963ad337e37cfda78a80aab1e
-./scripts/build.ps1
+pwsh -NoProfile -File ./scripts/build.ps1
 ```
 
 For offline integration checks, install a FILE: queue in the lab and run `./scripts/capture-tests.ps1 -QueueName '<lab queue>'` with Pillow and the reference encoder available. The helper writes explicit local capture files. [VM rehearsal](docs/VM_TESTING.md) · [Print validation](docs/PRINT_VALIDATION.md) · [Diagnostics](docs/DIAGNOSTICS.md)
+
+## Build the mini ZIP
+
+In PowerShell 7.5 or later, start from a clean checkout with Visual Studio C++, the Windows SDK and WDK 10.0.26100.0, and Python 3 on PATH. You also need the original `sihp1005.img` and the dedicated `OpenZJS Technical Tester Signing` certificate with its private key in your current user's Personal store. If you do not already have that tester identity, create it with `./scripts/new-test-signing-identity.ps1 -OutputDirectory artifacts/test-signing-identity` and read the thumbprint from its `IDENTITY.json`.
+
+From the repository root, run the commands below with your tester certificate thumbprint and firmware path.
+
+```powershell
+./scripts/package-candidate.ps1 -OutputPathFile artifacts/candidate-path.txt
+$candidate = Get-Content -LiteralPath artifacts/candidate-path.txt
+./scripts/package-mini.ps1 -CandidatePath $candidate `
+    -CertificateThumbprint '<40-character tester certificate thumbprint>' `
+    -FirmwarePath 'C:\private\sihp1005.img'
+```
+
+The second script signs and verifies the mini ZIP and prints its location under `artifacts/mini-*/`. The directory contains `HPLJ1005x64-<version>-mini-self-signed-test.zip`, the matching source ZIP, and `SHA256SUMS.txt`. Firmware is used locally to generate the catalog and is omitted from the ZIP. This process produces a self-signed tester package. [Packaging and installation guide](docs/MINI_INSTALL.md#build-locally)
 
 ## Driver architecture
 

@@ -2,6 +2,9 @@
 # See LICENSE in the repository root for license terms.
 param([ValidateSet('Debug','Release')][string]$Configuration = 'Release')
 $ErrorActionPreference = 'Stop'
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    throw 'This build requires PowerShell 7 or later. Run: pwsh -NoProfile -File .\scripts\build.ps1 (add -Configuration Debug for a Debug build). Windows PowerShell 5.1 is not supported.'
+}
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
