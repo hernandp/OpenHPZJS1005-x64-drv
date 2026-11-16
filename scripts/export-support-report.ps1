@@ -77,7 +77,8 @@ function Get-OpenZjsSupportData {
     } catch { $data.protectedPrintMode = $null; Add-CollectionError 'protectedPrintMode' $_ }
     try {
         $ordinal = 0
-        foreach ($queue in @(Get-Printer -ErrorAction Stop | Where-Object DriverName -EQ 'HP Laserjet 1005 (Benteveo Driver)')) {
+        $driverNames = @('HP Laserjet 1005 (Project Benteveo Driver)', 'HP Laserjet 1005 (Benteveo Driver)')
+        foreach ($queue in @(Get-Printer -ErrorAction Stop | Where-Object { $_.DriverName -in $driverNames })) {
             $ordinal++
             $item = @{ordinal=$ordinal;portKind='other';statusCode=[int]$queue.PrinterStatus;jobCount=$null;paperSizeCode=$null;duplexCode=$null;color=$null}
             if ($queue.PortName -match '^USB\d+$') { $item.portKind = 'USB' }

@@ -19,8 +19,9 @@ foreach ($relative in @('driver/lj1005render.dll', 'driver/lj1005monitor.dll')) 
         throw "Version resource missing or mismatched in $relative (expected $ExpectedVersion)."
     }
     if ($info.OriginalFilename -cne [IO.Path]::GetFileName($path) -or
-        $info.ProductName -cne 'Benteveo' -or
-        $info.CompanyName -cne 'Benteveo Project' -or
+        $info.ProductName -cne 'Project Benteveo' -or
+        $info.CompanyName -cne 'Hernán Di Pietro' -or
+        $info.LegalCopyright -cne 'Copyright (C) 2026 Hernán Di Pietro and Project Benteveo contributors' -or
         !$info.FileDescription -or !$info.InternalName) {
         throw "Version resource identity missing or mismatched in $relative."
     }

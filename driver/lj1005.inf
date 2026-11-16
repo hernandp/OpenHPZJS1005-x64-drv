@@ -20,7 +20,7 @@ PnpLockdown=1
 
 [Install]
 CopyFiles=DriverFiles,MonitorFiles,FirmwareFiles
-LanguageMonitor="HP LaserJet 1005 Firmware Monitor (development),lj1005monitor.dll"
+LanguageMonitor="HP LaserJet 1005 Firmware Monitor (Project Benteveo),lj1005monitor.dll"
 DataFile=lj1005.gpd
 DefaultDataType=RAW
 CoreDriverSections="{D20EA372-DD35-4950-9ED8-A6335AFE79F0},UNIDRV.OEM,UNIDRV_DATA,TTFSUB.OEM"
@@ -56,6 +56,6 @@ lj1005render.dll=1
 lj1005monitor.dll=1
 
 [Strings]
-Provider="Benteveo Project"
-Model="HP Laserjet 1005 (Benteveo Driver)"
-Disk="HP Laserjet 1005 (Benteveo Driver)"
+Provider="Project Benteveo"
+Model="HP Laserjet 1005 (Project Benteveo Driver)"
+Disk="HP Laserjet 1005 (Project Benteveo Driver)"

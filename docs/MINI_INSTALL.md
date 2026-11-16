@@ -50,7 +50,7 @@ Retain the currently installed version's extracted package until cleanup is veri
    includes `VID_03F0&PID_1317`. If the port association remains unclear, stop and
    collect a support report before submitting jobs to a guessed port.
 3. Choose Have Disk, browse to `lj1005.inf`, and select
-   **HP Laserjet 1005 (Benteveo Driver)**. Approve administrator prompts.
+   **HP Laserjet 1005 (Project Benteveo Driver)**. Approve administrator prompts.
    If firmware is missing or incorrect, cancel, correct the extracted folder,
    and retry; do not skip files or accept an altered package.
 4. In Printer properties, Ports, confirm the correct USB port and enable
@@ -89,7 +89,8 @@ pending jobs before removal.
 1. In Settings, Printers & scanners, select the Benteveo queue and choose **Remove**.
    Repeat for any other queue using this driver.
 2. Open **Print server properties**, choose **Drivers**, select
-   **HP Laserjet 1005 (Benteveo Driver)**, and click **Remove**. Choose
+   **HP Laserjet 1005 (Project Benteveo Driver)**, or **HP Laserjet 1005 (Benteveo Driver)**
+   for an earlier ZIP, and click **Remove**. Choose
    **Remove driver and driver package** and approve administrator prompts.
    Confirm the named Benteveo package, then choose **Delete** on the file-list
    page. Read the final result before closing the dialog.
@@ -109,13 +110,17 @@ Open **64-bit Windows PowerShell as administrator**. Set `$package` below to the
 extracted folder for the version you just removed. Run the entire first block,
 then keep that window open for the second block. Stop on an error and retain the
 console output. The original firmware can be absent from the extracted folder
-during cleanup.
+during cleanup. For an earlier ZIP whose INF lists the monitor with the
+`(development)` suffix, set `$monitorName` to
+`HP LaserJet 1005 Firmware Monitor (development)` before running the block.
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $openZjsPreflight = $false
 $package = (Resolve-Path -LiteralPath 'C:\path\to\HPLJ1005-mini').Path
-$monitorName = 'HP LaserJet 1005 Firmware Monitor (development)'
+$monitorName = 'HP LaserJet 1005 Firmware Monitor (Project Benteveo)'
+$driverNames = @('HP Laserjet 1005 (Project Benteveo Driver)', 'HP Laserjet 1005 (Benteveo Driver)')
+$providerNames = @('Project Benteveo', 'Benteveo Project')
 $monitorKey = "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\$monitorName"
 $firmwareHash = '638B9AD4A2CF6888208926EF7C7DE073DA8BA4CDED25D31000A585C4526A9CA1'
 if (![Environment]::Is64BitProcess) { throw 'Open 64-bit Windows PowerShell.' }
@@ -125,21 +130,27 @@ if (!$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     throw 'Open Windows PowerShell as administrator.'
 }
 function Assert-OpenZjsUnused {
-    if (@(Get-Printer | Where-Object DriverName -eq 'HP Laserjet 1005 (Benteveo Driver)').Count) {
+    if (@(Get-Printer | Where-Object { $_.DriverName -in $driverNames }).Count) {
         throw 'Remove all queues using this driver first.'
+    }
+    $otherMonitor = @('HP LaserJet 1005 Firmware Monitor (development)',
+                      'HP LaserJet 1005 Firmware Monitor (Project Benteveo)') |
+        Where-Object { $_ -ne $monitorName }
+    if (Test-Path -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\$otherMonitor") {
+        throw 'A second Benteveo monitor is registered and may share the files. Stop and collect a support report.'
     }
     $drivers = Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Environments' -Recurse |
         ForEach-Object { Get-ItemProperty -LiteralPath $_.PSPath }
     foreach ($driver in $drivers) {
         if ($driver.Monitor -eq $monitorName -or
             $driver.'Language Monitor' -eq $monitorName -or
-            $driver.PSChildName -eq 'HP Laserjet 1005 (Benteveo Driver)' -or
+            $driver.PSChildName -in $driverNames -or
             [string]$driver.'Configuration File' -match 'lj1005' -or
             [string]$driver.'Dependent Files' -match 'lj1005') {
             throw 'A registered driver still references Benteveo. Remove its package first.'
         }
     }
-    $packages = @(Get-WindowsDriver -Online | Where-Object ProviderName -eq 'Benteveo Project')
+    $packages = @(Get-WindowsDriver -Online | Where-Object { $_.ProviderName -in $providerNames })
     if ($packages.Count) {
         $packages | Format-Table Driver,OriginalFileName,ProviderName
         throw 'A Benteveo driver-store package remains. Finish Windows package removal first.'

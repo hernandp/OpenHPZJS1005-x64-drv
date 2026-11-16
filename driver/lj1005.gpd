@@ -2,7 +2,7 @@
 *% See LICENSE in the repository root for license terms.
 *GPDFileVersion: "1.0"
 *GPDSpecVersion: "1.0"
-*ModelName: "HP Laserjet 1005 (Benteveo Driver)"
+*ModelName: "HP Laserjet 1005 (Project Benteveo Driver)"
 *MasterUnits: PAIR(600, 600)
 *ResourceDLL: "unires.dll"
 *Include: "stdnames.gpd"
