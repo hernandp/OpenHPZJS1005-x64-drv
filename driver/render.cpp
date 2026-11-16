@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // See LICENSE in the repository root for license terms.
+#include "lj1005/runtime_constants.hpp"
 #include <windows.h>
 #include <objbase.h>
 #pragma warning(push)
@@ -22,11 +23,20 @@
 
 namespace {
     std::atomic<long> objects{0}, locks{0};
+    constexpr DWORD PLUGIN_VERSION = 0x00010000;
+    constexpr DWORD DEVMODE_VERSION = 1;
+    constexpr DWORD START_DOCUMENT_COMMAND = 1;
+    constexpr DWORD START_PAGE_COMMAND = 2;
+    constexpr DWORD END_PAGE_COMMAND = 3;
+    constexpr DWORD END_DOCUMENT_COMMAND = 4;
+    constexpr DWORD SET_COLUMN_COMMAND = 5;
+    constexpr DWORD SET_ROW_COMMAND = 6;
+    constexpr std::size_t SCANLINE_ALIGNMENT_BYTES = 4;
     constexpr DWORD SIGNATURE = 0x35303031; // "1005"
 
     struct Device {
-        lj1005::Raster raster;
-        lj1005::PageOptions options;
+        Lj1005::Raster raster;
+        Lj1005::PageOptions options;
         std::uint32_t originX = 0, originY = 0;
         std::uint32_t row = 0, page = 0;
         bool inDocument = false, inPage = false, failed = false;
@@ -36,13 +46,14 @@ namespace {
         std::atomic<ULONG> refs{1};
         IPrintOemDriverUni* helper = nullptr;
 
-        HRESULT Spool(PDEVOBJ dev, lj1005::Bytes bytes) {
+        HRESULT Spool(PDEVOBJ dev, Lj1005::Bytes bytes) {
             if (!helper)
                 return E_UNEXPECTED;
             std::size_t pos = 0;
             while (pos < bytes.size()) {
                 DWORD written = 0;
-                const auto count = static_cast<DWORD>(std::min<std::size_t>(65536, bytes.size() - pos));
+                const auto count = static_cast<DWORD>(
+                    std::min<std::size_t>(Lj1005::Runtime::TRANSFER_CHUNK_BYTES, bytes.size() - pos));
                 auto hr = helper->DrvWriteSpoolBuf(dev, bytes.data() + pos, count, &written);
                 if (FAILED(hr))
                     return hr;
@@ -101,7 +112,7 @@ namespace {
                 value = PRINTER_OEMINTF_VERSION;
                 break;
             case OEMGI_GETVERSION:
-                value = 0x00010000;
+                value = PLUGIN_VERSION;
                 break;
             default:
                 *needed = 0;
@@ -126,7 +137,8 @@ namespace {
                 return E_NOTIMPL;
             if (!param->pOEMDMOut || param->cbBufSize < sizeof(OEM_DMEXTRAHEADER))
                 return E_INVALIDARG;
-            *static_cast<OEM_DMEXTRAHEADER*>(param->pOEMDMOut) = {sizeof(OEM_DMEXTRAHEADER), SIGNATURE, 1};
+            *static_cast<OEM_DMEXTRAHEADER*>(param->pOEMDMOut) = {sizeof(OEM_DMEXTRAHEADER), SIGNATURE,
+                                                                  DEVMODE_VERSION};
             return S_OK;
         }
 
@@ -150,8 +162,10 @@ namespace {
             *out = nullptr;
             if (!dev || !info || infoSize < sizeof(GDIINFO) || !dev->pPublicDM)
                 return E_INVALIDARG;
-            if (info->ulLogPixelsX != 600 || info->ulLogPixelsY != 600 || !info->ulHorzRes || !info->ulVertRes ||
-                info->ulHorzRes > 10000 || info->ulVertRes > 10000)
+            if (info->ulLogPixelsX != Lj1005::Protocol::RESOLUTION_DPI ||
+                info->ulLogPixelsY != Lj1005::Protocol::RESOLUTION_DPI || !info->ulHorzRes || !info->ulVertRes ||
+                info->ulHorzRes > Lj1005::Protocol::MAX_RASTER_DIMENSION_PIXELS ||
+                info->ulVertRes > Lj1005::Protocol::MAX_RASTER_DIMENSION_PIXELS)
                 return E_INVALIDARG;
             try {
                 auto d = std::make_unique<Device>();
@@ -160,7 +174,8 @@ namespace {
                 // LANDSCAPE_CC270 rotates into portrait device coordinates before FilterGraphics.
                 if (dev->pPublicDM->dmOrientation == DMORIENT_LANDSCAPE)
                     std::swap(d->raster.width, d->raster.height);
-                d->options.paper = dev->pPublicDM->dmPaperSize == DMPAPER_LETTER ? 1 : 9;
+                d->options.paper = dev->pPublicDM->dmPaperSize == DMPAPER_LETTER ? Lj1005::Protocol::LETTER_PAPER
+                                                                                 : Lj1005::Protocol::A4_PAPER;
                 d->originX = static_cast<std::uint32_t>(std::max<LONG>(0, info->ptlPhysOffset.x));
                 d->originY = static_cast<std::uint32_t>(std::max<LONG>(0, info->ptlPhysOffset.y));
                 // MaxCopies=1: Unidrv performs copy expansion, keeping document ordering consistent.
@@ -215,7 +230,7 @@ namespace {
             auto& d = *static_cast<Device*>(dev->pdevOEM);
             try {
                 HRESULT hr = S_OK;
-                if (id == 1) {
+                if (id == START_DOCUMENT_COMMAND) {
                     // Unidrv repeats DOC_SETUP after ResetDC. ResetPDEV carries the
                     // active document across: never inject another JZJZ/START_DOC.
                     if (d.inDocument)
@@ -224,39 +239,44 @@ namespace {
                     d.failed = false;
                     d.inPage = false;
                     d.inDocument = true;
-                    hr = Spool(dev, lj1005::BeginDocument());
+                    hr = Spool(dev, Lj1005::BeginDocument());
                 }
-                else if (id == 2) {
+                else if (id == START_PAGE_COMMAND) {
                     if (!d.inDocument || d.inPage || d.failed)
                         return E_FAIL;
                     d.raster.pixels.assign(std::size_t((d.raster.width + 7) / 8) * d.raster.height, 0);
                     d.row = 0;
                     d.inPage = true;
                 }
-                else if (id == 3) {
+                else if (id == END_PAGE_COMMAND) {
                     if (!d.inPage || d.failed) {
                         d.failed = true;
                         return E_FAIL;
                     }
                     // Send the full physical sheet, as on the hardware-verified diagnostic path.
                     // Preserve Unidrv margins in pixels instead of emitting device offset commands.
-                    auto sheet = lj1005::PlaceOnSheet(d.raster, d.options.paper == 1 ? 5100 : 4960,
-                                                      d.options.paper == 1 ? 6600 : 7016, d.originX, d.originY);
-                    hr = Spool(dev, lj1005::EncodePage(sheet, d.options, ++d.page));
+                    auto sheet = Lj1005::PlaceOnSheet(
+                        d.raster,
+                        d.options.paper == Lj1005::Protocol::LETTER_PAPER ? Lj1005::Protocol::LETTER_WIDTH_PIXELS
+                                                                          : Lj1005::Protocol::A4_WIDTH_PIXELS,
+                        d.options.paper == Lj1005::Protocol::LETTER_PAPER ? Lj1005::Protocol::LETTER_HEIGHT_PIXELS
+                                                                          : Lj1005::Protocol::A4_HEIGHT_PIXELS,
+                        d.originX, d.originY);
+                    hr = Spool(dev, Lj1005::EncodePage(sheet, d.options, ++d.page));
                     d.inPage = false;
                 }
-                else if (id == 4) {
+                else if (id == END_DOCUMENT_COMMAND) {
                     if (!d.inDocument || d.inPage || d.failed)
                         return E_FAIL;
-                    hr = Spool(dev, lj1005::EndDocument());
+                    hr = Spool(dev, Lj1005::EndDocument());
                     d.inDocument = false;
                 }
-                else if (id == 5) {
+                else if (id == SET_COLUMN_COMMAND) {
                     // Full-width scan lines start at the printable origin. No horizontal blank stripping.
                     if (count != 1 || !params)
                         return E_INVALIDARG;
                 }
-                else if (id == 6) {
+                else if (id == SET_ROW_COMMAND) {
                     if (count != 1 || !params)
                         return E_INVALIDARG;
                     // Unidrv can omit wholly white leading/trailing bands. Preserve their page positions.
@@ -285,7 +305,8 @@ namespace {
             auto& d = *static_cast<Device*>(dev->pdevOEM);
             const auto stride = (d.raster.width + 7) / 8;
             if (!d.inPage || d.failed || d.row >= d.raster.height ||
-                (length != stride && length != (stride + 3) / 4 * 4)) {
+                (length != stride && length != (stride + SCANLINE_ALIGNMENT_BYTES - 1) / SCANLINE_ALIGNMENT_BYTES *
+                                                   SCANLINE_ALIGNMENT_BYTES)) {
                 d.failed = true;
                 return E_FAIL;
             }

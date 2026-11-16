@@ -17,7 +17,7 @@
 
 class Capture final : public IPrintOemDriverUni {
 public:
-    lj1005::Bytes bytes;
+    Lj1005::Bytes bytes;
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID id, void** out) override {
         if (!out)
@@ -135,24 +135,24 @@ int wmain(int argc, wchar_t** argv) {
             // DOC_SETUP may be reissued by Unidrv following ResetDC, without EndDoc.
             Check(render->CommandCallback(&device[i], 1, 0, nullptr, &result), "Start/reset document");
             Check(render->CommandCallback(&device[i], 2, 0, nullptr, &result), "Start page");
-            lj1005::Bytes row(i == 1 ? (4770 + 7) / 8 : (4910 + 7) / 8, 0xff);
+            Lj1005::Bytes row(i == 1 ? (4770 + 7) / 8 : (4910 + 7) / 8, 0xff);
             Check(render->FilterGraphics(&device[i], row.data(), static_cast<DWORD>(row.size())), "Raster row");
             Check(render->CommandCallback(&device[i], 3, 0, nullptr, &result), "End page");
         }
         INT result = 0;
         Check(render->CommandCallback(&device[2], 4, 0, nullptr, &result), "End document");
-        const auto pages = lj1005::DecodeJob(capture.bytes);
+        const auto pages = Lj1005::DecodeJob(capture.bytes);
         if (pages.size() != 3 || pages[0].width != 5100 || pages[1].width != 4960 || pages[1].height != 7016 ||
             pages[2].width != 5100)
             throw std::runtime_error("Paper reset damaged document geometry");
-        auto expected = lj1005::BeginDocument();
+        auto expected = Lj1005::BeginDocument();
         for (std::size_t i = 0; i < pages.size(); ++i) {
-            lj1005::PageOptions options;
+            Lj1005::PageOptions options;
             options.paper = i == 1 ? 9 : 1;
-            const auto encoded = lj1005::EncodePage(pages[i], options, static_cast<std::uint32_t>(i + 1));
+            const auto encoded = Lj1005::EncodePage(pages[i], options, static_cast<std::uint32_t>(i + 1));
             expected.insert(expected.end(), encoded.begin(), encoded.end());
         }
-        const auto end = lj1005::EndDocument();
+        const auto end = Lj1005::EndDocument();
         expected.insert(expected.end(), end.begin(), end.end());
         if (expected != capture.bytes)
             throw std::runtime_error("Paper reset damaged job framing or page sequence");
@@ -160,7 +160,7 @@ int wmain(int argc, wchar_t** argv) {
         capture.bytes.clear();
         for (DWORD command : {1, 2, 3, 4})
             Check(render->CommandCallback(&device[2], command, 0, nullptr, &result), "Second job");
-        if (lj1005::DecodeJob(capture.bytes).size() != 1)
+        if (Lj1005::DecodeJob(capture.bytes).size() != 1)
             throw std::runtime_error("Second job lost its header");
         for (auto& dev : device)
             Check(render->DisablePDEV(&dev), "Disable PDEV");

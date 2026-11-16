@@ -6,10 +6,15 @@
 #include <stdexcept>
 #include <vector>
 
-namespace lj1005 {
+namespace Lj1005 {
     namespace {
+        constexpr std::size_t MAX_TOKEN_CHARS = 64;
+        constexpr std::size_t MAX_RESPONSE_BYTES = 8192;
+        constexpr std::size_t MIN_JOB_STATUS_LINES = 3;
+
         void ValidateToken(std::string_view token) {
-            if (token.empty() || token.size() > 64 || !std::all_of(token.begin(), token.end(), [](unsigned char c) {
+            if (token.empty() || token.size() > MAX_TOKEN_CHARS ||
+                !std::all_of(token.begin(), token.end(), [](unsigned char c) {
                     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-';
                 }))
                 throw std::runtime_error("Invalid PJL job token");
@@ -48,7 +53,7 @@ namespace lj1005 {
                 pending_.clear();
             }
             else {
-                if (pending_.size() >= 8192)
+                if (pending_.size() >= MAX_RESPONSE_BYTES)
                     throw std::runtime_error("PJL response exceeds 8 KiB frame limit");
                 pending_.push_back(static_cast<char>(byte));
             }
@@ -72,7 +77,8 @@ namespace lj1005 {
             setupReady_ = true;
             return;
         }
-        if (lines.size() < 3 || lines[0] != "@PJL USTATUS JOB" || (lines[1] != "END" && lines[1] != "CANCELED"))
+        if (lines.size() < MIN_JOB_STATUS_LINES || lines[0] != "@PJL USTATUS JOB" ||
+            (lines[1] != "END" && lines[1] != "CANCELED"))
             return;
         std::optional<std::string_view> name, result;
         std::optional<std::uint32_t> pages;

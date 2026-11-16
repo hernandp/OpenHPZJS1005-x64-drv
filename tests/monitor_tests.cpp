@@ -11,9 +11,14 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include "completion_scenarios.hpp"
 #include <vector>
 
 namespace {
+    constexpr ULONGLONG RECONNECT_TEST_MAX_MS = 35000; // Independent 30-second policy plus scheduling allowance.
+    constexpr std::string_view JOB_NAME_PREFIX = "@PJL JOB NAME=\"";
+
     void Require(bool value, const char* message) {
         if (!value)
             throw std::runtime_error(message);
@@ -74,7 +79,7 @@ namespace {
         const auto start = output.find("@PJL JOB NAME=\"");
         if (start == std::string::npos)
             return FALSE;
-        const auto tokenStart = start + 15, tokenEnd = output.find('"', tokenStart);
+        const auto tokenStart = start + JOB_NAME_PREFIX.size(), tokenEnd = output.find('"', tokenStart);
         if (tokenEnd == std::string::npos)
             return FALSE;
         const auto token = output.substr(tokenStart, tokenEnd - tokenStart);
@@ -151,7 +156,7 @@ int wmain(int argc, wchar_t** argv) {
         doc.pDatatype = const_cast<LPWSTR>(L"RAW");
         const std::vector<unsigned char> job{'J', 'Z', 'J', 'Z', 1, 2, 3, 4, 5};
         for (auto name : {usb, lpt, file}) {
-            setScenario(0);
+            setScenario(CompletionScenario::NORMAL);
             FakePort fake;
             HANDLE port = nullptr;
             Require(monitor->pfnOpenPortEx(instance, &fake, name, printer, &port, &lower), "OpenPortEx failed");
@@ -182,7 +187,7 @@ int wmain(int argc, wchar_t** argv) {
         // synchronize with its own token, send one body, end at a PJL boundary,
         // and acknowledge exactly once without relying on ClosePort to reset it.
         for (auto name : {usb, lpt, file}) {
-            setScenario(0);
+            setScenario(CompletionScenario::NORMAL);
             FakePort repeated;
             HANDLE reused = nullptr;
             Require(monitor->pfnOpenPortEx(instance, &repeated, name, printer, &reused, &lower),
@@ -206,7 +211,7 @@ int wmain(int argc, wchar_t** argv) {
                 else {
                     const auto tokenStart = output.find("@PJL JOB NAME=\"");
                     Require(tokenStart != std::string::npos, "Consecutive job has no JOB token");
-                    const auto first = tokenStart + 15;
+                    const auto first = tokenStart + JOB_NAME_PREFIX.size();
                     const auto token = output.substr(first, output.find('"', first) - first);
                     Require(!token.empty() && token != previousToken, "Reused previous job token");
                     previousToken = token;
@@ -225,7 +230,7 @@ int wmain(int argc, wchar_t** argv) {
             Require(monitor->pfnClosePort(reused), "Close consecutive-job fixture");
         }
         for (unsigned scenario = 0; scenario < 5; ++scenario) {
-            setScenario(0);
+            setScenario(CompletionScenario::NORMAL);
             FakePort fake;
             HANDLE port = nullptr;
             if (scenario == 0)
@@ -263,8 +268,10 @@ int wmain(int argc, wchar_t** argv) {
             Require(acknowledgements() == 0, "Failed job was acknowledged as printed");
             Require(monitor->pfnClosePort(port), "Close failure fixture");
         }
-        for (DWORD scenario : {1u, 2u, 3u, 4u, 5u}) {
-            setScenario(0);
+        for (DWORD scenario :
+             {CompletionScenario::CANCELLED, CompletionScenario::READ_FAILURE, CompletionScenario::RECONNECT,
+              CompletionScenario::CANCEL_DURING_DISCONNECT, CompletionScenario::PERSISTENT_DISCONNECT}) {
+            setScenario(CompletionScenario::NORMAL);
             FakePort fake;
             HANDLE port = nullptr;
             Require(monitor->pfnOpenPortEx(instance, &fake, usb, printer, &port, &lower),
@@ -279,9 +286,10 @@ int wmain(int argc, wchar_t** argv) {
             const auto beforeCompletion = fake.bytes.size();
             const auto startedCompletion = GetTickCount64();
             Require(monitor->pfnEndDocPort(port), "Status failure requested a replay of submitted data");
-            if (scenario == 5)
-                Require(GetTickCount64() - startedCompletion < 35000, "Disconnect retry exceeded its bound");
-            Require(acknowledgements() == (scenario == 3 ? 1u : 0u) && fake.ends == 1,
+            if (scenario == CompletionScenario::PERSISTENT_DISCONNECT)
+                Require(GetTickCount64() - startedCompletion < RECONNECT_TEST_MAX_MS,
+                        "Disconnect retry exceeded its bound");
+            Require(acknowledgements() == (scenario == CompletionScenario::RECONNECT ? 1u : 0u) && fake.ends == 1,
                     "Incorrect acknowledgement after completion recovery");
             const std::string trailer(fake.bytes.begin() + beforeCompletion, fake.bytes.end());
             Require(trailer.find("JZJZ") == std::string::npos, "Recovery replayed raster data");
@@ -290,7 +298,7 @@ int wmain(int argc, wchar_t** argv) {
                     "Recovery replayed the end-of-job trailer");
             Require(monitor->pfnClosePort(port), "Close completion failure fixture");
         }
-        for (DWORD scenario : {1u, 2u}) {
+        for (DWORD scenario : {CompletionScenario::CANCELLED, CompletionScenario::READ_FAILURE}) {
             setScenario(scenario);
             FakePort fake;
             HANDLE port = nullptr;

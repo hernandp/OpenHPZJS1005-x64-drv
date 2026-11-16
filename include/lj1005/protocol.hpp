@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // See LICENSE in the repository root for license terms.
 #pragma once
+#include "lj1005/protocol_constants.hpp"
 #include <cstdint>
 #include <iosfwd>
 #include <span>
 #include <vector>
 
-namespace lj1005 {
+namespace Lj1005 {
     using Bytes = std::vector<std::uint8_t>;
 
     struct Raster {
@@ -15,9 +16,9 @@ namespace lj1005 {
     };
 
     struct PageOptions {
-        std::uint32_t paper = 9; // A4, Windows DMPAPER value.
+        std::uint32_t paper = Protocol::A4_PAPER; // A4, Windows DMPAPER value.
         std::uint32_t copies = 1;
-        std::uint32_t source = 7;
+        std::uint32_t source = Protocol::AUTOMATIC_PAPER_SOURCE;
         std::uint32_t offsetX = 0, offsetY = 0;
     };
 

@@ -8,7 +8,7 @@
 #include <memory>
 #include <string_view>
 
-namespace lj1005 {
+namespace Lj1005 {
     struct CompletionBackend {
         virtual ~CompletionBackend() = default;
         // Must return within a bounded transport timeout, including when no bytes arrive.

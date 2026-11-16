@@ -10,7 +10,11 @@ extern "C" {
 #include <sstream>
 #include <stdexcept>
 
-using namespace lj1005;
+using namespace Lj1005;
+
+namespace {
+    constexpr std::uint32_t REPRODUCIBLE_SEED = 1005;
+}
 
 void Require(bool condition, const char* text) {
     if (!condition)
@@ -195,7 +199,7 @@ void TestPrintValidation() {
 
 void RoundTrip(std::uint32_t w, std::uint32_t h, bool random) {
     Raster r{w, h, Bytes(std::size_t((w + 7) / 8) * h, 0)};
-    std::mt19937 rng(1005);
+    std::mt19937 rng(REPRODUCIBLE_SEED);
     if (random)
         for (auto& b : r.pixels)
             b = static_cast<std::uint8_t>(rng());

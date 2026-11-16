@@ -11,8 +11,10 @@
 #include <cwctype>
 #include <stdexcept>
 
-namespace lj1005 {
+namespace Lj1005 {
     namespace {
+        constexpr int MAX_USB_ANCESTOR_DEPTH = 4;
+
         struct Handle {
             HANDLE value = INVALID_HANDLE_VALUE;
 
@@ -83,7 +85,7 @@ namespace lj1005 {
             if (!SetupDiGetDeviceInterfaceDetailW(set, &iface, detail, needed, nullptr, &info))
                 ThrowUsbError("Reading USB interface");
             DEVINST node = info.DevInst;
-            for (int depth = 0; depth < 4; ++depth) {
+            for (int depth = 0; depth < MAX_USB_ANCESTOR_DEPTH; ++depth) {
                 wchar_t id[MAX_DEVICE_ID_LEN]{};
                 if (CM_Get_Device_IDW(node, id, MAX_DEVICE_ID_LEN, 0) == CR_SUCCESS && IsLaserJet1005(id)) {
                     devices.push_back({detail->DevicePath, id});
@@ -106,7 +108,7 @@ namespace lj1005 {
         Handle event(CreateEventW(nullptr, TRUE, FALSE, nullptr));
         if (!event.value)
             ThrowUsbError("Creating device-ID event");
-        std::vector<unsigned char> buffer(4096, 0);
+        std::vector<unsigned char> buffer(Runtime::DEVICE_ID_BUFFER_BYTES, 0);
         DWORD returned = 0;
         OVERLAPPED op{};
         op.hEvent = event.value;
@@ -114,7 +116,7 @@ namespace lj1005 {
                              static_cast<DWORD>(buffer.size()), &returned, &op)) {
             if (GetLastError() != ERROR_IO_PENDING)
                 ThrowUsbError("Reading IEEE 1284 device ID");
-            if (WaitForSingleObject(event.value, 5000) != WAIT_OBJECT_0) {
+            if (WaitForSingleObject(event.value, Runtime::DEVICE_ID_TIMEOUT_MS) != WAIT_OBJECT_0) {
                 CancelIoEx(file.value, &op);
                 GetOverlappedResult(file.value, &op, &returned, TRUE);
                 throw std::runtime_error("Timed out reading IEEE 1284 device ID");
@@ -122,16 +124,16 @@ namespace lj1005 {
             if (!GetOverlappedResult(file.value, &op, &returned, FALSE))
                 ThrowUsbError("Completing device ID read");
         }
-        if (returned < 2 || returned > buffer.size())
+        if (returned < Runtime::USB_DEVICE_ID_PREFIX_BYTES || returned > buffer.size())
             throw std::runtime_error("Invalid IEEE 1284 ID length");
         // Windows USBPRINT prepends a two-byte length field; use returned size to bound text.
-        auto first = buffer.begin() + 2, last = buffer.begin() + returned;
+        auto first = buffer.begin() + Runtime::USB_DEVICE_ID_PREFIX_BYTES, last = buffer.begin() + returned;
         last = std::find(first, last, 0);
         return std::string(first, last);
     }
 
     Bytes UsbRead(const UsbDevice& device, std::uint32_t timeoutMs) {
-        if (!timeoutMs || timeoutMs > 10000)
+        if (!timeoutMs || timeoutMs > Runtime::MAX_USB_READ_TIMEOUT_MS)
             throw std::runtime_error("USB read timeout must be 1..10000 ms");
         Handle file(CreateFileW(device.path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
                                 OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr));
@@ -140,7 +142,7 @@ namespace lj1005 {
         Handle event(CreateEventW(nullptr, TRUE, FALSE, nullptr));
         if (!event.value)
             ThrowUsbError("Creating USB read event");
-        Bytes bytes(4096);
+        Bytes bytes(Runtime::STATUS_BUFFER_BYTES);
         DWORD received = 0;
         OVERLAPPED op{};
         op.hEvent = event.value;
@@ -178,7 +180,7 @@ namespace lj1005 {
         if (!event.value)
             ThrowUsbError("Creating USB completion event");
         for (std::size_t pos = 0; pos < bytes.size();) {
-            const auto n = static_cast<DWORD>(std::min<std::size_t>(65536, bytes.size() - pos));
+            const auto n = static_cast<DWORD>(std::min<std::size_t>(Runtime::TRANSFER_CHUNK_BYTES, bytes.size() - pos));
             OVERLAPPED op{};
             op.hEvent = event.value;
             ResetEvent(event.value);
@@ -186,7 +188,7 @@ namespace lj1005 {
             if (!WriteFile(file.value, bytes.data() + pos, n, &written, &op)) {
                 if (GetLastError() != ERROR_IO_PENDING)
                     ThrowUsbError("Writing USB data");
-                if (WaitForSingleObject(event.value, 30000) != WAIT_OBJECT_0) {
+                if (WaitForSingleObject(event.value, Runtime::USB_WRITE_TIMEOUT_MS) != WAIT_OBJECT_0) {
                     CancelIoEx(file.value, &op);
                     // Keep the OVERLAPPED and data alive until cancellation has completed.
                     GetOverlappedResult(file.value, &op, &written, TRUE);

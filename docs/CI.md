@@ -1,6 +1,6 @@
 # Build verification
 
-GitHub Actions runs on pushes to main, mini-install and codex branches, on pull requests and on manual dispatch. The windows-2022 runner checks clang-format 22.1.3, Python archive and firmware INF tests, and support-report privacy under both PowerShell versions.
+GitHub Actions runs on pushes to main, mini-install and codex branches, on pull requests and on manual dispatch. The windows-2022 runner checks C++ layout with clang-format 22.1.3 and enforces the [namespace and constant conventions](CODING_STYLE.md). It also runs Python archive and firmware INF tests and checks support-report privacy under both PowerShell versions.
 
 The unsigned candidate builds from an archived source snapshot. It runs all seven CTest suites, checks x64 imports and version resources for the two driver DLLs, validates the INF and GPD and records build provenance. CI verifies both archive manifests and the exact payload against the clean commit. Source and unsigned archives, checksums and validation logs have a 14-day retention period.
 

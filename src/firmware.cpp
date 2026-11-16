@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // See LICENSE in the repository root for license terms.
+#include "lj1005/runtime_constants.hpp"
 #include "lj1005/firmware.hpp"
 #include <algorithm>
 #include <cctype>
 #include <stdexcept>
 
-namespace lj1005 {
+namespace Lj1005 {
     namespace {
         std::string Normalize(std::string_view s) {
 
@@ -72,7 +73,7 @@ namespace lj1005 {
         const auto firmware = WrapFirmware(transport.loadImage());
         transport.write(firmware);
 
-        for (unsigned int attempt = 0; attempt < 20; ++attempt) {
+        for (unsigned int attempt = 0; attempt < Runtime::FIRMWARE_POLL_ATTEMPTS; ++attempt) {
             transport.waitHalfSecond();
 
             if (GetFirmwareState(transport.identify()) == FirmwareState::ready)

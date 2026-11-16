@@ -3,7 +3,7 @@
 #include "lj1005/pjl.hpp"
 #include <iostream>
 #include <stdexcept>
-using namespace lj1005;
+using namespace Lj1005;
 
 void Require(bool condition, const char* message) {
     if (!condition)

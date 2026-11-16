@@ -8,8 +8,11 @@
 #include <string>
 #include <vector>
 
-namespace lj1005 {
+namespace Lj1005 {
     namespace {
+        constexpr std::size_t USB_PATH_CAPACITY = 2048;
+        constexpr std::size_t MAX_JOB_STATUS_BYTES = 1024 * 1024;
+
         [[noreturn]] void ThrowCompletionError(const char* action, DWORD code = GetLastError()) {
             throw std::runtime_error(std::string(action) + " (Win32 " + std::to_string(code) + ")");
         }
@@ -27,7 +30,7 @@ namespace lj1005 {
                     const auto key =
                         std::wstring(L"SYSTEM\\CurrentControlSet\\Control\\Print\\Monitors\\USB Monitor\\Ports\\") +
                         std::wstring(portName);
-                    std::array<wchar_t, 2048> path{};
+                    std::array<wchar_t, USB_PATH_CAPACITY> path{};
                     DWORD bytes = static_cast<DWORD>(sizeof(path));
                     const auto result = RegGetValueW(HKEY_LOCAL_MACHINE, key.c_str(), L"Device Path", RRF_RT_REG_SZ,
                                                      nullptr, path.data(), &bytes);
@@ -48,8 +51,8 @@ namespace lj1005 {
                             "Parallel completion requires a port monitor with timed bidirectional reads");
                     COMMTIMEOUTS timeouts{};
                     timeouts.ReadIntervalTimeout = MAXDWORD;
-                    timeouts.ReadTotalTimeoutConstant = 500;
-                    timeouts.WriteTotalTimeoutConstant = 30000;
+                    timeouts.ReadTotalTimeoutConstant = Runtime::COMPLETION_READ_MS;
+                    timeouts.WriteTotalTimeoutConstant = Runtime::PARALLEL_WRITE_TIMEOUT_MS;
                     if (!lower_.pfnSetPortTimeOuts(lowerHandle_, &timeouts, 0))
                         ThrowCompletionError("Setting parallel read timeout");
                 }
@@ -66,8 +69,8 @@ namespace lj1005 {
                 // Independent overlapped USB reads give a bounded wait even if USBMON lacks timeout callbacks.
                 // The underlying port monitor still owns all firmware and document writes.
                 if (usb_)
-                    return UsbRead(*usb_, 500);
-                Bytes data(4096);
+                    return UsbRead(*usb_, Runtime::COMPLETION_READ_MS);
+                Bytes data(Runtime::STATUS_BUFFER_BYTES);
                 DWORD count = 0;
                 if (!lower_.pfnReadPort(lowerHandle_, data.data(), static_cast<DWORD>(data.size()), &count))
                     ThrowCompletionError("Reading parallel completion");
@@ -86,7 +89,7 @@ namespace lj1005 {
                     if (code != ERROR_INSUFFICIENT_BUFFER)
                         ThrowCompletionError("Sizing print job status", code);
                 }
-                if (!needed || needed > 1024 * 1024)
+                if (!needed || needed > MAX_JOB_STATUS_BYTES)
                     throw std::runtime_error("Invalid print job status size");
                 std::vector<unsigned char> buffer(needed);
                 if (!GetJobW(printer_, job_, 1, buffer.data(), needed, &needed)) {

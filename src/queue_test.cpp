@@ -7,6 +7,27 @@
 #include <string>
 #include <vector>
 
+namespace {
+    constexpr int MULTI_PAGE_COUNT = 3;
+    constexpr int BLANK_PAGE_INDEX = 1;
+    constexpr int BORDER_INSET_PIXELS = 100;
+    constexpr int BOLD_BORDER_PIXELS = 12;
+    constexpr int FONT_HEIGHT_PIXELS = 100;
+    constexpr int LABEL_X_PIXELS = 200;
+    constexpr int LABEL_Y_PIXELS = 300;
+    constexpr int BAR_COUNT = 16;
+    constexpr int BAR_LEFT_PIXELS = 200;
+    constexpr int BAR_PITCH_PIXELS = 200;
+    constexpr int BAR_WIDTH_PIXELS = 80;
+    constexpr int BAR_TOP_PIXELS = 700;
+    constexpr int BAR_BOTTOM_PIXELS = 1100;
+    constexpr int MARKER_LEFT_PIXELS = 200;
+    constexpr int MARKER_TOP_PIXELS = 1300;
+    constexpr int MARKER_BASE_RIGHT_PIXELS = 300;
+    constexpr int MARKER_PAGE_STEP_PIXELS = 200;
+    constexpr int MARKER_BOTTOM_PIXELS = 1500;
+}
+
 int wmain(int argc, wchar_t** argv) {
     if (argc < 3 || argc > 5) {
         std::cerr
@@ -66,11 +87,11 @@ int wmain(int argc, wchar_t** argv) {
         if (StartDocW(dc, &doc) <= 0)
             throw std::runtime_error("StartDoc failed");
         started = true;
-        const int pages = (multi || scenario == L"emf-reset") ? 3 : 1;
+        const int pages = (multi || scenario == L"emf-reset") ? MULTI_PAGE_COUNT : 1;
         for (int page = 0; page < pages; ++page) {
             if (scenario == L"emf-reset") {
-                dm->dmPaperSize = page == 1 ? DMPAPER_A4 : DMPAPER_LETTER;
-                dm->dmOrientation = page == 1 ? DMORIENT_LANDSCAPE : DMORIENT_PORTRAIT;
+                dm->dmPaperSize = page == BLANK_PAGE_INDEX ? DMPAPER_A4 : DMPAPER_LETTER;
+                dm->dmOrientation = page == BLANK_PAGE_INDEX ? DMORIENT_LANDSCAPE : DMORIENT_PORTRAIT;
                 auto reset = ResetDCW(dc, dm);
                 if (!reset)
                     throw std::runtime_error("ResetDC failed");
@@ -90,48 +111,60 @@ int wmain(int argc, wchar_t** argv) {
                 if (!played)
                     throw std::runtime_error("EMF playback failed");
             }
-            else if (scenario != L"blank" && !(multi && page == 1)) {
+            else if (scenario != L"blank" && !(multi && page == BLANK_PAGE_INDEX)) {
                 const int width = GetDeviceCaps(dc, HORZRES), height = GetDeviceCaps(dc, VERTRES);
                 const auto black = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
                 if (bold) {
                     // Half-millimetre strips, contained within the original border bounds.
-                    const RECT edges[] = {{100, 100, width - 100, 112},
-                                          {100, height - 112, width - 100, height - 100},
-                                          {100, 112, 112, height - 112},
-                                          {width - 112, 112, width - 100, height - 112}};
+                    const RECT edges[] = {{BORDER_INSET_PIXELS, BORDER_INSET_PIXELS, width - BORDER_INSET_PIXELS,
+                                           (BORDER_INSET_PIXELS + BOLD_BORDER_PIXELS)},
+                                          {BORDER_INSET_PIXELS, height - (BORDER_INSET_PIXELS + BOLD_BORDER_PIXELS),
+                                           width - BORDER_INSET_PIXELS, height - BORDER_INSET_PIXELS},
+                                          {BORDER_INSET_PIXELS, (BORDER_INSET_PIXELS + BOLD_BORDER_PIXELS),
+                                           (BORDER_INSET_PIXELS + BOLD_BORDER_PIXELS),
+                                           height - (BORDER_INSET_PIXELS + BOLD_BORDER_PIXELS)},
+                                          {width - (BORDER_INSET_PIXELS + BOLD_BORDER_PIXELS),
+                                           (BORDER_INSET_PIXELS + BOLD_BORDER_PIXELS), width - BORDER_INSET_PIXELS,
+                                           height - (BORDER_INSET_PIXELS + BOLD_BORDER_PIXELS)}};
                     for (const auto& edge : edges)
                         if (!FillRect(dc, &edge, black))
                             throw std::runtime_error("Border drawing failed");
                 }
                 else
-                    Rectangle(dc, 100, 100, width - 100, height - 100);
+                    Rectangle(dc, BORDER_INSET_PIXELS, BORDER_INSET_PIXELS, width - BORDER_INSET_PIXELS,
+                              height - BORDER_INSET_PIXELS);
                 HFONT font =
-                    CreateFontW(-100, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-                                CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"Arial");
+                    CreateFontW(-FONT_HEIGHT_PIXELS, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+                                OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, L"Arial");
                 auto previous = SelectObject(dc, font);
                 std::wstring text = L"Benteveo - HP Laserjet 1005 driver for Windows 11 x64";
                 if (bold && multi)
-                    text += L" - Page " + std::to_wstring(page + 1) + L" of 3";
-                TextOutW(dc, 200, 300, text.c_str(), static_cast<int>(text.size()));
+                    text += L" - Page " + std::to_wstring(page + 1) + L" of " + std::to_wstring(MULTI_PAGE_COUNT);
+                TextOutW(dc, LABEL_X_PIXELS, LABEL_Y_PIXELS, text.c_str(), static_cast<int>(text.size()));
                 SelectObject(dc, previous);
                 DeleteObject(font);
-                for (int i = 0; i < 16; ++i) {
+                for (int i = 0; i < BAR_COUNT; ++i) {
                     if (bold) {
-                        const RECT bar{200 + i * 200, 700, 280 + i * 200, 1100};
+                        const RECT bar{BAR_LEFT_PIXELS + i * BAR_PITCH_PIXELS, BAR_TOP_PIXELS,
+                                       BAR_LEFT_PIXELS + BAR_WIDTH_PIXELS + i * BAR_PITCH_PIXELS, BAR_BOTTOM_PIXELS};
                         if (!FillRect(dc, &bar, black))
                             throw std::runtime_error("Bar drawing failed");
                     }
                     else
-                        Rectangle(dc, 200 + i * 200, 700, 280 + i * 200, 1100);
+                        Rectangle(dc, BAR_LEFT_PIXELS + i * BAR_PITCH_PIXELS, BAR_TOP_PIXELS,
+                                  BAR_LEFT_PIXELS + BAR_WIDTH_PIXELS + i * BAR_PITCH_PIXELS, BAR_BOTTOM_PIXELS);
                 }
                 if (multi) {
                     if (bold) {
-                        const RECT marker{200, 1300, 300 + page * 200, 1500};
+                        const RECT marker{MARKER_LEFT_PIXELS, MARKER_TOP_PIXELS,
+                                          MARKER_BASE_RIGHT_PIXELS + page * MARKER_PAGE_STEP_PIXELS,
+                                          MARKER_BOTTOM_PIXELS};
                         if (!FillRect(dc, &marker, black))
                             throw std::runtime_error("Page marker drawing failed");
                     }
                     else
-                        Rectangle(dc, 200, 1300, 300 + page * 200, 1500);
+                        Rectangle(dc, MARKER_LEFT_PIXELS, MARKER_TOP_PIXELS,
+                                  MARKER_BASE_RIGHT_PIXELS + page * MARKER_PAGE_STEP_PIXELS, MARKER_BOTTOM_PIXELS);
                 }
             }
             if (EndPage(dc) <= 0)

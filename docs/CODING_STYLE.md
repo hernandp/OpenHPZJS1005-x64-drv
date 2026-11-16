@@ -8,7 +8,8 @@ Derived from the maintainer's edits to `src/firmware.cpp` and `src/main.cpp` on 
 - Put opening braces on the declaration or control-statement line. Put `else`, `else if`, and `catch` on a new line after the preceding closing brace.
 - Use PascalCase for project-owned functions and types: `GetFirmwareState`, `EnsureFirmware`, `ReadFile`, `FirmwareTransport`.
 - Use camelCase for variables, parameters, and data members: `seenMfg`, `seenFirmware`, `pageNumber`. A function-valued data member is still a data member (`loadImage`).
-- Use uppercase names with underscores for named compile-time constants, such as `FILESIZE_LIMIT`. Keep lowercase namespaces, including `lj1005`.
+- Use `UPPER_SNAKE_CASE` for named compile-time constants and declare one per statement on its own line. Give shared constants an explicit type and use `inline constexpr` in headers.
+- Use PascalCase for each component of a project namespace, such as `Lj1005::Runtime` and `Lj1005::Protocol::ItemTag`.
 - Write spaces around operators, after commas, and between control keywords and parentheses: `if (condition)`, `const auto end = id.find(';');`.
 - Attach pointer and reference markers to the type: `const char*`, `const Raster&`.
 - Put each statement on its own line. Avoid compressed function bodies or an `if`, its body, and a following statement on the same line.
@@ -17,7 +18,7 @@ Derived from the maintainer's edits to `src/firmware.cpp` and `src/main.cpp` on 
 - Use `const` for values that do not change and `auto` where the initializer makes the type clear. Keep explicit fixed-width types where protocol widths matter.
 
 ```cpp
-namespace lj1005 {
+namespace Lj1005 {
     bool EnsureFirmware(const FirmwareTransport& transport) {
 
         if (GetFirmwareState(transport.identify()) == FirmwareState::ready)
@@ -26,7 +27,7 @@ namespace lj1005 {
         const auto firmware = WrapFirmware(transport.loadImage());
         transport.write(firmware);
 
-        for (unsigned int attempt = 0; attempt < 20; ++attempt) {
+        for (unsigned int attempt = 0; attempt < Runtime::FIRMWARE_POLL_ATTEMPTS; ++attempt) {
             transport.waitHalfSecond();
 
             if (GetFirmwareState(transport.identify()) == FirmwareState::ready)
@@ -48,9 +49,11 @@ Windows/COM methods, exports, SDK fields, standard-library members, and JBIG API
 Use clang-format **22** and the root `.clang-format`. The PowerShell 7 helper finds it on PATH or in Visual Studio's LLVM tools; an explicit path can be supplied with `-ClangFormat`.
 
 ```powershell
-./scripts/format.ps1          # Apply layout to project-owned C++ files
-./scripts/format.ps1 -Check   # Check without editing
+./scripts/format.ps1          # Apply layout and check naming and declarations
+./scripts/format.ps1 -Check   # Check layout, naming and declarations without editing
 ./scripts/build.ps1          # Build and run the seven offline test suites
 ```
 
-The formatter controls layout; it does not rename identifiers, choose logical blank-line groupings, or prove that moved braces preserve behavior. Update declarations and callers together when renaming, and review the semantic diff before accepting a style change. Keep include order around Windows SDK headers intact. No formatter or build command above installs a driver or submits a page.
+The helper runs clang-format for layout and checks PascalCase namespace names, UPPER_SNAKE_CASE constexpr names, and grouped constexpr declarations. Fix reported declarations and their callers together. Keep include order around Windows SDK headers intact.
+
+Use the [protocol constants header](../include/lj1005/protocol_constants.hpp) for shared wire values and limits, and the [runtime constants header](../include/lj1005/runtime_constants.hpp) for shared transport sizes and timings. Keep implementation-specific constants in the file's anonymous namespace. Leave ordinary counters, indexing and byte arithmetic inline. Keep test vectors and boundary expectations independent of the production constants they verify.

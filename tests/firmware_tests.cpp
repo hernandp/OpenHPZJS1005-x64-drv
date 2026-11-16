@@ -3,7 +3,7 @@
 #include "lj1005/firmware.hpp"
 #include <iostream>
 #include <stdexcept>
-using namespace lj1005;
+using namespace Lj1005;
 
 void Require(bool value) {
     if (!value)

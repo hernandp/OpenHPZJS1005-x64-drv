@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace lj1005 {
+namespace Lj1005 {
     std::string PjlBeginJob(std::string_view token);
     std::string PjlEndJob(std::string_view token);
 

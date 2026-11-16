@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace lj1005 {
+namespace Lj1005 {
     enum class FirmwareState {
         missing,
         ready
