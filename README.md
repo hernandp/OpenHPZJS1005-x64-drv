@@ -34,7 +34,25 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 ## Install with Have Disk
 
-The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` from your HP software beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. 
+The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**.
+
+### Get the HP firmware
+
+Extract the mini ZIP first. Open [get-hp-firmware.ps1](scripts/get-hp-firmware.ps1) on GitHub and use **Download raw file** to save the helper. Open PowerShell in the folder where you saved it, and replace the example path with the folder containing your extracted `lj1005.inf`.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\get-hp-firmware.ps1 -DriverFolder 'C:\path\to\HPLJ1005-mini'
+```
+
+The helper downloads the original LaserJet 1005 package directly from HP, reads it as an archive, and saves the verified `sihp1005.img` beside the INF. It needs no administrator rights. The execution policy option applies only to the PowerShell process running the helper. Continue with certificate setup and Have Disk when the helper reports success.
+
+If you already have the original HP package, use it locally:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\get-hp-firmware.ps1 -DriverFolder 'C:\path\to\HPLJ1005-mini' -HpPackage 'C:\path\to\lj1005hostbased-en.exe'
+```
+
+If you already have `sihp1005.img` from your original HP software, copy it beside the INF and check the size and SHA-256 in the [installation guide](docs/MINI_INSTALL.md#prepare-the-extracted-folder).
 
 ### Test Certificate installation
 

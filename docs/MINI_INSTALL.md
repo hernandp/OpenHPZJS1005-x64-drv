@@ -10,8 +10,10 @@ Use a disposable VM for the initial installation rehearsal.
 ## Prepare the extracted folder
 
 1. Extract the ZIP completely. Keep all files together.
-2. Obtain the original `sihp1005.img` from your own HP software package and copy
-   it beside `lj1005.inf`. Keep that exact filename; do not modify the INF or CAT.
+2. Use the optional [HP firmware helper](https://github.com/hernandp/OpenHPZJS1005-x64-drv#get-the-hp-firmware)
+   to download and verify the firmware, or copy the original `sihp1005.img`
+   from your own HP software package beside `lj1005.inf`. Keep that exact filename
+   and leave the INF and CAT intact.
    Firmware is not included in this download and is not covered by our GPL license.
 3. Check that the image is 116892 bytes and its SHA-256 is:
    `638b9ad4a2cf6888208926ef7c7de073da8ba4cded25d31000a585c4526a9ca1`.
