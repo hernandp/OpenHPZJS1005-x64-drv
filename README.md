@@ -30,16 +30,26 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` from your HP software beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. 
 
-Make sure you import the Test Certificate to your target system.
+### Test Certificate installation
 
-<img width="500" height="541" alt="image" src="https://github.com/user-attachments/assets/5e443cfe-5eb0-4750-b6e7-0b0dc880cf7e" />
+This driver is signed by using a test certificate -In the future a proper solution would be provided for open-source projects such as SignPath. To install the Project Benteveo driver, import the certificate by double-clicking `TEST-CERTIFICATE.cer`, and clicking 'Install Certificate'. 
+Add the certificate in **Local Machine** context, to the following stores: **Trusted Root Certification Authorities** and **Trusted Publishers**.
 
+ℹ️ Optionally Check if the certificate is properly installed by running the following Powershell script (must return True for both stores):
+
+```powershell
+$t = 'DEAD78F5D4F2A4D8A424726555A6C3D536E445FC'
+Test-Path "Cert:\LocalMachine\Root\$t"
+Test-Path "Cert:\LocalMachine\TrustedPublisher\$t"
+```
+
+### Continue with Wizard
 
 To launch the classic Add Printer Wizard in Windows, use one of these quick methods:
 
 Through standard Windows Settings:
 
-* Navigate to Start > Settings > Bluetooth & devices > Printers & scanners > Add a printer & scanner > Add device (or select Add a new device manually if the printer isn't listed automatically).
+* Navigate to **Start > Settings > Bluetooth & devices > Printers & scanners > Add a printer & scanner > Add device** (or select Add a new device manually if the printer isn't listed automatically).
 
 * Command Prompt / Run Command:
   - Press `Windows Key + R` to open the Run dialog box.
@@ -59,8 +69,10 @@ Through standard Windows Settings:
 * Press the Have Disk button and browse to the folder where you extracted the Project Benteveo ZIP:
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/fa1c124b-f872-4fb3-a425-728c9019559a" />
 
+* Make sure **HP Laserjet 1005 (Benteveo Driver)** appears with Authenticode(tm) Digital signature.
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/58344dfb-f9b7-4f54-aac2-8af06387ae6d" />
 
-
+* Finish the installation by choosing an alternative name and sharing options. Confirm the driver works by loading an A4 sheet in your printer, and clicking **Print a Test Page** button at the end of the wizard.
 
 Select the USB port assigned to the connected printer. Follow the guide for firmware verification, tester certificate trust, paper settings and removal. [Installation guide](docs/MINI_INSTALL.md)
 
