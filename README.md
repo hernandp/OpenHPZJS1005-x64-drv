@@ -26,6 +26,12 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 **Lesson:** Don't throw away your old hardware! With current AI tools, you can do some vibe software and hardware hacking to *hopefully* suit your needs.
 
+## Current-state-of-development docs
+* [Changelog](CHANGELOG.md)
+* [Test evidence](docs/TEST_STATUS.md)
+* [Release plan](docs/RELEASE_PLAN.md)
+
+
 ## Install with Have Disk
 
 The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` from your HP software beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. 
@@ -74,9 +80,6 @@ Through standard Windows Settings:
 
 * Finish the installation by choosing an alternative name and sharing options. Confirm the driver works by loading an A4 sheet in your printer, and clicking **Print a Test Page** button at the end of the wizard.
 
-Select the USB port assigned to the connected printer. Follow the guide for firmware verification, tester certificate trust, paper settings and removal. [Installation guide](docs/MINI_INSTALL.md)
-
-**Release status:** the available local builds use a dedicated self-signed tester certificate. Public distribution awaits trusted signing and release acceptance. CI produces unsigned engineering archives. The earlier Open ZJS package passed VM testing; the Benteveo-branded package awaits its own VM installation acceptance. After the paper-loading solenoid repair, the exact Benteveo tester package passed A4 physical printing, copies/collation, paper-out, front-cover recovery and five cold cycles on build 26300.9974. The signed 0.1.2 USB retry fix passed a timed interruption and follow-up on the same build; interruptions beyond its 30-second retry window remain unconfirmed. Sleep/wake and physical Letter remain untested. [Test evidence](docs/TEST_STATUS.md) · [Release plan](docs/RELEASE_PLAN.md) · [Changelog](CHANGELOG.md)
 
 ## Build and test
 
