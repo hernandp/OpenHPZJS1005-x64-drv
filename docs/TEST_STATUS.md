@@ -1,5 +1,24 @@
 # Test evidence by deployment path
 
+## VMware Workstation Have Disk and A4 test page — November 17, 2026
+
+The maintainer reported that Have Disk installed the 0.1.2 tester mini ZIP in
+a Windows 11 VMware Workstation guest. The printer was connected from the
+VMware menu, the guest queue used USB001, and the guest detected
+`USB\VID_03F0&PID_1317` with status OK. The exact guest Windows build and ZIP
+digest were not independently verified for this run.
+
+The wizard's first physical test produced multiple blank sheets. A separate
+FILE: queue using the same driver captured a Windows test page that validated
+as one Letter sheet, one copy, at 600 dpi. The decoded raster contained the
+expected text and printer graphic. Capture SHA-256:
+`b4e5ed15e1637b3a61bfd7af9257ac956bac2d92c7b010c073a652b14a28d4ef`.
+
+After changing the USB001 queue from Letter to A4, the maintainer reported
+that the physical Windows test page printed correctly. No monitor trace was
+supplied. This records a successful A4 retry on this VM and printer; the cause
+of the initial blank sheets and physical Letter behavior remain unverified.
+
 ## USB completion retry fix — November 14–16, 2026 (timed recovery validated)
 
 The 0.1.2 signed retry candidate was built from base commit

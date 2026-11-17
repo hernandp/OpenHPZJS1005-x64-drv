@@ -75,10 +75,10 @@ Through standard Windows Settings:
 * Press the Have Disk button and browse to the folder where you extracted the Project Benteveo ZIP:
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/fa1c124b-f872-4fb3-a425-728c9019559a" />
 
-* Make sure **HP Laserjet 1005 (Benteveo Driver)** appears with Authenticode(tm) Digital signature.
+* Make sure **HP Laserjet 1005 (Project Benteveo Driver)** appears with an Authenticode digital signature. The screenshot shows the name used by an earlier tester ZIP.
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/58344dfb-f9b7-4f54-aac2-8af06387ae6d" />
 
-* Finish the installation by choosing an alternative name and sharing options. Confirm the driver works by loading an A4 sheet in your printer, and clicking **Print a Test Page** button at the end of the wizard.
+* Finish the wizard before printing. Confirm that the queue uses the USB port assigned to the connected printer. If you are using A4 paper, set A4 in the queue's **Printing Defaults** and **Printing preferences**, load one A4 sheet, then select **Print Test Page** from **Printer properties**. [Installation guide](docs/MINI_INSTALL.md)
 
 
 ## Build and test

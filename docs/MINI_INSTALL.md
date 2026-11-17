@@ -53,11 +53,15 @@ Retain the currently installed version's extracted package until cleanup is veri
    **HP Laserjet 1005 (Project Benteveo Driver)**. Approve administrator prompts.
    If firmware is missing or incorrect, cancel, correct the extracted folder,
    and retry; do not skip files or accept an altered package.
-4. In Printer properties, Ports, confirm the correct USB port and enable
-   bidirectional support. In Printing preferences, confirm A4, portrait,
-   monochrome and simplex. Windows selected Letter initially in the VM rehearsal,
-   despite the GPD's A4 default. Keep your preferred default printer selected.
-5. Print one test page only when the physical printer and paper are ready.
+4. Finish the wizard before printing a test page. In **Printer properties →
+   Ports**, confirm the correct USB port and enable bidirectional support.
+   For A4 paper, set **Printer properties → Advanced → Printing Defaults** to A4,
+   then confirm A4 in **Printing preferences** for the current user. Confirm
+   portrait, monochrome and simplex. Keep your preferred default printer selected.
+   The driver declares A4 as its default, and Windows Unidrv can select Letter
+   on a non-metric system. [Windows paper default rules](https://learn.microsoft.com/en-us/windows-hardware/drivers/print/feature-attributes)
+5. Load one A4 sheet and select **Print Test Page** from Printer properties.
+   Physical Letter printing is still under test.
 
 Windows installs the image as `%SystemRoot%\System32\lj1005-firmware.img`.
 The monitor uses this installed copy, so the extracted folder can be moved
