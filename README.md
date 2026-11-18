@@ -34,7 +34,10 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 ## Install with Have Disk
 
-The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**.
+The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. See below for details. 
+
+⏯️ An installation demo video is available here: [Youtube](https://www.youtube.com/watch?v=YPfRTDhf5iE)
+
 
 ### Get the HP firmware
 
