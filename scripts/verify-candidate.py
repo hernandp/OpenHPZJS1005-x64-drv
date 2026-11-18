@@ -10,6 +10,7 @@ import re
 import zipfile
 
 
+ARCHIVE_PREFIXES = ("Benteveo-HPLJ1005-x64", "HPLJ1005x64")
 PAYLOAD = {
     "driver/lj1005.inf",
     "driver/lj1005.gpd", "driver/lj1005.ini",
@@ -124,8 +125,9 @@ def verify(candidate, require_clean=False):
     require(info["sourceArchive"] == sources[0]
             and info["sourceArchiveSha256"] == checksums[sources[0]],
             "Source archive provenance mismatch")
-    require(sources[0] == f"HPLJ1005x64-{version}-source.zip"
-            and binaries[0] == f"HPLJ1005x64-{version}-unsigned-candidate.zip",
+    require(any(sources[0] == f"{prefix}-{version}-source.zip"
+                and binaries[0] == f"{prefix}-{version}-unsigned-candidate.zip"
+                for prefix in ARCHIVE_PREFIXES),
             "Archive/version mismatch")
     require(info["packageState"] == "unsigned-engineering-candidate"
             and info["cleanMachineTested"] is False, "Unexpected acceptance claim")

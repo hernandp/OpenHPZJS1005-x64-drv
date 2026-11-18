@@ -54,13 +54,13 @@ class CandidateVerification(unittest.TestCase):
         return verifier.digest((self.root / name).read_bytes())
 
     def build(self, corrupt_manifest=False, bad_provenance=False):
-        source_name = "HPLJ1005x64-0.1.1-source.zip"
+        source_name = "Benteveo-HPLJ1005-x64-0.1.1-source.zip"
         source_hash = self.archive(source_name, "source", self.source, corrupt_manifest)
         self.info.update(sourceArchive=source_name, sourceArchiveSha256=source_hash)
         if bad_provenance:
             self.info["sourceArchiveSha256"] = "0" * 64
         self.binary["BUILD-INFO.json"] = json.dumps(self.info).encode()
-        binary_name = "HPLJ1005x64-0.1.1-unsigned-candidate.zip"
+        binary_name = "Benteveo-HPLJ1005-x64-0.1.1-unsigned-candidate.zip"
         binary_hash = self.archive(binary_name, "HPLJ1005x64", self.binary)
         (self.root / "SHA256SUMS.txt").write_text(
             f"{source_hash}  {source_name}\n{binary_hash}  {binary_name}\n"

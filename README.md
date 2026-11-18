@@ -136,7 +136,7 @@ $candidate = Get-Content -LiteralPath artifacts/candidate-path.txt
     -FirmwarePath 'C:\private\sihp1005.img'
 ```
 
-The second script signs and verifies the mini ZIP and prints its location under `artifacts/mini-*/`. The directory contains `HPLJ1005x64-<version>-mini-self-signed-test.zip`, the matching source ZIP, and `SHA256SUMS.txt`. Firmware is used locally to generate the catalog and is omitted from the ZIP. This process produces a self-signed tester package. [Packaging and installation guide](docs/MINI_INSTALL.md#build-locally)
+The second script signs and verifies the mini ZIP and prints its location under `artifacts/mini-*/`. The directory contains `Benteveo-HPLJ1005-x64-<version>-mini-self-signed-test.zip`, `Benteveo-HPLJ1005-x64-<version>-source.zip`, and `SHA256SUMS.txt`. Firmware is used locally to generate the catalog and is omitted from the ZIP. This process produces a self-signed tester package. [Packaging and installation guide](docs/MINI_INSTALL.md#build-locally)
 
 ## Driver architecture
 

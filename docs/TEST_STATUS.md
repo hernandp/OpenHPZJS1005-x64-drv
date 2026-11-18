@@ -1,5 +1,16 @@
 # Test evidence by deployment path
 
+## First GitHub release — November 18, 2026
+
+The maintainer reported testing the signed 0.1.2 mini ZIP and publishing it
+alongside the matching source ZIP and checksums. GitHub reports the mini ZIP
+SHA-256 as `1df6797a25b9edc1274fa08146c4a2108b3a4935e87f95ba2aab2b6f04573cf0`,
+which matches the locally verified build. The build snapshot used base commit
+`a9ccfb2c863ed00d6b43601b780aa06dc2728114` with the archive naming changes
+still in the working tree. The attached source ZIP contains that snapshot.
+The guest Windows build and individual test results were not supplied for
+this report. [GitHub release](https://github.com/hernandp/OpenHPZJS1005-x64-drv/releases/tag/0.1.2)
+
 ## VMware Workstation Have Disk and A4 test page — November 17, 2026
 
 The maintainer reported that Have Disk installed the 0.1.2 tester mini ZIP in

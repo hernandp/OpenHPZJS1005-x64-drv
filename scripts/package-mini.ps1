@@ -127,7 +127,7 @@ $entries = Get-ChildItem -LiteralPath $bundle -File | ForEach-Object {
     [ordered]@{ path = $_.Name; bytes = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName).Hash.ToLowerInvariant() }
 }
 $entries | Sort-Object { $_.path } | ConvertTo-Json | Set-Content (Join-Path $bundle 'SHA256-MANIFEST.json') -Encoding utf8
-$archive = Join-Path $out "HPLJ1005x64-$($info.version)-mini-self-signed-test.zip"
+$archive = Join-Path $out "Benteveo-HPLJ1005-x64-$($info.version)-mini-self-signed-test.zip"
 Compress-Archive -LiteralPath $bundle -DestinationPath $archive
 Copy-Item -LiteralPath $sourceZip[0].FullName -Destination $out
 Get-FileHash -LiteralPath $archive, (Join-Path $out $info.sourceArchive) | ForEach-Object {

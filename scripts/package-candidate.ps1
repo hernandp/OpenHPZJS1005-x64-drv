@@ -11,6 +11,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $projectRoot = Split-Path $PSScriptRoot -Parent
+$archivePrefix = 'Benteveo-HPLJ1005-x64'
 $infVerif = Join-Path $WdkRoot "tools\$WdkVersion\x64\infverif.exe"
 $gpdCheck = Join-Path $WdkRoot "tools\$WdkVersion\x64\gpdcheck.exe"
 foreach ($tool in @($infVerif, $gpdCheck)) {
@@ -106,7 +107,7 @@ if ($infText -notmatch ('(?m)^DriverVer=[^,]+,' + [regex]::Escape($version) + '\
     throw 'CMake and INF versions differ.'
 }
 Write-Manifest $source
-$sourceZip = Join-Path $candidate "HPLJ1005x64-$version-source.zip"
+$sourceZip = Join-Path $candidate "$archivePrefix-$version-source.zip"
 Compress-Archive -LiteralPath $source -DestinationPath $sourceZip
 
 # Build exactly the archived source, not binaries from the working checkout.
@@ -149,7 +150,7 @@ $null = Invoke-Check $gpdCheck @('-n', '-x', (Join-Path $payload 'lj1005.gpd')) 
     cleanMachineTested = $false
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $bundle 'BUILD-INFO.json') -Encoding utf8
 Write-Manifest $bundle
-$binaryZip = Join-Path $candidate "HPLJ1005x64-$version-unsigned-candidate.zip"
+$binaryZip = Join-Path $candidate "$archivePrefix-$version-unsigned-candidate.zip"
 Compress-Archive -LiteralPath $bundle -DestinationPath $binaryZip
 Get-FileHash -LiteralPath $sourceZip, $binaryZip -Algorithm SHA256 |
     ForEach-Object { $_.Hash.ToLowerInvariant() + '  ' + [IO.Path]::GetFileName($_.Path) } |

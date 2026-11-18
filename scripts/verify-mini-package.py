@@ -60,6 +60,8 @@ def verify(directory, original):
     for key in prior:
         if key != "packageState":
             require(info[key] == prior[key], "Changed provenance: " + key)
+    require(any(archives[0].name == f"{prefix}-{info['version']}-mini-self-signed-test.zip"
+                for prefix in candidate.ARCHIVE_PREFIXES), "Archive/version mismatch")
     for name in ("lj1005.inf", "lj1005.gpd", "lj1005.ini"):
         require(files[name] == baseline["driver/" + name], "Changed driver payload: " + name)
     for name in ("lj1005render.dll", "lj1005monitor.dll"):
