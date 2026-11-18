@@ -16,9 +16,9 @@ A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `0
 
 I purchased this printer back in the early 2000s, and it served me well until HP decided to phase it out, ending software support in the Windows XP era.
 
-Over the following two decades, I moved between houses, jobs, machines, and operating systems. This good old battleship ended up abandoned in the back of my parents' house, until I decided to rescue it from under a pile of dirt, spiderwebs, and dead insects to pursue some toner transfer printing for my girlfriend.
+Over the following two decades, I moved between houses, jobs, machines, and operating systems. This good old battleship ended up abandoned in the back of my parents' house, until I decided to rescue it from under a pile of dirt, spiderwebs, and dead insects to pursue some toner transfer printing that my girlfriend needed for her artwork.
 
-We wanted to transfer an image of a benteveo bird (the one that brands this project), so that's where the name comes from.
+She wanted to transfer an image of a benteveo bird (the one that brands this project), so that's where the name comes from.
 
 The printer got a new toner cartridge and some mechanical fixes, and it works quite well. But it was lacking a printer driver for Windows 11, so I decided to code one using Codex, relying on specs from the web and the Zenographics ZjStream open protocol implementation for CUPS.
 
