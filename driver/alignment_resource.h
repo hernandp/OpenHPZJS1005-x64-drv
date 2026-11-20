@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// See LICENSE in the repository root for license terms.
+#pragma once
+
+#define IDD_ALIGNMENT 101
+#define IDD_ABOUT 102
+#define IDR_ABOUT_ART 103
+#define IDR_ABOUT_LICENSE 104
+#define IDC_HORIZONTAL_SHIFT 1001
+#define IDC_VERTICAL_SHIFT 1002
+#define IDC_SHIFT_UNITS 1003
+#define IDC_ABOUT_ART 1010
+#define IDC_ABOUT_TITLE 1011
+#define IDC_ABOUT_VERSION 1012
+#define IDC_ABOUT_COPYRIGHT 1013
+#define IDC_ABOUT_LICENSE 1014
+#define IDC_ABOUT_DESCRIPTION 1015
+#define IDC_ABOUT_LICENSE_LABEL 1016

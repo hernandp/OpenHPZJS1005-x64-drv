@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// See LICENSE in the repository root for license terms.
+#include <windows.h>
+#include "alignment_resource.h"
+
+IDD_ALIGNMENT DIALOGEX 0, 0, 225, 101
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Benteveo Alignment"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "&Units:", -1, 8, 12, 78, 10
+    COMBOBOX IDC_SHIFT_UNITS, 90, 9, 124, 70, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT "&Horizontal shift:", -1, 8, 36, 78, 10
+    EDITTEXT IDC_HORIZONTAL_SHIFT, 90, 32, 66, 14, ES_AUTOHSCROLL | WS_TABSTOP
+    LTEXT "&Vertical shift:", -1, 8, 57, 78, 10
+    EDITTEXT IDC_VERTICAL_SHIFT, 90, 53, 66, 14, ES_AUTOHSCROLL | WS_TABSTOP
+    LTEXT "Positive values move the image right or down. Negative values move it left or up.", -1, 8, 76, 207, 20
+END
+
+IDD_ABOUT DIALOGEX 0, 0, 248, 184
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "About Benteveo"
+FONT 9, "Segoe UI"
+BEGIN
+    CONTROL "", IDC_ABOUT_ART, "Static", SS_OWNERDRAW, 8, 9, 66, 60
+    LTEXT "Project Benteveo", IDC_ABOUT_TITLE, 82, 9, 158, 12
+    LTEXT "HP LaserJet 1005 driver\nfor Windows 10 and 11 (x64)", IDC_ABOUT_DESCRIPTION, 82, 24, 158, 21
+    LTEXT "", IDC_ABOUT_VERSION, 82, 48, 158, 10
+    LTEXT "", IDC_ABOUT_COPYRIGHT, 82, 60, 158, 21
+    LTEXT "License (GPL-2.0-or-later)", IDC_ABOUT_LICENSE_LABEL, 82, 85, 158, 10
+    EDITTEXT IDC_ABOUT_LICENSE, 82, 97, 158, 79, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP
+END
+
+IDR_ABOUT_ART RCDATA "docs/benteveo-and-hp.png"
+IDR_ABOUT_LICENSE RCDATA "LICENSE"

@@ -1,5 +1,11 @@
 # Test evidence by deployment path
 
+## Windows 10 22H2 compatibility — November 20, 2026
+
+The maintainer confirmed that Benteveo 0.1.2 works on Windows 10 22H2 x64.
+The exact build revision, ZIP digest, connection type, and individual test
+results were not supplied for this run.
+
 ## First GitHub release — November 18, 2026
 
 The maintainer reported testing the signed 0.1.2 mini ZIP and publishing it

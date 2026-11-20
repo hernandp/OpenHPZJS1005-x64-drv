@@ -5,6 +5,13 @@ Versions use `major.minor.release`. Windows driver metadata adds a trailing
 public release dates. Earlier entries summarize changes made while that version
 was current; these were development and tester builds.
 
+## 0.2.0 — 2026-11-20
+
+- Add horizontal and vertical alignment controls in Printing Preferences, with shifts up to 200 mm in either direction and a millimeter/inch selector.
+- Save default shifts and allow per-job overrides. Shift portrait and landscape output at its original scale. Older saved settings start at zero.
+- Add an About Benteveo tab with the project artwork, installed driver version, copyright notice, and full GPL license.
+- Include the Printing Preferences plug-in in the signed Have Disk mini ZIP and verify it with the rest of the package.
+
 ## 0.1.2 — 2026-11-14
 
 - Retry temporary USB disconnects while awaiting job completion, for up to 30 seconds per interruption.

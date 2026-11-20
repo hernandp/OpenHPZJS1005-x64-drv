@@ -1,6 +1,6 @@
 # Project Benteveo 
 
-**HP Laserjet 1005 driver for Windows 11 x64**
+**HP LaserJet 1005 driver for Windows 10 22H2 and Windows 11 (x64)**
 
 <p align="center">
   <img src="docs/benteveo-and-hp.png" alt="A benteveo bird perched on an HP LaserJet 1005 printer" width="720">
@@ -8,7 +8,7 @@
 
 A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `03f0:1317`). 
 
-⚠️ The initial target is Windows 11 x64 with one USB printer and A4 paper. 
+⚠️ The supported setup is Windows 10 22H2 x64 or Windows 11 x64 with one USB printer and A4 paper.
 
 ⚠️ The **Laserjet P1005 / M1005** use different drivers.
 
@@ -110,7 +110,7 @@ Install Visual Studio Desktop development with C++, the Windows SDK and PowerShe
 pwsh -NoProfile -File ./scripts/build.ps1
 ```
 
-The Release build runs seven driver tests. It produces the two driver DLLs, printer descriptions, a development CLI and the queue capture helper in `build/Release`. [CI and local build](docs/CI.md)
+The Release build runs seven driver tests. It produces the driver DLLs, printer descriptions, a development CLI and the queue capture helper in `build/Release`. [CI and local build](docs/CI.md)
 
 The optional Linux-reference checkout is excluded from Git; to enable its comparison executables:
 

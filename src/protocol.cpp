@@ -213,18 +213,22 @@ namespace Lj1005 {
         return b;
     }
 
-    Raster PlaceOnSheet(const Raster& r, std::uint32_t width, std::uint32_t height, std::uint32_t x, std::uint32_t y) {
+    Raster PlaceOnSheet(const Raster& r, std::uint32_t width, std::uint32_t height, std::uint32_t x, std::uint32_t y,
+                        std::int32_t shiftX, std::int32_t shiftY) {
         ValidateRaster(r);
         const auto size = RasterSize(width, height);
         if (x > width || y > height || r.width > width - x || r.height > height - y)
             throw std::runtime_error("Printable raster does not fit the physical sheet");
         Raster sheet{width, height, Bytes(size, 0)};
         const auto fromStride = (r.width + 7) / 8, toStride = (width + 7) / 8;
-        for (std::uint32_t row = 0; row < r.height; ++row)
-            for (std::uint32_t col = 0; col < r.width; ++col)
+        const auto left = std::int64_t(x) + shiftX, top = std::int64_t(y) + shiftY;
+        const auto firstRow = std::max<std::int64_t>(0, -top), lastRow = std::min<std::int64_t>(r.height, height - top);
+        const auto firstCol = std::max<std::int64_t>(0, -left), lastCol = std::min<std::int64_t>(r.width, width - left);
+        for (auto row = firstRow; row < lastRow; ++row)
+            for (auto col = firstCol; col < lastCol; ++col)
                 if (r.pixels[std::size_t(row) * fromStride + col / 8] & (0x80u >> (col % 8)))
-                    sheet.pixels[std::size_t(row + y) * toStride + (col + x) / 8] |=
-                        static_cast<std::uint8_t>(0x80u >> ((col + x) % 8));
+                    sheet.pixels[std::size_t(row + top) * toStride + (col + left) / 8] |=
+                        static_cast<std::uint8_t>(0x80u >> ((col + left) % 8));
         return sheet;
     }
 
