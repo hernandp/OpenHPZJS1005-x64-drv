@@ -33,5 +33,6 @@ BEGIN
     EDITTEXT IDC_ABOUT_LICENSE, 82, 97, 158, 79, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP
 END
 
-IDR_ABOUT_ART RCDATA "docs/benteveo-and-hp.png"
+// A 384 x 288 thumbnail of docs/benteveo-and-hp.png for the About tab.
+IDR_ABOUT_ART RCDATA "driver/about-logo.jpg"
 IDR_ABOUT_LICENSE RCDATA "LICENSE"

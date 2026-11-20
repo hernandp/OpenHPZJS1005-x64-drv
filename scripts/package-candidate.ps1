@@ -79,7 +79,7 @@ $allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative.Contains('..') -or [IO.Path]::IsPathRooted($relative)) { throw "Invalid source path: $relative" }
     if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions -and
-        $relative -notin @('driver/version.rc.in', 'docs/benteveo-and-hp.png')) {
+        $relative -notin @('driver/version.rc.in', 'docs/benteveo-and-hp.png', 'driver/about-logo.jpg')) {
         throw "Review unexpected source file before packaging: $relative"
     }
     $original = Get-Item -LiteralPath (Join-Path $projectRoot $relative)
