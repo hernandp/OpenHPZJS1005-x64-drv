@@ -1,6 +1,6 @@
 # Project Benteveo 
 
-**HP LaserJet 1005 driver for Windows 10 22H2 and Windows 11 (x64)**
+**HP Laserjet 1005 driver for Windows 10/11 x64**
 
 <p align="center">
   <img src="docs/benteveo-and-hp.png" alt="A benteveo bird perched on an HP LaserJet 1005 printer" width="720">
@@ -9,6 +9,11 @@
 A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `03f0:1317`). 
 
 ⚠️ The supported setup is Windows 10 22H2 x64 or Windows 11 x64 with one USB printer and A4 paper.
+=======
+**Tested operating systems**
+
+* Windows 11 x64 25H2/26H1/26H2
+* Windows 10 x64 22H2
 
 ⚠️ The **Laserjet P1005 / M1005** use different drivers.
 
@@ -16,9 +21,9 @@ A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `0
 
 I purchased this printer back in the early 2000s, and it served me well until HP decided to phase it out, ending software support in the Windows XP era.
 
-Over the following two decades, I moved between houses, jobs, machines, and operating systems. This good old battleship ended up abandoned in the back of my parents' house, until I decided to rescue it from under a pile of dirt, spiderwebs, and dead insects to pursue some toner transfer printing for my girlfriend.
+Over the following two decades, I moved between houses, jobs, machines, and operating systems. This good old battleship ended up abandoned in the back of my parents' house, until I decided to rescue it from under a pile of dirt, spiderwebs, and dead insects to pursue some toner transfer printing that my girlfriend needed for her artwork.
 
-We wanted to transfer an image of a benteveo bird (the one that brands this project), so that's where the name comes from.
+She wanted to transfer an image of a benteveo bird (the one that brands this project), so that's where the name comes from.
 
 The printer got a new toner cartridge and some mechanical fixes, and it works quite well. But it was lacking a printer driver for Windows 11, so I decided to code one using Codex, relying on specs from the web and the Zenographics ZjStream open protocol implementation for CUPS.
 
