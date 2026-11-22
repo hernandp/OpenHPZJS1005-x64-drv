@@ -7,6 +7,7 @@ was current; these were development and tester builds.
 
 ## 0.2.0 — 2026-11-20
 
+- Windows 10 support for version 22H2 on x64.
 - Add horizontal and vertical alignment controls in Printing Preferences, with shifts up to 200 mm in either direction and a millimeter/inch selector.
 - Save default shifts and allow per-job overrides. Shift portrait and landscape output at its original scale. Older saved settings start at zero.
 - Add an About Benteveo tab with the project artwork, installed driver version, copyright notice, and full GPL license.

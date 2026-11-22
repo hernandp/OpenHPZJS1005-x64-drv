@@ -142,7 +142,7 @@ The second script signs and verifies the mini ZIP and prints its location under 
 
 Applications → Windows GDI/Unidrv rasterization and halftoning → `lj1005render.dll` → JBIG + ZJS → Windows print spooler → `lj1005monitor.dll` (firmware, synchronization and completion) → inbox USB or local parallel port.
 
-The rendering DLL implements `IPrintOemUni`. A GPD enables full raster delivery; the plug-in assembles a page and uses the same tested encoder as the USB utility. Margins are embedded in the physical-sheet raster; no ZJS offset commands are emitted by the plug-in. Landscape uses Unidrv's `LANDSCAPE_CC270` rotation into portrait device coordinates. A4 and Letter, 600 dpi, monochrome and simplex are the initial feature set. C++ provides direct Windows printer COM/GDI integration and reuses the existing C JBIG codec. No custom kernel driver is necessary for the verified USB path.
+The rendering DLL implements `IPrintOemUni`. A GPD enables full raster delivery; the plug-in assembles a page and uses the same tested encoder as the USB utility. Margins are embedded in the physical-sheet raster; no ZJS offset commands are emitted by the plug-in. Landscape uses Unidrv's `LANDSCAPE_CC270` rotation into portrait device coordinates. Use A4, 600 dpi, monochrome, and simplex for physical printing. Letter rendering works in file captures. A Letter job produced repeated blank sheets with A4 paper loaded. Physical printing with matching Letter paper remains unverified. C++ provides direct Windows printer COM/GDI integration and reuses the existing C JBIG codec. No custom kernel driver is necessary for the verified USB path.
 
 ## License
 

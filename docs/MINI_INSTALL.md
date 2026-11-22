@@ -5,7 +5,7 @@ P1005 and M1005 are different printers. This package uses a self-signed tester
 certificate that you explicitly trust during setup.
 The earlier Open ZJS package passed wizard installation, file output and manual
 removal/reinstallation in a Windows 11 Pro 25H2 x64 VM on November 10–11, 2026.
-The Benteveo-branded package awaits its own VM installation acceptance. Physical A4 printing has passed on build 26300.9974 for the exact tester ZIP recorded in [test status](TEST_STATUS.md); the signed 0.1.2 USB retry fix also passed a timed interruption and follow-up on that build. Interruptions beyond the 30-second retry window remain unconfirmed; sleep/wake and physical Letter remain untested.
+The Benteveo-branded package awaits its own VM installation acceptance. Physical A4 printing has passed on build 26300.9974 for the exact tester ZIP recorded in [test status](TEST_STATUS.md). The signed 0.1.2 USB retry fix also passed a timed interruption and follow-up on that build. Interruptions beyond the 30-second retry window and sleep/wake remain unverified. Selecting Letter with A4 paper loaded produced repeated blank sheets. Physical printing with matching Letter paper remains unverified.
 Use a disposable VM for the initial installation rehearsal.
 
 ## Prepare the extracted folder
@@ -64,7 +64,7 @@ Retain the currently installed version's extracted package until cleanup is veri
    The driver declares A4 as its default, and Windows Unidrv can select Letter
    on a non-metric system. [Windows paper default rules](https://learn.microsoft.com/en-us/windows-hardware/drivers/print/feature-attributes)
 5. Load one A4 sheet and select **Print Test Page** from Printer properties.
-   Physical Letter printing is still under test.
+   Use A4 in both the application and printer preferences for physical printing.
 
 Windows installs the image as `%SystemRoot%\System32\lj1005-firmware.img`.
 The monitor uses this installed copy, so the extracted folder can be moved
@@ -91,6 +91,7 @@ version, copyright notice, and full GPL license.
 
 - **Missing file or catalog hash error.** Cancel the wizard, extract a fresh ZIP and check the name, size and SHA-256 of the image before retrying.
 - **Signature rejected.** Check the catalog signer, expiry and both local-computer stores against the independently supplied tester identity. Stop if the identity differs.
+- **Repeated blank sheets with Letter selected and A4 loaded.** Cancel the job and check that the queue is empty. Set both the application and printer preferences to A4 before retrying on A4 paper.
 - **Blank sheet or paper stops partway.** Record which sheets actually emerged, the lights and selected USB port. Cancel any remaining job before reloading paper. The earlier four-sheet stoppage was attributed by the maintainer to a paper-loading solenoid problem; a retry passed after hardware repair.
 - **Reporting a problem.** Include the Windows build, package digest, application, paper settings and exact error. Keep firmware, spool data and private documents out of reports.
 
