@@ -56,7 +56,7 @@ namespace {
                     L"Enter a shift from -" + limit + L" to " + limit +
                     (page.units == Alignment::Units::inches ? L" in, using up to five decimal places."
                                                             : L" mm, using up to three decimal places.");
-                MessageBoxW(dialog, message.c_str(), L"Benteveo Alignment", MB_OK | MB_ICONWARNING);
+                MessageBoxW(dialog, message.c_str(), L"Alignment", MB_OK | MB_ICONWARNING);
                 SetFocus(GetDlgItem(dialog, field));
                 return {};
             }

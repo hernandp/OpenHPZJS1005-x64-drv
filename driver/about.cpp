@@ -32,6 +32,7 @@ namespace Lj1005 {
             IStream* stream = nullptr;
             std::unique_ptr<Gdiplus::Image> artwork;
             HFONT titleFont = nullptr;
+            HFONT licenseFont = nullptr;
 
             ~AboutContent() {
                 artwork.reset();
@@ -41,6 +42,8 @@ namespace Lj1005 {
                     Gdiplus::GdiplusShutdown(graphicsToken);
                 if (titleFont)
                     DeleteObject(titleFont);
+                if (licenseFont)
+                    DeleteObject(licenseFont);
             }
         };
 
@@ -109,7 +112,6 @@ namespace Lj1005 {
             const int tabWidth = 4; // Edit control tab stops are in dialog units.
             const auto edit = GetDlgItem(dialog, IDC_ABOUT_LICENSE);
             SendMessageW(edit, EM_SETTABSTOPS, 1, reinterpret_cast<LPARAM>(&tabWidth));
-            PostMessageW(edit, EM_SETSEL, 0, 0);
         }
 
         void LayoutAboutPage(HWND dialog) {
@@ -159,12 +161,19 @@ namespace Lj1005 {
                 auto content = std::make_unique<AboutContent>();
                 const auto title = GetDlgItem(dialog, IDC_ABOUT_TITLE);
                 const auto font = reinterpret_cast<HFONT>(SendMessageW(title, WM_GETFONT, 0, 0));
-                LOGFONTW bold{};
-                if (font && GetObjectW(font, sizeof(bold), &bold)) {
+                LOGFONTW normal{};
+                if (font && GetObjectW(font, sizeof(normal), &normal)) {
+                    auto bold = normal;
                     bold.lfWeight = FW_BOLD;
                     content->titleFont = CreateFontIndirectW(&bold);
                     if (content->titleFont)
                         SendMessageW(title, WM_SETFONT, reinterpret_cast<WPARAM>(content->titleFont), FALSE);
+                    normal.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+                    wcscpy_s(normal.lfFaceName, L"Courier New");
+                    content->licenseFont = CreateFontIndirectW(&normal);
+                    if (content->licenseFont)
+                        SendDlgItemMessageW(dialog, IDC_ABOUT_LICENSE, WM_SETFONT,
+                                            reinterpret_cast<WPARAM>(content->licenseFont), FALSE);
                 }
                 ShowVersion(dialog, module);
                 ShowLicense(dialog, module);
@@ -176,6 +185,10 @@ namespace Lj1005 {
             if (message == WM_SIZE) {
                 LayoutAboutPage(dialog);
                 return TRUE;
+            }
+            if (message == WM_NOTIFY && reinterpret_cast<const NMHDR*>(lParam)->code == PSN_SETACTIVE) {
+                // Let the property sheet finish assigning focus before clearing its automatic selection.
+                PostMessageW(GetDlgItem(dialog, IDC_ABOUT_LICENSE), EM_SETSEL, 0, 0);
             }
             auto* content = reinterpret_cast<AboutContent*>(GetWindowLongPtrW(dialog, DWLP_USER));
             if (message == WM_DRAWITEM && wParam == IDC_ABOUT_ART && content) {

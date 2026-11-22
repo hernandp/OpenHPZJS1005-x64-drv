@@ -1,5 +1,12 @@
 # Test evidence by deployment path
 
+## Physical alignment check — November 22, 2026
+
+The maintainer set a 50 mm shift in the Benteveo 0.2.0 **Alignment** tab,
+printed test lines, and measured a matching 50 mm displacement with a ruler.
+This is a physical pass for the reported shift. The axis, orientation, Windows
+build, and tester ZIP digest were not recorded for this run.
+
 ## Windows 10 22H2 compatibility — November 20, 2026
 
 The maintainer confirmed that Benteveo 0.1.2 works on Windows 10 22H2 x64.

@@ -12,7 +12,7 @@ Use an isolated Windows 10 22H2 x64 or Windows 11 x64 VM with Secure Boot enable
 
 Record results against the exact ZIP. FILE: tests exercise rendering and spooling. Physical USB, firmware transfer and paper handling have their own [acceptance matrix](RELEASE_ACCEPTANCE.md).
 
-For alignment, verify that **Benteveo Alignment** starts at zero in millimeters.
+Verify that the **Alignment** tab starts at zero in millimeters.
 Capture an unshifted A4 page with asymmetric markers, then apply **+5.08 mm**
 horizontally and **−2.54 mm** vertically. Switch to inches and confirm **+0.2 in**
 and **−0.1 in**. Reopen preferences and check that both values and the unit

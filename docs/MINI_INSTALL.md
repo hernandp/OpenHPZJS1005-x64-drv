@@ -73,7 +73,7 @@ The firmware loads when needed for printing after printer power-on.
 
 ## Shift the printed image
 
-In **Printing Preferences → Benteveo Alignment**, choose millimeters or inches
+In **Printing Preferences → Alignment**, choose millimeters or inches
 and enter a horizontal and vertical shift. Both start at zero. Positive values
 move the image right or down as you view the print, and negative values move it
 left or up. Each axis supports up to 200 mm in either direction. Changing units
