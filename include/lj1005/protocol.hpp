@@ -26,7 +26,7 @@ namespace Lj1005 {
     void WritePBM(std::ostream& output, const Raster& raster);
     Raster TestPage();
     Raster PlaceOnSheet(const Raster& raster, std::uint32_t width, std::uint32_t height, std::uint32_t x,
-                        std::uint32_t y);
+                        std::uint32_t y, std::int32_t shiftX = 0, std::int32_t shiftY = 0);
     Bytes BeginDocument();
     Bytes EncodePage(const Raster& raster, const PageOptions& options, std::uint32_t pageNumber);
     Bytes EndDocument();

@@ -24,7 +24,7 @@ SOURCE_ROOT_FILES = {
 SOURCE_DIRS = {"driver", "include", "src", "scripts", "tests", "vendor", "docs", ".github"}
 SOURCE_EXTENSIONS = {
     ".cpp", ".hpp", ".c", ".h", ".ps1", ".py", ".cmake",
-    ".md", ".gpd", ".inf", ".ini", ".def", ".yml",
+    ".md", ".gpd", ".inf", ".ini", ".def", ".rc", ".yml",
 }
 
 
@@ -99,10 +99,15 @@ def verify(candidate, require_clean=False):
     require(len(sources) == len(binaries) == 1, "Unexpected archive names")
     source = read_archive(candidate / sources[0], "source")
     binary = read_archive(candidate / binaries[0], "HPLJ1005x64")
-    require(set(binary) == PAYLOAD, "Production payload allowlist differs")
+    ini = source["driver/lj1005.ini"].decode("utf-8-sig")
+    has_ui = re.search(r"(?im)^OEMConfigFile1=lj1005ui\.dll\s*$", ini) is not None
+    expected_payload = PAYLOAD | ({"driver/lj1005ui.dll"} if has_ui else set())
+    require(set(binary) == expected_payload, "Production payload allowlist differs")
     for name in source:
         path = PurePosixPath(name)
-        require(name in SOURCE_ROOT_FILES or name in {"driver/version.rc.in", "docs/benteveo-and-hp.png"} or (
+        require(name in SOURCE_ROOT_FILES or name in {
+            "driver/version.rc.in", "docs/benteveo-and-hp.png", "driver/about-logo.jpg",
+        } or (
             len(path.parts) > 1 and path.parts[0] in SOURCE_DIRS
             and path.suffix in SOURCE_EXTENSIONS
         ), f"Unexpected source file: {name}")

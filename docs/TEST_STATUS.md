@@ -1,5 +1,32 @@
 # Test evidence by deployment path
 
+## Physical Letter blank-sheet report — November 22, 2026
+
+The maintainer reported that selecting Letter with A4 paper loaded produced
+repeated blank sheets. Normal printing resumed after restoring the A4
+setting. A matching Letter job with Letter paper has yet to be tested
+physically. The Windows build, application, and exact package digest were
+not recorded for this run.
+
+An offline comparison encoded the same small mark on full-size A4 and Letter
+pages at 600 dpi. For each size, Benteveo emitted one valid sheet and matched the
+pinned foo2zjs reference byte for byte. The original LaserJet 1005 reference
+profile also uses paper code 1 for Letter. These checks confirm the tested
+encoder output and leave the cause of the physical failure unresolved.
+
+## Physical alignment check — November 22, 2026
+
+The maintainer set a 50 mm shift in the Benteveo 0.2.0 **Alignment** tab,
+printed test lines, and measured a matching 50 mm displacement with a ruler.
+This is a physical pass for the reported shift. The axis, orientation, Windows
+build, and tester ZIP digest were not recorded for this run.
+
+## Windows 10 22H2 compatibility — November 20, 2026
+
+The maintainer confirmed that Benteveo 0.1.2 works on Windows 10 22H2 x64.
+The exact build revision, ZIP digest, connection type, and individual test
+results were not supplied for this run.
+
 ## First GitHub release — November 18, 2026
 
 The maintainer reported testing the signed 0.1.2 mini ZIP and publishing it

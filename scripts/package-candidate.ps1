@@ -75,11 +75,11 @@ $sourcePaths = @('CMakeLists.txt', 'LICENSE', 'README.md', 'CHANGELOG.md', 'THIR
     '.gitattributes', '.clang-format', '.github', 'driver', 'include', 'src', 'scripts', 'tests', 'vendor', 'docs')
 $files = & git -C $projectRoot -c core.quotepath=false ls-files --cached --others --exclude-standard -- @sourcePaths
 if ($LASTEXITCODE -ne 0 -or !$files) { throw 'Source snapshot requires a Git checkout.' }
-$allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md', '.gpd', '.inf', '.ini', '.def', '.yml')
+$allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md', '.gpd', '.inf', '.ini', '.def', '.rc', '.yml')
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative.Contains('..') -or [IO.Path]::IsPathRooted($relative)) { throw "Invalid source path: $relative" }
     if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions -and
-        $relative -notin @('driver/version.rc.in', 'docs/benteveo-and-hp.png')) {
+        $relative -notin @('driver/version.rc.in', 'docs/benteveo-and-hp.png', 'driver/about-logo.jpg')) {
         throw "Review unexpected source file before packaging: $relative"
     }
     $original = Get-Item -LiteralPath (Join-Path $projectRoot $relative)
@@ -114,7 +114,7 @@ Compress-Archive -LiteralPath $source -DestinationPath $sourceZip
 & (Join-Path $source 'scripts\build.ps1') -Configuration Release *>&1 |
     Tee-Object -FilePath (Join-Path $logs 'build-tests.log') | Out-Host
 $binaryRoot = Join-Path $source 'build\Release'
-foreach ($file in @('lj1005.inf', 'lj1005.gpd', 'lj1005.ini', 'lj1005render.dll', 'lj1005monitor.dll')) {
+foreach ($file in @('lj1005.inf', 'lj1005.gpd', 'lj1005.ini', 'lj1005render.dll', 'lj1005monitor.dll', 'lj1005ui.dll')) {
     Copy-Item -LiteralPath (Join-Path $binaryRoot $file) -Destination $payload
 }
 foreach ($file in @('LICENSE', 'THIRD_PARTY.md')) {

@@ -46,9 +46,12 @@ def verify(directory, original):
     archives = list(directory.glob("*-mini-self-signed-test.zip"))
     require(len(archives) == 1, "Expected one mini ZIP")
     files = candidate.read_archive(archives[0], "HPLJ1005-mini")
-    require(set(files) == PAYLOAD, "Mini payload differs: firmware/tools/unexpected files are forbidden")
-    require(all(digest(data) != FIRMWARE_HASH for data in files.values()), "Firmware leaked into ZIP")
     baseline = candidate.read_archive(next(original.glob("*-unsigned-candidate.zip")), "HPLJ1005x64")
+    plugins = ("lj1005render.dll", "lj1005monitor.dll")
+    if "driver/lj1005ui.dll" in baseline:
+        plugins += ("lj1005ui.dll",)
+    require(set(files) == PAYLOAD | set(plugins), "Mini payload differs: firmware/tools/unexpected files are forbidden")
+    require(all(digest(data) != FIRMWARE_HASH for data in files.values()), "Firmware leaked into ZIP")
     info = json.loads(files["BUILD-INFO.json"].decode("utf-8-sig"))
     prior = json.loads(baseline["BUILD-INFO.json"].decode("utf-8-sig"))
     require(info["packageState"] == "mini-self-signed-test-rehearsal", "Wrong package state")
@@ -64,7 +67,7 @@ def verify(directory, original):
                 for prefix in candidate.ARCHIVE_PREFIXES), "Archive/version mismatch")
     for name in ("lj1005.inf", "lj1005.gpd", "lj1005.ini"):
         require(files[name] == baseline["driver/" + name], "Changed driver payload: " + name)
-    for name in ("lj1005render.dll", "lj1005monitor.dll"):
+    for name in plugins:
         compare_pe(baseline["driver/" + name], files[name])
     for name in ("LICENSE", "THIRD_PARTY.md", "README.md"):
         require(files[name] == baseline[name], "Changed packaged file: " + name)

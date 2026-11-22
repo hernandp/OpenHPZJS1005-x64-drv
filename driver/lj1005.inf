@@ -6,7 +6,7 @@ Signature="$Windows NT$"
 Provider=%Provider%
 ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
 Class=Printer
-DriverVer=11/14/2026,0.1.2.0
+DriverVer=11/20/2026,0.2.0.0
 CatalogFile=lj1005.cat
 DriverIsolation=2
 PnpLockdown=1
@@ -33,6 +33,7 @@ CoreDriverDependencies={D20EA372-DD35-4950-9ED8-A6335AFE79F0}
 lj1005.gpd
 lj1005.ini
 lj1005render.dll
+lj1005ui.dll
 
 [MonitorFiles]
 lj1005monitor.dll,,,0x00000020
@@ -53,6 +54,7 @@ sihp1005.img=1
 lj1005.gpd=1
 lj1005.ini=1
 lj1005render.dll=1
+lj1005ui.dll=1
 lj1005monitor.dll=1
 
 [Strings]

@@ -75,11 +75,12 @@ class CandidateVerification(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Dirty source"):
             verifier.verify(self.root, True)
 
-    def test_only_official_picture_is_allowed_in_source(self):
+    def test_only_reviewed_artwork_is_allowed_in_source(self):
         self.source["docs/benteveo-and-hp.png"] = b"picture fixture"
+        self.source["driver/about-logo.jpg"] = b"thumbnail fixture"
         self.build()
         self.assertEqual(verifier.verify(self.root)["status"], "passed")
-        self.source["docs/unreviewed.png"] = b"unexpected picture"
+        self.source["driver/unreviewed.jpg"] = b"unexpected picture"
         self.build()
         with self.assertRaisesRegex(ValueError, "Unexpected source"):
             verifier.verify(self.root)

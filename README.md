@@ -1,6 +1,6 @@
 # Project Benteveo 
 
-**HP Laserjet 1005 driver for Windows 10/11 x64**
+## HP Laserjet 1005 driver for Windows 10/11 (x64)
 
 <p align="center">
   <img src="docs/benteveo-and-hp.png" alt="A benteveo bird perched on an HP LaserJet 1005 printer" width="720">
@@ -8,10 +8,7 @@
 
 A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `03f0:1317`). 
 
-**Tested operating systems**
-
-* Windows 11 x64 25H2/26H1/26H2
-* Windows 10 x64 22H2
+⚠️ The supported setup is **Windows 10 22H2 x64 or Windows 11 x64 with one USB printer and A4 paper**.
 
 ⚠️ The **Laserjet P1005 / M1005** use different drivers.
 
@@ -113,7 +110,7 @@ Install Visual Studio Desktop development with C++, the Windows SDK and PowerShe
 pwsh -NoProfile -File ./scripts/build.ps1
 ```
 
-The Release build runs seven driver tests. It produces the two driver DLLs, printer descriptions, a development CLI and the queue capture helper in `build/Release`. [CI and local build](docs/CI.md)
+The Release build runs seven driver tests. It produces the driver DLLs, printer descriptions, a development CLI and the queue capture helper in `build/Release`. [CI and local build](docs/CI.md)
 
 The optional Linux-reference checkout is excluded from Git; to enable its comparison executables:
 
@@ -145,7 +142,7 @@ The second script signs and verifies the mini ZIP and prints its location under 
 
 Applications → Windows GDI/Unidrv rasterization and halftoning → `lj1005render.dll` → JBIG + ZJS → Windows print spooler → `lj1005monitor.dll` (firmware, synchronization and completion) → inbox USB or local parallel port.
 
-The rendering DLL implements `IPrintOemUni`. A GPD enables full raster delivery; the plug-in assembles a page and uses the same tested encoder as the USB utility. Margins are embedded in the physical-sheet raster; no ZJS offset commands are emitted by the plug-in. Landscape uses Unidrv's `LANDSCAPE_CC270` rotation into portrait device coordinates. A4 and Letter, 600 dpi, monochrome and simplex are the initial feature set. C++ provides direct Windows printer COM/GDI integration and reuses the existing C JBIG codec. No custom kernel driver is necessary for the verified USB path.
+The rendering DLL implements `IPrintOemUni`. A GPD enables full raster delivery; the plug-in assembles a page and uses the same tested encoder as the USB utility. Margins are embedded in the physical-sheet raster; no ZJS offset commands are emitted by the plug-in. Landscape uses Unidrv's `LANDSCAPE_CC270` rotation into portrait device coordinates. Use A4, 600 dpi, monochrome, and simplex for physical printing. Letter rendering works in file captures. A Letter job produced repeated blank sheets with A4 paper loaded. Physical printing with matching Letter paper remains unverified. C++ provides direct Windows printer COM/GDI integration and reuses the existing C JBIG codec. No custom kernel driver is necessary for the verified USB path.
 
 ## License
 

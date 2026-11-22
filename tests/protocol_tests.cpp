@@ -270,6 +270,13 @@ int main() {
         Require(sheet.pixels == Bytes({0, 0, 1, 0x40, 0, 0x80, 0, 0}), "Physical margin placement");
         Rejects([] { PlaceOnSheet(Raster{8, 1, {0xff}}, 8, 2, 1, 0); });
         Rejects([] { PlaceOnSheet(Raster{8, 1, {0xff}}, 8, 2, 0, 0xffffffffu); });
+        const Raster marks{3, 2, {0xa0, 0x60}};
+        Require(PlaceOnSheet(marks, 5, 4, 1, 1, -2, -2).pixels == Bytes({0xc0, 0, 0, 0}),
+                "Negative shifts clip the top and left");
+        Require(PlaceOnSheet(marks, 5, 4, 1, 1, 3, 2).pixels == Bytes({0, 0, 0, 0x08}),
+                "Positive shifts clip the right and bottom");
+        Require(PlaceOnSheet(marks, 5, 4, 1, 1, 6, -6).pixels == Bytes(4, 0),
+                "Shifting entirely off the sheet produces a blank page");
         Bytes elf(54, 0);
         elf[0] = 0x7f;
         elf[1] = 'E';

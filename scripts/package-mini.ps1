@@ -47,7 +47,9 @@ $info = Get-Content -LiteralPath (Join-Path $inputBundle 'BUILD-INFO.json') -Raw
 $bundle = Join-Path $out 'HPLJ1005-mini'
 $logs = Join-Path $out 'validation'
 New-Item -ItemType Directory -Path $bundle, $logs | Out-Null
-foreach ($name in @('lj1005.inf','lj1005.gpd','lj1005.ini','lj1005render.dll','lj1005monitor.dll')) {
+$plugins = @('lj1005render.dll','lj1005monitor.dll')
+if (Test-Path -LiteralPath (Join-Path $inputBundle 'driver\lj1005ui.dll')) { $plugins += 'lj1005ui.dll' }
+foreach ($name in @('lj1005.inf','lj1005.gpd','lj1005.ini') + $plugins) {
     Copy-Item -LiteralPath (Join-Path $inputBundle "driver\$name") -Destination $bundle
 }
 foreach ($name in @('LICENSE','THIRD_PARTY.md','README.md')) {
@@ -76,7 +78,7 @@ function Sign-File([string]$Path, [string]$Log) {
         status = [string]$signature.Status; statusMessage = $signature.StatusMessage
         signerThumbprintSha1 = $signature.SignerCertificate.Thumbprint }
 }
-$signatureResults = foreach ($name in @('lj1005render.dll','lj1005monitor.dll')) {
+$signatureResults = foreach ($name in $plugins) {
     Sign-File (Join-Path $bundle $name) "$name-sign.log"
 }
 $signatureResults | ConvertTo-Json | Set-Content (Join-Path $logs 'signed-dlls.json')

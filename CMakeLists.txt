@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # See LICENSE in the repository root for license terms.
 cmake_minimum_required(VERSION 3.24)
-project(HPLJ1005x64 VERSION 0.1.2 LANGUAGES C CXX)
+project(HPLJ1005x64 VERSION 0.2.0 LANGUAGES C CXX)
 set(OPENZJS_VERSION "${PROJECT_VERSION}.0")
 # Windows stores each version component as a 16-bit integer.
 foreach(component IN ITEMS PROJECT_VERSION_MAJOR PROJECT_VERSION_MINOR PROJECT_VERSION_PATCH)
@@ -57,11 +57,19 @@ if(WIN32)
   if(MSVC)
     target_compile_options(lj1005render PRIVATE /W4 /WX /permissive- /EHsc)
   endif()
+  add_library(lj1005ui SHARED driver/ui.cpp driver/about.cpp driver/alignment.rc driver/ui.def)
+  add_windows_version(lj1005ui "Benteveo printing preferences" "lj1005ui.dll" VFT_DLL)
+  target_include_directories(lj1005ui PRIVATE include "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(lj1005ui PRIVATE comctl32 user32 gdi32 gdiplus shlwapi version ole32 uuid)
+  target_compile_definitions(lj1005ui PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+  if(MSVC)
+    target_compile_options(lj1005ui PRIVATE /W4 /WX /permissive- /EHsc)
+  endif()
   add_custom_target(driver_package ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${CMAKE_CURRENT_SOURCE_DIR}/driver/lj1005.gpd" "${CMAKE_CURRENT_SOURCE_DIR}/driver/lj1005.inf" "${CMAKE_CURRENT_SOURCE_DIR}/driver/lj1005.ini"
       "$<TARGET_FILE_DIR:lj1005render>"
-    DEPENDS lj1005render lj1005monitor)
+    DEPENDS lj1005render lj1005monitor lj1005ui)
   target_sources(lj1005 PRIVATE src/usb_windows.cpp)
   target_link_libraries(lj1005 PRIVATE setupapi cfgmgr32)
   target_compile_definitions(lj1005 PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
@@ -109,9 +117,10 @@ if(BUILD_TESTING)
     add_test(NAME monitor_production_load COMMAND monitor_tests "$<TARGET_FILE:lj1005monitor>" --load-only)
     add_executable(render_smoke tests/render_smoke.cpp)
     target_compile_definitions(render_smoke PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_compile_definitions(render_smoke PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
     target_compile_options(render_smoke PRIVATE /EHsc)
     target_link_libraries(render_smoke PRIVATE lj1005_core ole32 uuid)
-    add_test(NAME render_com COMMAND render_smoke "$<TARGET_FILE:lj1005render>")
+    add_test(NAME render_com COMMAND render_smoke "$<TARGET_FILE:lj1005render>" "$<TARGET_FILE:lj1005ui>")
   endif()
   add_executable(protocol_tests tests/protocol_tests.cpp)
   target_link_libraries(protocol_tests PRIVATE lj1005_core)

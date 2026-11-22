@@ -14,6 +14,7 @@
 #include <initguid.h>
 #include <prcomoem.h>
 #include "lj1005/protocol.hpp"
+#include "alignment_devmode.hpp"
 #include <algorithm>
 #include <atomic>
 #include <cstring>
@@ -23,8 +24,6 @@
 
 namespace {
     std::atomic<long> objects{0}, locks{0};
-    constexpr DWORD PLUGIN_VERSION = 0x00010000;
-    constexpr DWORD DEVMODE_VERSION = 1;
     constexpr DWORD START_DOCUMENT_COMMAND = 1;
     constexpr DWORD START_PAGE_COMMAND = 2;
     constexpr DWORD END_PAGE_COMMAND = 3;
@@ -32,11 +31,11 @@ namespace {
     constexpr DWORD SET_COLUMN_COMMAND = 5;
     constexpr DWORD SET_ROW_COMMAND = 6;
     constexpr std::size_t SCANLINE_ALIGNMENT_BYTES = 4;
-    constexpr DWORD SIGNATURE = 0x35303031; // "1005"
 
     struct Device {
         Lj1005::Raster raster;
         Lj1005::PageOptions options;
+        Lj1005::Alignment::Shift shift;
         std::uint32_t originX = 0, originY = 0;
         std::uint32_t row = 0, page = 0;
         bool inDocument = false, inPage = false, failed = false;
@@ -100,46 +99,11 @@ namespace {
         }
 
         HRESULT STDMETHODCALLTYPE GetInfo(DWORD mode, PVOID buffer, DWORD size, PDWORD needed) override {
-            if (!needed)
-                return E_POINTER;
-            *needed = sizeof(DWORD);
-            DWORD value;
-            switch (mode) {
-            case OEMGI_GETSIGNATURE:
-                value = SIGNATURE;
-                break;
-            case OEMGI_GETINTERFACEVERSION:
-                value = PRINTER_OEMINTF_VERSION;
-                break;
-            case OEMGI_GETVERSION:
-                value = PLUGIN_VERSION;
-                break;
-            default:
-                *needed = 0;
-                return E_NOTIMPL;
-            }
-            if (!buffer || size < sizeof(value)) {
-                SetLastError(ERROR_INSUFFICIENT_BUFFER);
-                return E_FAIL;
-            }
-            std::memcpy(buffer, &value, sizeof(value));
-            return S_OK;
+            return Lj1005::Alignment::GetInfo(mode, buffer, size, needed);
         }
 
         HRESULT STDMETHODCALLTYPE DevMode(DWORD mode, POEMDMPARAM param) override {
-            if (!param)
-                return E_POINTER;
-            if (mode == OEMDM_SIZE) {
-                param->cbBufSize = sizeof(OEM_DMEXTRAHEADER);
-                return S_OK;
-            }
-            if (mode != OEMDM_DEFAULT && mode != OEMDM_CONVERT && mode != OEMDM_MERGE)
-                return E_NOTIMPL;
-            if (!param->pOEMDMOut || param->cbBufSize < sizeof(OEM_DMEXTRAHEADER))
-                return E_INVALIDARG;
-            *static_cast<OEM_DMEXTRAHEADER*>(param->pOEMDMOut) = {sizeof(OEM_DMEXTRAHEADER), SIGNATURE,
-                                                                  DEVMODE_VERSION};
-            return S_OK;
+            return Lj1005::Alignment::DevMode(mode, param);
         }
 
         HRESULT STDMETHODCALLTYPE EnableDriver(DWORD, DWORD size, PDRVENABLEDATA data) override {
@@ -172,7 +136,9 @@ namespace {
                 d->raster.width = info->ulHorzRes;
                 d->raster.height = info->ulVertRes;
                 // LANDSCAPE_CC270 rotates into portrait device coordinates before FilterGraphics.
-                if (dev->pPublicDM->dmOrientation == DMORIENT_LANDSCAPE)
+                const bool landscape = dev->pPublicDM->dmOrientation == DMORIENT_LANDSCAPE;
+                d->shift = Lj1005::Alignment::DeviceDots(Lj1005::Alignment::ReadDevMode(dev->pOEMDM).shift, landscape);
+                if (landscape)
                     std::swap(d->raster.width, d->raster.height);
                 d->options.paper = dev->pPublicDM->dmPaperSize == DMPAPER_LETTER ? Lj1005::Protocol::LETTER_PAPER
                                                                                  : Lj1005::Protocol::A4_PAPER;
@@ -261,7 +227,7 @@ namespace {
                                                                           : Lj1005::Protocol::A4_WIDTH_PIXELS,
                         d.options.paper == Lj1005::Protocol::LETTER_PAPER ? Lj1005::Protocol::LETTER_HEIGHT_PIXELS
                                                                           : Lj1005::Protocol::A4_HEIGHT_PIXELS,
-                        d.originX, d.originY);
+                        d.originX, d.originY, d.shift.x, d.shift.y);
                     hr = Spool(dev, Lj1005::EncodePage(sheet, d.options, ++d.page));
                     d.inPage = false;
                 }
