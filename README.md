@@ -1,6 +1,6 @@
 # Project Benteveo 
 
-**HP Laserjet 1005 driver for Windows 10/11 x64**
+## HP Laserjet 1005 driver for Windows 10/11 (x64)
 
 <p align="center">
   <img src="docs/benteveo-and-hp.png" alt="A benteveo bird perched on an HP LaserJet 1005 printer" width="720">
@@ -8,12 +8,7 @@
 
 A Windows printer driver for the **original HP LaserJet 1005 Series** (USB ID `03f0:1317`). 
 
-⚠️ The supported setup is Windows 10 22H2 x64 or Windows 11 x64 with one USB printer and A4 paper.
-=======
-**Tested operating systems**
-
-* Windows 11 x64 25H2/26H1/26H2
-* Windows 10 x64 22H2
+⚠️ The supported setup is **Windows 10 22H2 x64 or Windows 11 x64 with one USB printer and A4 paper**.
 
 ⚠️ The **Laserjet P1005 / M1005** use different drivers.
 
