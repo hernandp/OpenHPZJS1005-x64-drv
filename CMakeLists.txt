@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # See LICENSE in the repository root for license terms.
 cmake_minimum_required(VERSION 3.24)
-project(HPLJ1005x64 VERSION 0.2.0 LANGUAGES C CXX)
+project(HPLJ1005x64 VERSION 0.3.0 LANGUAGES C CXX)
 set(OPENZJS_VERSION "${PROJECT_VERSION}.0")
 # Windows stores each version component as a 16-bit integer.
 foreach(component IN ITEMS PROJECT_VERSION_MAJOR PROJECT_VERSION_MINOR PROJECT_VERSION_PATCH)
