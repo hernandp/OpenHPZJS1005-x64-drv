@@ -39,6 +39,15 @@ The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, co
 ⏯️ An installation demo video is available here: [Youtube](https://www.youtube.com/watch?v=YPfRTDhf5iE)
 
 
+### Prepare with the prerequisite wizard
+
+Extract the whole mini ZIP, connect and turn on the original HP LaserJet 1005,
+and open **BenteveoPrerequisites.exe** beside `lj1005.inf`. The wizard checks
+tester trust, prepares the original HP firmware, and shows the Windows USB port
+to select in Have Disk. When ready, **Open Add Printer Wizard** opens
+**Find a printer by other options** directly. Choose **Exit** to install
+later. The wizard asks before adding tester trust to the local computer.
+
 ### Check and prepare for Have Disk
 
 In the extracted folder, run the Windows PowerShell that comes with Windows 10 and 11:

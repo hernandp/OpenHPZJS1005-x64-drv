@@ -8,6 +8,22 @@ removal/reinstallation in a Windows 11 Pro 25H2 x64 VM on November 10–11, 2026
 The Benteveo-branded package awaits its own VM installation acceptance. Physical A4 printing has passed on build 26300.9974 for the exact tester ZIP recorded in [test status](TEST_STATUS.md). The signed 0.1.2 USB retry fix also passed a timed interruption and follow-up on that build. Interruptions beyond the 30-second retry window and sleep/wake remain unverified. Selecting Letter with A4 paper loaded produced repeated blank sheets. Physical printing with matching Letter paper remains unverified.
 Use a disposable VM for the initial installation rehearsal.
 
+## Prepare with the prerequisite wizard
+
+1. Extract the whole ZIP. Connect the original HP LaserJet 1005 to an available
+   USB port and turn it on.
+2. Open **BenteveoPrerequisites.exe** beside `lj1005.inf` and click **Next** to
+   check tester trust, firmware, and the live USB print port.
+3. Continue if a prerequisite needs attention. Approve tester trust only if
+   you intend to add the listed certificate to the local computer. The wizard
+   can download and verify the original HP firmware, or you can select a
+   local `sihp1005.img` using **Browse for firmware**. If the printer is missing,
+   connect it and retry.
+4. Note the USB port and INF path on the ready screen. **Open Add Printer
+   Wizard** opens **Find a printer by other options**. Choose **Add a local
+   printer or network printer with manual settings**, then use the reported
+   port and Have Disk as described below. Choose **Exit** to install later.
+
 ## Prepare with Preinstall.ps1
 
 Extract the entire ZIP, connect and turn on the original LaserJet 1005, and open

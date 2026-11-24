@@ -11,6 +11,7 @@ was current; these were development and tester builds.
 - Add an install mode that downloads verified firmware and prompts before importing missing tester trust.
 - Include the helper in the signed Have Disk mini ZIP.
 - Add a matching-package uninstall helper for driver cleanup and optional tester certificate removal.
+- Add a native prerequisite wizard for tester trust, HP firmware, and the USB port to select in Have Disk.
 
 ## 0.2.0 — 2026-11-20
 
