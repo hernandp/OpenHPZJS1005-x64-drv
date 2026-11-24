@@ -31,35 +31,20 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 * [Test evidence](docs/TEST_STATUS.md)
 * [Release plan](docs/RELEASE_PLAN.md)
 
+## Installation using the Prerequisites Wizard
 
-## Install with Have Disk
+1. Extract the driver ZIP, connect and turn on the original HP LaserJet 1005.
+2. Run **BenteveoPrerequisites.exe** found in the extracted files to run the **Prerequisites Installation wizard**.
+3. The wizard will guide you through required steps to setup tester certificate, preparation of the original HP firmware, and detecting the Windows USB port to select in the subsequent Windows wizard.
+4. When all prerequisites are met, click **Open Add Printer Wizard** at the end if you want to open the Windows wizard to continue installation. You may exit the wizard if you want to do it later.
 
-The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, connect and power on the printer, then check the prerequisites before choosing **Add manually → Local printer → Have Disk**.
+### Add Printer Wizard
 
-⏯️ An installation demo video is available here: [Youtube](https://www.youtube.com/watch?v=YPfRTDhf5iE)
+XXX
 
+## (Alternative) Manual Installation
 
-### Prepare with the prerequisite wizard
-
-Extract the whole mini ZIP, connect and turn on the original HP LaserJet 1005,
-and open **BenteveoPrerequisites.exe** beside `lj1005.inf`. The wizard checks
-tester trust, prepares the original HP firmware, and shows the Windows USB port
-to select in Have Disk. When ready, **Open Add Printer Wizard** opens
-**Find a printer by other options** directly. Choose **Exit** to install
-later. The wizard asks before adding tester trust to the local computer.
-
-### Check and prepare for Have Disk
-
-In the extracted folder, run the Windows PowerShell that comes with Windows 10 and 11:
-
-```powershell
-powershell.exe -NoProfile -File .\Preinstall.ps1 /CHECK
-powershell.exe -NoProfile -File .\Preinstall.ps1 /INSTALL
-```
-
-`/CHECK` is the default. It checks tester trust, the firmware image, and the live USB port. Run `/INSTALL` if preparation is needed. It can download the verified HP firmware and asks before adding missing tester trust from an administrator terminal. When the check says ready, select the reported USB port in Have Disk.
-
-The 0.3.0 ZIP includes the script. For a 0.2.0 tester ZIP that uses the same signing identity, [download Preinstall.ps1](scripts/Preinstall.ps1) from GitHub and place it beside `lj1005.inf`. See the [installation guide](docs/MINI_INSTALL.md#prepare-with-preinstallps1) if Windows blocks the script.
+The following section is targeted at power users, developers and testers, or in case the wizard method does not work in your system.
 
 ### Get the HP firmware
 
@@ -159,7 +144,7 @@ script offers a separate choice to remove tester trust after driver cleanup.
 If your ZIP predates the helper, download it from the link above and place
 it beside the extracted INF. [Installation and manual removal guide](docs/MINI_INSTALL.md#remove-with-uninstallps1)
 
-## Build the mini ZIP
+## Building the mini ZIP
 
 In PowerShell 7.5 or later, start from a clean checkout with Visual Studio C++, the Windows SDK and WDK 10.0.26100.0, and Python 3 on PATH. You also need the original `sihp1005.img` and the dedicated `OpenZJS Technical Tester Signing` certificate with its private key in your current user's Personal store. If you do not already have that tester identity, create it with `./scripts/new-test-signing-identity.ps1 -OutputDirectory artifacts/test-signing-identity` and read the thumbprint from its `IDENTITY.json`.
 
