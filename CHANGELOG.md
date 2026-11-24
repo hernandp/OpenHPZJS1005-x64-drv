@@ -5,6 +5,14 @@ Versions use `major.minor.release`. Windows driver metadata adds a trailing
 public release dates. Earlier entries summarize changes made while that version
 was current; these were development and tester builds.
 
+## 0.3.0 — 2026-11-23
+
+- Add a Windows PowerShell 5.1 preinstallation check for the tester certificate, firmware, and live LaserJet USB port.
+- Add an install mode that downloads verified firmware and prompts before importing missing tester trust.
+- Include the helper in the signed Have Disk mini ZIP.
+- Add a matching-package uninstall helper for driver cleanup and optional tester certificate removal.
+- Add a native prerequisite wizard for tester trust, HP firmware, and the USB port to select in Have Disk.
+
 ## 0.2.0 — 2026-11-20
 
 - Windows 10 support for version 22H2 on x64.

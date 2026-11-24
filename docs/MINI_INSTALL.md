@@ -8,6 +8,60 @@ removal/reinstallation in a Windows 11 Pro 25H2 x64 VM on November 10–11, 2026
 The Benteveo-branded package awaits its own VM installation acceptance. Physical A4 printing has passed on build 26300.9974 for the exact tester ZIP recorded in [test status](TEST_STATUS.md). The signed 0.1.2 USB retry fix also passed a timed interruption and follow-up on that build. Interruptions beyond the 30-second retry window and sleep/wake remain unverified. Selecting Letter with A4 paper loaded produced repeated blank sheets. Physical printing with matching Letter paper remains unverified.
 Use a disposable VM for the initial installation rehearsal.
 
+## Prepare with the prerequisite wizard
+
+1. Extract the whole ZIP. Connect the original HP LaserJet 1005 to an available
+   USB port and turn it on.
+2. Open **BenteveoPrerequisites.exe** beside `lj1005.inf` and click **Next** to
+   check tester trust, firmware, and the live USB print port.
+3. Continue if a prerequisite needs attention. Approve tester trust only if
+   you intend to add the listed certificate to the local computer. The wizard
+   can download and verify the original HP firmware, or you can select a
+   local `sihp1005.img` using **Browse for firmware**. If the printer is missing,
+   connect it and retry.
+4. Note the USB port and INF path on the ready screen. **Open Add Printer
+   Wizard** opens **Find a printer by other options**. Choose **Add a local
+   printer or network printer with manual settings**, then use the reported
+   port and Have Disk as described below. Choose **Exit** to install later.
+
+## Prepare with Preinstall.ps1
+
+Extract the entire ZIP, connect and turn on the original LaserJet 1005, and open
+Windows PowerShell in the folder containing `lj1005.inf`. Use the Windows
+PowerShell 5.1 included with Windows 10 and 11.
+
+```powershell
+powershell.exe -NoProfile -File .\Preinstall.ps1 /CHECK
+```
+
+`/CHECK` is the default and reports certificate, firmware and USB readiness.
+If it reports missing tester trust or firmware, run:
+
+```powershell
+powershell.exe -NoProfile -File .\Preinstall.ps1 /INSTALL
+```
+
+`/INSTALL` downloads the original HP archive, verifies the required firmware,
+and saves it beside the INF. To add missing tester trust, run the same command
+from **Windows PowerShell → Run as administrator** in the extracted folder
+and type **YES** at the certificate prompt. The prompt lists the exact
+certificate and local computer stores. This changes trust for the whole
+computer. Either mode reports the USB port to select in Have Disk when it can
+identify one live match. If it cannot, reconnect the printer and repeat the check.
+
+The script is included starting with 0.3.0. For the 0.2.0 ZIP with the same
+tester certificate, [download the script from the project](https://github.com/hernandp/OpenHPZJS1005-x64-drv#check-and-prepare-for-have-disk)
+and save it beside the extracted INF. Obtain the ZIP and script from the official
+project. If Windows blocks the verified downloaded script, unblock only that file
+and use a process-scoped policy:
+
+```powershell
+Unblock-File -LiteralPath .\Preinstall.ps1
+powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File .\Preinstall.ps1 /CHECK
+```
+
+Use the manual preparation steps below if an organization policy blocks scripts.
+
 ## Prepare the extracted folder
 
 1. Extract the ZIP completely. Keep all files together.
@@ -36,7 +90,7 @@ Use a disposable VM for the initial installation rehearsal.
 The catalog was generated with this exact firmware image present. Supplying
 the matching file completes the package without changing its signature.
 The ZIP's SHA256-MANIFEST lists distributed files only; BUILD-INFO records the
-required, omitted firmware. No Setup executable or diagnostic utility is needed.
+required, omitted firmware.
 
 ## Install with Windows
 
@@ -46,8 +100,8 @@ Retain the currently installed version's extracted package until cleanup is veri
 1. Connect and power on the printer. Windows protected print mode must be off;
    this legacy third-party driver cannot operate in that mode.
 2. Open Printers & scanners, Add device, then the option to add manually.
-   Choose a local printer with manual settings and the USB virtual printer port
-   corresponding to the connected HP. Record the port from an existing working
+   Choose a local printer with manual settings and the USB port reported by
+   Preinstall.ps1. For manual preparation, record the port from an existing working
    queue when available. With several USB devices, compare the device entries in
    Device Manager before and after reconnecting this printer. Its hardware ID
    includes `VID_03F0&PID_1317`. If the port association remains unclear, stop and
@@ -107,6 +161,28 @@ and custom preferences. Record the current default printer and whether Windows
 manages the default automatically. Screenshots are sufficient for restoring these
 settings manually. Close printing applications and finish or cancel this printer's
 pending jobs before removal.
+
+## Remove with Uninstall.ps1
+
+Open **64-bit Windows PowerShell as administrator** in the extracted folder for
+the installed Benteveo release. If your 0.2.0 or 0.3.0 ZIP predates this helper,
+download [Uninstall.ps1 from the project](https://github.com/hernandp/OpenHPZJS1005-x64-drv#uninstall)
+and put it beside the original INF, catalog and driver files.
+
+```powershell
+powershell.exe -NoProfile -File .\Uninstall.ps1 /CHECK
+powershell.exe -NoProfile -File .\Uninstall.ps1 /REMOVE
+```
+
+`/CHECK` is a read-only preview. Review all listed queues before running
+`/REMOVE`. Finish or cancel their print jobs, then type **REMOVE** when prompted
+to confirm. If Windows reports an in-use component, restart and rerun
+`/REMOVE` from the same folder. Keep the ZIP and original firmware for reinstalling.
+
+After verified removal, press Enter to keep tester trust or type **REMOVE
+CERTIFICATE** to request its removal. The script keeps the certificate if a
+driver catalog still uses it or the dependency check cannot finish. Use the
+manual procedure below if the installed package is older or cannot be matched.
 
 ## Remove the queue and driver package
 

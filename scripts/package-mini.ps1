@@ -39,6 +39,7 @@ if (!(Test-Path -LiteralPath $SignTool -PathType Leaf)) { throw 'SignTool is mis
 $unsignedZip = @(Get-ChildItem -LiteralPath $candidate -Filter '*-unsigned-candidate.zip')
 $sourceZip = @(Get-ChildItem -LiteralPath $candidate -Filter '*-source.zip')
 if ($unsignedZip.Count -ne 1 -or $sourceZip.Count -ne 1) { throw 'Expected one candidate/source pair.' }
+$helpers = @('Preinstall.ps1', 'Uninstall.ps1')
 $out = Join-Path $project ('artifacts\mini-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
 New-Item -ItemType Directory -Path $out | Out-Null
 Expand-Archive -LiteralPath $unsignedZip[0].FullName -DestinationPath $out
@@ -49,6 +50,8 @@ $logs = Join-Path $out 'validation'
 New-Item -ItemType Directory -Path $bundle, $logs | Out-Null
 $plugins = @('lj1005render.dll','lj1005monitor.dll')
 if (Test-Path -LiteralPath (Join-Path $inputBundle 'driver\lj1005ui.dll')) { $plugins += 'lj1005ui.dll' }
+$wizard = 'BenteveoPrerequisites.exe'
+Copy-Item -LiteralPath (Join-Path $inputBundle $wizard) -Destination $bundle
 foreach ($name in @('lj1005.inf','lj1005.gpd','lj1005.ini') + $plugins) {
     Copy-Item -LiteralPath (Join-Path $inputBundle "driver\$name") -Destination $bundle
 }
@@ -78,10 +81,10 @@ function Sign-File([string]$Path, [string]$Log) {
         status = [string]$signature.Status; statusMessage = $signature.StatusMessage
         signerThumbprintSha1 = $signature.SignerCertificate.Thumbprint }
 }
-$signatureResults = foreach ($name in $plugins) {
+$signatureResults = foreach ($name in ($plugins + $wizard)) {
     Sign-File (Join-Path $bundle $name) "$name-sign.log"
 }
-$signatureResults | ConvertTo-Json | Set-Content (Join-Path $logs 'signed-dlls.json')
+$signatureResults | ConvertTo-Json | Set-Content (Join-Path $logs 'signed-binaries.json')
 $temporaryFirmware = Join-Path $bundle 'sihp1005.img'
 try {
     Copy-Item -LiteralPath $firmware.FullName -Destination $temporaryFirmware
@@ -104,11 +107,20 @@ try {
     # Only this newly created, exact staging file; never delete the supplied image.
     if (Test-Path -LiteralPath $temporaryFirmware) { Remove-Item -LiteralPath $temporaryFirmware -Force }
 }
+$packagedCertificateHash = (Get-FileHash -LiteralPath (Join-Path $bundle 'TEST-CERTIFICATE.cer')).Hash
+foreach ($helper in $helpers) {
+    $helperPath = Join-Path $PSScriptRoot $helper
+    $helperText = Get-Content -LiteralPath $helperPath -Raw
+    if (!$helperText.Contains($cert.Thumbprint) -or !$helperText.Contains($packagedCertificateHash)) {
+        throw "$helper must pin the certificate used to sign this package."
+    }
+    Copy-Item -LiteralPath $helperPath -Destination $bundle
+}
 $info.packageState = 'mini-self-signed-test-rehearsal'
 $signing = [ordered]@{
     subject = $cert.Subject
     thumbprintSha1 = $cert.Thumbprint
-    certificateFileSha256 = (Get-FileHash -LiteralPath (Join-Path $bundle 'TEST-CERTIFICATE.cer')).Hash.ToLowerInvariant()
+    certificateFileSha256 = $packagedCertificateHash.ToLowerInvariant()
     notBeforeUtc = $cert.NotBefore.ToUniversalTime().ToString('o')
     notAfterUtc = $cert.NotAfter.ToUniversalTime().ToString('o')
     fileDigestAlgorithm = 'SHA256'

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # See LICENSE in the repository root for license terms.
 cmake_minimum_required(VERSION 3.24)
-project(HPLJ1005x64 VERSION 0.2.0 LANGUAGES C CXX)
+project(HPLJ1005x64 VERSION 0.3.0 LANGUAGES C CXX)
 set(OPENZJS_VERSION "${PROJECT_VERSION}.0")
 # Windows stores each version component as a 16-bit integer.
 foreach(component IN ITEMS PROJECT_VERSION_MAJOR PROJECT_VERSION_MINOR PROJECT_VERSION_PATCH)
@@ -43,6 +43,16 @@ if(WIN32)
     target_sources(${target} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated/${target}.rc")
   endfunction()
   add_windows_version(lj1005 "Benteveo printer utility" "lj1005.exe" VFT_APP)
+  add_executable(BenteveoPrerequisites WIN32 src/prereq_wizard.cpp src/prereq_wizard.rc
+    src/prereq_wizard.manifest src/prerequisites.cpp src/usb_windows.cpp)
+  add_windows_version(BenteveoPrerequisites "Benteveo prerequisite wizard" "BenteveoPrerequisites.exe" VFT_APP)
+  target_include_directories(BenteveoPrerequisites PRIVATE include .)
+  target_compile_definitions(BenteveoPrerequisites PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+  target_link_libraries(BenteveoPrerequisites PRIVATE bcrypt cfgmgr32 comctl32 comdlg32 crypt32
+    gdiplus ole32 setupapi shell32 shlwapi uuid winhttp winspool)
+  if(MSVC)
+    target_compile_options(BenteveoPrerequisites PRIVATE /W4 /WX /permissive- /EHsc)
+  endif()
   add_library(lj1005monitor SHARED driver/monitor.cpp driver/trace.cpp driver/completion_windows.cpp src/usb_windows.cpp driver/monitor.def)
   add_windows_version(lj1005monitor "Benteveo firmware and print monitor" "lj1005monitor.dll" VFT_DLL)
   target_link_libraries(lj1005monitor PRIVATE lj1005_core winspool setupapi cfgmgr32 advapi32)

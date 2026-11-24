@@ -34,10 +34,32 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 ## Install with Have Disk
 
-The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, place the original `sihp1005.img` beside `lj1005.inf`, and use **Add manually → Local printer → Have Disk**. See below for details. 
+The end-user package is a ZIP for the Windows Add Printer Wizard. Extract it, connect and power on the printer, then check the prerequisites before choosing **Add manually → Local printer → Have Disk**.
 
 ⏯️ An installation demo video is available here: [Youtube](https://www.youtube.com/watch?v=YPfRTDhf5iE)
 
+
+### Prepare with the prerequisite wizard
+
+Extract the whole mini ZIP, connect and turn on the original HP LaserJet 1005,
+and open **BenteveoPrerequisites.exe** beside `lj1005.inf`. The wizard checks
+tester trust, prepares the original HP firmware, and shows the Windows USB port
+to select in Have Disk. When ready, **Open Add Printer Wizard** opens
+**Find a printer by other options** directly. Choose **Exit** to install
+later. The wizard asks before adding tester trust to the local computer.
+
+### Check and prepare for Have Disk
+
+In the extracted folder, run the Windows PowerShell that comes with Windows 10 and 11:
+
+```powershell
+powershell.exe -NoProfile -File .\Preinstall.ps1 /CHECK
+powershell.exe -NoProfile -File .\Preinstall.ps1 /INSTALL
+```
+
+`/CHECK` is the default. It checks tester trust, the firmware image, and the live USB port. Run `/INSTALL` if preparation is needed. It can download the verified HP firmware and asks before adding missing tester trust from an administrator terminal. When the check says ready, select the reported USB port in Have Disk.
+
+The 0.3.0 ZIP includes the script. For a 0.2.0 tester ZIP that uses the same signing identity, [download Preinstall.ps1](scripts/Preinstall.ps1) from GitHub and place it beside `lj1005.inf`. See the [installation guide](docs/MINI_INSTALL.md#prepare-with-preinstallps1) if Windows blocks the script.
 
 ### Get the HP firmware
 
@@ -121,6 +143,21 @@ pwsh -NoProfile -File ./scripts/build.ps1
 ```
 
 For offline integration checks, install a FILE: queue in the lab and run `./scripts/capture-tests.ps1 -QueueName '<lab queue>'` with Pillow and the reference encoder available. The helper writes explicit local capture files. [VM rehearsal](docs/VM_TESTING.md) · [Print validation](docs/PRINT_VALIDATION.md) · [Diagnostics](docs/DIAGNOSTICS.md)
+
+## Uninstall
+
+Run [Uninstall.ps1](scripts/Uninstall.ps1) from the extracted ZIP for the
+installed Benteveo version. Open 64-bit Windows PowerShell as administrator:
+
+```powershell
+powershell.exe -NoProfile -File .\Uninstall.ps1 /CHECK
+powershell.exe -NoProfile -File .\Uninstall.ps1 /REMOVE
+```
+
+Review the queues and files in the preview before confirming removal. The
+script offers a separate choice to remove tester trust after driver cleanup.
+If your ZIP predates the helper, download it from the link above and place
+it beside the extracted INF. [Installation and manual removal guide](docs/MINI_INSTALL.md#remove-with-uninstallps1)
 
 ## Build the mini ZIP
 
