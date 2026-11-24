@@ -16,8 +16,8 @@ digest = candidate.digest
 FIRMWARE_HASH = "638b9ad4a2cf6888208926ef7c7de073da8ba4cded25d31000a585c4526a9ca1"
 PAYLOAD = {"lj1005.inf", "lj1005.gpd", "lj1005.ini", "lj1005render.dll",
            "lj1005monitor.dll", "lj1005.cat", "LICENSE", "THIRD_PARTY.md",
-           "README.md", "BUILD-INFO.json", "TEST-CERTIFICATE.cer", "Preinstall.ps1"}
-OPTIONAL_HELPERS = {"Uninstall.ps1"}
+           "README.md", "BUILD-INFO.json", "TEST-CERTIFICATE.cer"}
+UNINSTALLER = "Uninstall.ps1"
 
 
 def compare_pe(original, signed):
@@ -53,7 +53,7 @@ def verify(directory, original):
         plugins += ("lj1005ui.dll",)
     wizard = "BenteveoPrerequisites.exe"
     expected_payload = PAYLOAD | set(plugins) | ({wizard} if wizard in baseline else set())
-    require(expected_payload <= set(files) <= expected_payload | OPTIONAL_HELPERS,
+    require(expected_payload <= set(files) <= expected_payload | {UNINSTALLER},
             "Mini payload differs: firmware and unexpected files are forbidden")
     require(all(digest(data) != FIRMWARE_HASH for data in files.values()), "Firmware leaked into ZIP")
     info = json.loads(files["BUILD-INFO.json"].decode("utf-8-sig"))
@@ -93,13 +93,12 @@ def verify(directory, original):
     require(digest((directory / info["sourceArchive"]).read_bytes()) == info["sourceArchiveSha256"], "Source mismatch")
     source = candidate.read_archive(directory / info["sourceArchive"], "source")
     require(files["README.md"] == source["docs/MINI_INSTALL.md"], "Guide differs from source")
-    for helper in {"Preinstall.ps1"} | OPTIONAL_HELPERS:
-        expected = source.get(f"scripts/{helper}")
-        require(files.get(helper) == expected, f"{helper} differs from source")
-        if expected is not None:
-            require(info["signing"]["thumbprintSha1"].encode() in expected
-                    and info["signing"]["certificateFileSha256"].upper().encode() in expected,
-                    f"{helper} does not pin the bundled certificate")
+    uninstaller = source.get(f"scripts/{UNINSTALLER}")
+    require(files.get(UNINSTALLER) == uninstaller, f"{UNINSTALLER} differs from source")
+    if uninstaller is not None:
+        require(info["signing"]["thumbprintSha1"].encode() in uninstaller
+                and info["signing"]["certificateFileSha256"].upper().encode() in uninstaller,
+                f"{UNINSTALLER} does not pin the bundled certificate")
     return {"status": "passed", "firmwareIncluded": False, "files": len(files),
             "wizardAcceptance": "pending VM", "catalogMembership": "requires Windows verification"}
 

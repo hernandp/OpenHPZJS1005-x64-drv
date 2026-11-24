@@ -24,45 +24,9 @@ Use a disposable VM for the initial installation rehearsal.
    printer or network printer with manual settings**, then use the reported
    port and Have Disk as described below. Choose **Exit** to install later.
 
-## Prepare with Preinstall.ps1
-
-Extract the entire ZIP, connect and turn on the original LaserJet 1005, and open
-Windows PowerShell in the folder containing `lj1005.inf`. Use the Windows
-PowerShell 5.1 included with Windows 10 and 11.
-
-```powershell
-powershell.exe -NoProfile -File .\Preinstall.ps1 /CHECK
-```
-
-`/CHECK` is the default and reports certificate, firmware and USB readiness.
-If it reports missing tester trust or firmware, run:
-
-```powershell
-powershell.exe -NoProfile -File .\Preinstall.ps1 /INSTALL
-```
-
-`/INSTALL` downloads the original HP archive, verifies the required firmware,
-and saves it beside the INF. To add missing tester trust, run the same command
-from **Windows PowerShell → Run as administrator** in the extracted folder
-and type **YES** at the certificate prompt. The prompt lists the exact
-certificate and local computer stores. This changes trust for the whole
-computer. Either mode reports the USB port to select in Have Disk when it can
-identify one live match. If it cannot, reconnect the printer and repeat the check.
-
-The script is included starting with 0.3.0. For the 0.2.0 ZIP with the same
-tester certificate, [download the script from the project](https://github.com/hernandp/OpenHPZJS1005-x64-drv#check-and-prepare-for-have-disk)
-and save it beside the extracted INF. Obtain the ZIP and script from the official
-project. If Windows blocks the verified downloaded script, unblock only that file
-and use a process-scoped policy:
-
-```powershell
-Unblock-File -LiteralPath .\Preinstall.ps1
-powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File .\Preinstall.ps1 /CHECK
-```
-
-Use the manual preparation steps below if an organization policy blocks scripts.
-
 ## Prepare the extracted folder
+
+Follow these steps if you are preparing the package manually.
 
 1. Extract the ZIP completely. Keep all files together.
 2. Use the optional [HP firmware helper](https://github.com/hernandp/OpenHPZJS1005-x64-drv#get-the-hp-firmware)
@@ -101,9 +65,9 @@ Retain the currently installed version's extracted package until cleanup is veri
    this legacy third-party driver cannot operate in that mode.
 2. Open Printers & scanners, Add device, then the option to add manually.
    Choose a local printer with manual settings and the USB port reported by
-   Preinstall.ps1. For manual preparation, record the port from an existing working
-   queue when available. With several USB devices, compare the device entries in
-   Device Manager before and after reconnecting this printer. Its hardware ID
+   the prerequisite wizard. For manual preparation, record the port from an
+   existing working queue when available. With several USB devices, compare the
+   device entries in Device Manager before and after reconnecting this printer. Its hardware ID
    includes `VID_03F0&PID_1317`. If the port association remains unclear, stop and
    collect a support report before submitting jobs to a guessed port.
 3. Choose Have Disk, browse to `lj1005.inf`, and select

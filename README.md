@@ -33,30 +33,41 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 ## Installation using the Prerequisites Wizard
 
-1. Extract the driver ZIP, connect and turn on the original HP LaserJet 1005.
-2. Run **BenteveoPrerequisites.exe** found in the extracted files to run the **Prerequisites Installation wizard**.
-3. The wizard will guide you through required steps to setup tester certificate, preparation of the original HP firmware, and detecting the Windows USB port to select in the subsequent Windows wizard. **Take note of this USB port**
-4. When all prerequisites are met, click **Open Add Printer Wizard** at the end if you want to open the Windows wizard to continue installation. You may exit the wizard if you want to do it later.
+The tester ZIP uses a self-signed certificate. The prerequisite wizard asks for
+your consent before adding tester trust to the local computer.
+
+1. Extract the entire ZIP. Connect the original HP LaserJet 1005 to USB and turn it on.
+2. Run **BenteveoPrerequisites.exe** beside `lj1005.inf` and click **Next** to check the prerequisites.
+3. Follow the prompts to prepare the tester certificate and HP firmware. Note the USB port and INF path on the ready screen.
+4. Click **Open Add Printer Wizard** to continue, or **Exit** to install later.
 
 ### Continue with Add Printer Wizard
 
-* Choose local installation:
-<img width="500" alt="image" src="https://github.com/user-attachments/assets/0ff1a57e-048a-49af-94a3-29887dd23ffe" />
+1. On **Find a printer by other options**, select **Add a local printer or network printer with manual settings** and click **Next**.
 
-* Make sure the printer is connected to your desired USB port. The Benteveo prerequisite tool gives you a hint on the USB port.
-<img width="500" alt="image" src="https://github.com/user-attachments/assets/99d19c1e-21e0-4735-b881-de62963bd23d" />
+   <img width="500" alt="Add Printer Wizard with manual printer settings selected" src="https://github.com/user-attachments/assets/0ff1a57e-048a-49af-94a3-29887dd23ffe" />
 
-* Press the Have Disk button and browse to the folder where you extracted the Project Benteveo ZIP:
-<img width="500" alt="image" src="https://github.com/user-attachments/assets/fa1c124b-f872-4fb3-a425-728c9019559a" />
+2. Select **Use an existing port**, choose the exact USB port reported by the prerequisite wizard, and click **Next**. If the port is missing, reconnect the printer and rerun the prerequisite check.
 
-* Make sure **HP Laserjet 1005 (Project Benteveo Driver)** appears with an Authenticode digital signature. The screenshot shows the name used by an earlier tester ZIP.
-<img width="500" alt="image" src="https://github.com/user-attachments/assets/58344dfb-f9b7-4f54-aac2-8af06387ae6d" />
+   <img width="500" alt="The existing printer port selector" src="https://github.com/user-attachments/assets/99d19c1e-21e0-4735-b881-de62963bd23d" />
 
-* Finish the wizard before printing. Confirm that the queue uses the USB port assigned to the connected printer. If you are using A4 paper, set A4 in the queue's **Printing Defaults** and **Printing preferences**, load one A4 sheet, then select **Print Test Page** from **Printer properties**. [Installation guide](docs/MINI_INSTALL.md)
+3. Click **Have Disk**, then **Browse**. Select `lj1005.inf` in the extracted folder, click **Open**, then **OK**.
 
-## (Alternative) Manual Installation
+   <img width="500" alt="Have Disk dialog for browsing to lj1005.inf" src="https://github.com/user-attachments/assets/fa1c124b-f872-4fb3-a425-728c9019559a" />
 
-The following section is targeted at power users, developers and testers, or in case the wizard method does not work in your system.
+4. Select **HP Laserjet 1005 (Project Benteveo Driver)** and click **Next**. If Windows rejects the signature, cancel and check the certificate and extracted files. The screenshot shows the name used by an earlier tester ZIP. [Troubleshooting](docs/MINI_INSTALL.md#troubleshooting)
+
+   <img width="500" alt="Benteveo driver model in the Add Printer Wizard" src="https://github.com/user-attachments/assets/58344dfb-f9b7-4f54-aac2-8af06387ae6d" />
+
+5. Confirm the printer name and approve the Windows administrator prompt if shown. Choose **Do not share this printer** if asked. Click **Finish** before printing a test page.
+6. Open the new queue's **Printer properties**. On the **Ports** tab, confirm the reported USB port and tick **Enable bidirectional support**. Set the paper size to **A4** in **Advanced → Printing Defaults** and in **Printing preferences**.
+7. Load one A4 sheet and click **Print Test Page** in **Printer properties**.
+
+For Windows Protected Print Mode, reinstallation, or driver cleanup, see the [installation guide](docs/MINI_INSTALL.md).
+
+## Manual installation
+
+Use these steps to prepare the package if the prerequisite wizard is unavailable.
 
 ### Get the HP firmware
 
@@ -76,12 +87,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\get-hp-firmware.ps1 -D
 
 If you already have `sihp1005.img` from your original HP software, copy it beside the INF and check the size and SHA-256 in the [installation guide](docs/MINI_INSTALL.md#prepare-the-extracted-folder).
 
-### Test Certificate installation
+### Install the tester certificate
 
-This driver is signed by using a test certificate -In the future a proper solution would be provided for open-source projects such as SignPath. To install the Project Benteveo driver, import the certificate by double-clicking `TEST-CERTIFICATE.cer`, and clicking 'Install Certificate'. 
-Add the certificate in **Local Machine** context, to the following stores: **Trusted Root Certification Authorities** and **Trusted Publishers**.
+Verify that `TEST-CERTIFICATE.cer` matches the published tester certificate identity and is within its validity period. If you choose to trust it, double-click the certificate and click **Install Certificate**. Import it into both **Trusted Root Certification Authorities** and **Trusted Publishers** under **Local Machine**. [Certificate verification and manual preparation](docs/MINI_INSTALL.md#prepare-the-extracted-folder)
 
-ℹ️ Optionally Check if the certificate is properly installed by running the following Powershell script (must return True for both stores):
+You can check both stores in PowerShell. Both commands should return `True`.
 
 ```powershell
 $t = 'DEAD78F5D4F2A4D8A424726555A6C3D536E445FC'
@@ -89,24 +99,9 @@ Test-Path "Cert:\LocalMachine\Root\$t"
 Test-Path "Cert:\LocalMachine\TrustedPublisher\$t"
 ```
 
-### Launch the Add Printer Wizard.
+### Launch the Add Printer Wizard
 
-To launch the classic Add Printer Wizard in Windows, use one of these quick methods:
-
-Through standard Windows Settings:
-
-* Navigate to **Start > Settings > Bluetooth & devices > Printers & scanners > Add a printer & scanner > Add device** (or select Add a new device manually if the printer isn't listed automatically).
-
-* Command Prompt / Run Command:
-  - Press `Windows Key + R` to open the Run dialog box.
-  - Type `rundll32 printui.dll,PrintUIEntry /il` and press Enter.
-  
-* Open the Run dialog box (Windows Key + R) and type `printui /im` to jump straight to the manual setup options.
-  
-* As Administrator:
-  - Open Command Prompt as Administrator, then run `rundll32 printui.dll,PrintUIEntry /il` to install a printer with elevated privileges without logging out the current user.
-
-
+Press **Windows key + R**, run `printui /im`, and follow the [Add Printer Wizard steps above](#continue-with-add-printer-wizard). You can also open **Printers & scanners** from Start, choose to add a printer, then select the manual option. If you prepared the package without the prerequisite wizard, confirm the port before continuing. [Manual port selection](docs/MINI_INSTALL.md#install-with-windows)
 
 ## Build and test
 
@@ -145,12 +140,12 @@ it beside the extracted INF. [Installation and manual removal guide](docs/MINI_I
 
 ## Building the mini ZIP
 
-In PowerShell 7.5 or later, start from a clean checkout with Visual Studio C++, the Windows SDK and WDK 10.0.26100.0, and Python 3 on PATH. You also need the original `sihp1005.img` and the dedicated `OpenZJS Technical Tester Signing` certificate with its private key in your current user's Personal store. If you do not already have that tester identity, create it with `./scripts/new-test-signing-identity.ps1 -OutputDirectory artifacts/test-signing-identity` and read the thumbprint from its `IDENTITY.json`.
+In PowerShell 7.5 or later, start from a clean checkout with Visual Studio C++, the Windows SDK and WDK 10.0.26100.0, and Python 3 on PATH. To sign the tester ZIP, use the original `sihp1005.img` and the project's `OpenZJS Technical Tester Signing` certificate with its private key in your current user's Personal store. The prerequisite wizard and uninstaller pin this tester identity. The candidate build and its tests can run without the signing key.
 
 From the repository root, run the commands below with your tester certificate thumbprint and firmware path.
 
 ```powershell
-./scripts/package-candidate.ps1 -OutputPathFile artifacts/candidate-path.txt
+./scripts/package-candidate.ps1 -CatalogOS '10_GE_X64,10_VB_X64' -OutputPathFile artifacts/candidate-path.txt
 $candidate = Get-Content -LiteralPath artifacts/candidate-path.txt
 ./scripts/package-mini.ps1 -CandidatePath $candidate `
     -CertificateThumbprint '<40-character tester certificate thumbprint>' `
