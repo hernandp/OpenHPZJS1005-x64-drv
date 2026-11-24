@@ -35,12 +35,24 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 1. Extract the driver ZIP, connect and turn on the original HP LaserJet 1005.
 2. Run **BenteveoPrerequisites.exe** found in the extracted files to run the **Prerequisites Installation wizard**.
-3. The wizard will guide you through required steps to setup tester certificate, preparation of the original HP firmware, and detecting the Windows USB port to select in the subsequent Windows wizard.
+3. The wizard will guide you through required steps to setup tester certificate, preparation of the original HP firmware, and detecting the Windows USB port to select in the subsequent Windows wizard. **Take note of this USB port**
 4. When all prerequisites are met, click **Open Add Printer Wizard** at the end if you want to open the Windows wizard to continue installation. You may exit the wizard if you want to do it later.
 
-### Add Printer Wizard
+### Continue with Add Printer Wizard
 
-XXX
+* Choose local installation:
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/0ff1a57e-048a-49af-94a3-29887dd23ffe" />
+
+* Make sure the printer is connected to your desired USB port. The Benteveo prerequisite tool gives you a hint on the USB port.
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/99d19c1e-21e0-4735-b881-de62963bd23d" />
+
+* Press the Have Disk button and browse to the folder where you extracted the Project Benteveo ZIP:
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/fa1c124b-f872-4fb3-a425-728c9019559a" />
+
+* Make sure **HP Laserjet 1005 (Project Benteveo Driver)** appears with an Authenticode digital signature. The screenshot shows the name used by an earlier tester ZIP.
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/58344dfb-f9b7-4f54-aac2-8af06387ae6d" />
+
+* Finish the wizard before printing. Confirm that the queue uses the USB port assigned to the connected printer. If you are using A4 paper, set A4 in the queue's **Printing Defaults** and **Printing preferences**, load one A4 sheet, then select **Print Test Page** from **Printer properties**. [Installation guide](docs/MINI_INSTALL.md)
 
 ## (Alternative) Manual Installation
 
@@ -77,7 +89,7 @@ Test-Path "Cert:\LocalMachine\Root\$t"
 Test-Path "Cert:\LocalMachine\TrustedPublisher\$t"
 ```
 
-### Continue with Wizard
+### Launch the Add Printer Wizard.
 
 To launch the classic Add Printer Wizard in Windows, use one of these quick methods:
 
@@ -94,19 +106,6 @@ Through standard Windows Settings:
 * As Administrator:
   - Open Command Prompt as Administrator, then run `rundll32 printui.dll,PrintUIEntry /il` to install a printer with elevated privileges without logging out the current user.
 
-* Choose local installation:
-<img width="500" alt="image" src="https://github.com/user-attachments/assets/0ff1a57e-048a-49af-94a3-29887dd23ffe" />
-
-* Make sure the printer is connected to your desired USB port:
-<img width="500" alt="image" src="https://github.com/user-attachments/assets/99d19c1e-21e0-4735-b881-de62963bd23d" />
-
-* Press the Have Disk button and browse to the folder where you extracted the Project Benteveo ZIP:
-<img width="500" alt="image" src="https://github.com/user-attachments/assets/fa1c124b-f872-4fb3-a425-728c9019559a" />
-
-* Make sure **HP Laserjet 1005 (Project Benteveo Driver)** appears with an Authenticode digital signature. The screenshot shows the name used by an earlier tester ZIP.
-<img width="500" alt="image" src="https://github.com/user-attachments/assets/58344dfb-f9b7-4f54-aac2-8af06387ae6d" />
-
-* Finish the wizard before printing. Confirm that the queue uses the USB port assigned to the connected printer. If you are using A4 paper, set A4 in the queue's **Printing Defaults** and **Printing preferences**, load one A4 sheet, then select **Print Test Page** from **Printer properties**. [Installation guide](docs/MINI_INSTALL.md)
 
 
 ## Build and test
