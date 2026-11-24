@@ -5,46 +5,50 @@
 
 IDR_WIZARD_ART RCDATA "driver/about-logo.jpg"
 
-IDD_WELCOME DIALOGEX 0, 0, 350, 200
+IDD_WELCOME DIALOGEX 0, 0, 418, 220
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
-    CONTROL "", IDC_ARTWORK, "Static", SS_OWNERDRAW, 10, 16, 112, 99
-    LTEXT "Welcome to the Benteveo prerequisite wizard", -1, 138, 20, 197, 27
-    LTEXT "Before continuing, connect the original HP LaserJet 1005 to an available USB port and turn it on.", -1, 138, 55, 197, 34
-    LTEXT "The wizard checks the tester certificate, the original HP firmware, and the USB port you will select in Have Disk.", -1, 138, 99, 197, 38
-    LTEXT "Click Next when the printer is connected.", -1, 138, 147, 197, 22
+    CONTROL "", IDC_ARTWORK, "Static", SS_OWNERDRAW, 8, 10, 114, 200
+    LTEXT "Welcome to the Benteveo prerequisite wizard", IDC_HEADING, 140, 20, 266, 22
+    LTEXT "Before continuing, connect the original HP LaserJet 1005 to an available USB port and turn it on.", -1, 140, 53, 266, 35
+    LTEXT "The wizard checks the tester certificate, the original HP firmware, and the USB port you will select in Have Disk.", -1, 140, 98, 266, 38
+    LTEXT "Click Next when the printer is connected.", -1, 140, 148, 266, 22
 END
 
-IDD_CHECK DIALOGEX 0, 0, 350, 200
+IDD_CHECK DIALOGEX 0, 0, 418, 220
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
-    LTEXT "", IDC_CERT_MARK, 10, 9, 12, 14
-    LTEXT "", IDC_CERT_RESULT, 26, 9, 311, 25
-    LTEXT "", IDC_FW_MARK, 10, 36, 12, 14
-    LTEXT "", IDC_FW_RESULT, 26, 36, 311, 25
-    LTEXT "", IDC_USB_MARK, 10, 63, 12, 14
-    LTEXT "", IDC_USB_RESULT, 26, 63, 311, 25
-    LTEXT "", IDC_MESSAGE, 10, 95, 327, 42
-    EDITTEXT IDC_INF_PATH, 10, 139, 327, 29, ES_MULTILINE | ES_READONLY | WS_TABSTOP
-    PUSHBUTTON "Check again", IDC_ACTION, 10, 173, 83, 16
-    PUSHBUTTON "Open Add Printer Wizard", IDC_OPEN_PRINTER, 213, 173, 124, 16
+    CONTROL "", IDC_ARTWORK, "Static", SS_OWNERDRAW, 8, 10, 114, 200
+    LTEXT "Check prerequisites", IDC_HEADING, 140, 20, 266, 22
+    LTEXT "", IDC_CERT_MARK, 140, 46, 12, 14
+    LTEXT "", IDC_CERT_RESULT, 155, 46, 251, 27
+    LTEXT "", IDC_FW_MARK, 140, 76, 12, 14
+    LTEXT "", IDC_FW_RESULT, 155, 76, 251, 27
+    LTEXT "", IDC_USB_MARK, 140, 106, 12, 14
+    LTEXT "", IDC_USB_RESULT, 155, 106, 251, 27
+    LTEXT "", IDC_MESSAGE, 140, 138, 266, 28
+    EDITTEXT IDC_INF_PATH, 140, 168, 266, 24, ES_MULTILINE | ES_READONLY | WS_TABSTOP
+    PUSHBUTTON "Check again", IDC_ACTION, 140, 196, 92, 16
+    PUSHBUTTON "Open Add Printer Wizard", IDC_OPEN_PRINTER, 282, 196, 124, 16
 END
 
-IDD_PREPARE DIALOGEX 0, 0, 350, 200
+IDD_PREPARE DIALOGEX 0, 0, 418, 220
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
 FONT 9, "Segoe UI"
 BEGIN
-    LTEXT "", IDC_CERT_MARK, 10, 9, 12, 14
-    LTEXT "", IDC_CERT_RESULT, 26, 9, 311, 25
-    LTEXT "", IDC_FW_MARK, 10, 36, 12, 14
-    LTEXT "", IDC_FW_RESULT, 26, 36, 311, 25
-    LTEXT "", IDC_USB_MARK, 10, 63, 12, 14
-    LTEXT "", IDC_USB_RESULT, 26, 63, 311, 25
-    LTEXT "", IDC_MESSAGE, 10, 95, 327, 42
-    EDITTEXT IDC_INF_PATH, 10, 139, 327, 29, ES_MULTILINE | ES_READONLY | WS_TABSTOP
-    PUSHBUTTON "Retry", IDC_ACTION, 10, 173, 101, 16
-    PUSHBUTTON "Browse for firmware...", IDC_BROWSE, 119, 173, 107, 16
-    PUSHBUTTON "Open Add Printer Wizard", IDC_OPEN_PRINTER, 213, 173, 124, 16
+    CONTROL "", IDC_ARTWORK, "Static", SS_OWNERDRAW, 8, 10, 114, 200
+    LTEXT "Prepare for Have Disk", IDC_HEADING, 140, 20, 266, 22
+    LTEXT "", IDC_CERT_MARK, 140, 46, 12, 14
+    LTEXT "", IDC_CERT_RESULT, 155, 46, 251, 27
+    LTEXT "", IDC_FW_MARK, 140, 76, 12, 14
+    LTEXT "", IDC_FW_RESULT, 155, 76, 251, 27
+    LTEXT "", IDC_USB_MARK, 140, 106, 12, 14
+    LTEXT "", IDC_USB_RESULT, 155, 106, 251, 27
+    LTEXT "", IDC_MESSAGE, 140, 138, 266, 28
+    EDITTEXT IDC_INF_PATH, 140, 168, 266, 24, ES_MULTILINE | ES_READONLY | WS_TABSTOP
+    PUSHBUTTON "Retry", IDC_ACTION, 140, 196, 92, 16
+    PUSHBUTTON "Browse for firmware...", IDC_BROWSE, 242, 196, 107, 16
+    PUSHBUTTON "Open Add Printer Wizard", IDC_OPEN_PRINTER, 282, 196, 124, 16
 END

@@ -29,6 +29,16 @@ namespace Lj1005::Prerequisites {
         constexpr wchar_t TITLE[] = L"Project Benteveo Prerequisites Installation Tool";
         constexpr COLORREF READY_COLOR = RGB(0, 109, 50);
         constexpr COLORREF INCOMPLETE_COLOR = RGB(181, 23, 35);
+        constexpr Gdiplus::ARGB SIDEBAR_GOLD = 0xffedc456;
+        constexpr Gdiplus::ARGB SIDEBAR_AMBER = 0xffbc8b35;
+        constexpr Gdiplus::ARGB SIDEBAR_WALNUT = 0xff4d432f;
+        constexpr Gdiplus::ARGB ARTWORK_MATTE = 0xfffffdf7;
+        constexpr Gdiplus::ARGB ARTWORK_FRAME = 0xffad842e;
+        constexpr Gdiplus::ARGB ARTWORK_SHADOW = 0x304d432f;
+        constexpr float ARTWORK_OUTER_INSET = 0.075f;
+        constexpr float ARTWORK_MATTE_INSET = 0.036f;
+        constexpr float ARTWORK_SHADOW_OFFSET = 0.014f;
+        constexpr wchar_t HEADING_FONT_PROPERTY[] = L"BenteveoHeadingFont";
         constexpr std::array RESULT_IDS{IDC_CERT_RESULT, IDC_FW_RESULT, IDC_USB_RESULT};
         constexpr std::array MARK_IDS{IDC_CERT_MARK, IDC_FW_MARK, IDC_USB_MARK};
         constexpr std::array LABELS{L"Certificates", L"HP firmware", L"USB connection"};
@@ -49,6 +59,27 @@ namespace Lj1005::Prerequisites {
             MultiByteToWideChar(CP_UTF8, 0, message, -1, result.data(), length);
             result.pop_back();
             return result;
+        }
+
+        bool HighContrast() {
+            HIGHCONTRASTW contrast{sizeof(contrast)};
+            return SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(contrast), &contrast, 0) &&
+                   (contrast.dwFlags & HCF_HIGHCONTRASTON);
+        }
+
+        void StyleHeading(HWND page) {
+            const auto heading = GetDlgItem(page, IDC_HEADING);
+            const auto font = reinterpret_cast<HFONT>(SendMessageW(heading, WM_GETFONT, 0, 0));
+            LOGFONTW description{};
+            if (!GetObjectW(font, sizeof(description), &description))
+                return;
+            description.lfWeight = FW_BOLD;
+            description.lfHeight = MulDiv(description.lfHeight, 4, 3);
+            const auto title = CreateFontIndirectW(&description);
+            if (title && SetPropW(page, HEADING_FONT_PROPERTY, title))
+                SendMessageW(heading, WM_SETFONT, reinterpret_cast<WPARAM>(title), FALSE);
+            else if (title)
+                DeleteObject(title);
         }
 
         struct Artwork {
@@ -78,18 +109,50 @@ namespace Lj1005::Prerequisites {
             }
 
             void Draw(const DRAWITEMSTRUCT& item) const {
-                FillRect(item.hDC, &item.rcItem, GetSysColorBrush(COLOR_WINDOW));
-                if (!image || image->GetLastStatus() != Gdiplus::Ok)
+                const auto& bounds = item.rcItem;
+                const bool highContrast = HighContrast();
+                const Gdiplus::RectF panel(static_cast<float>(bounds.left), static_cast<float>(bounds.top),
+                                           static_cast<float>(bounds.right - bounds.left),
+                                           static_cast<float>(bounds.bottom - bounds.top));
+                if (panel.Width <= 0 || panel.Height <= 0)
                     return;
                 Gdiplus::Graphics graphics(item.hDC);
-                const auto width = item.rcItem.right - item.rcItem.left;
+                if (highContrast || !token) {
+                    FillRect(item.hDC, &bounds, GetSysColorBrush(COLOR_WINDOW));
+                    FrameRect(item.hDC, &bounds, GetSysColorBrush(COLOR_WINDOWTEXT));
+                }
+                else {
+                    const Gdiplus::Color gold(SIDEBAR_GOLD);
+                    const Gdiplus::Color walnut(SIDEBAR_WALNUT);
+                    Gdiplus::LinearGradientBrush background(panel, gold, walnut, Gdiplus::LinearGradientModeVertical);
+                    const Gdiplus::Color colors[]{gold, Gdiplus::Color(SIDEBAR_AMBER), walnut};
+                    constexpr float STOPS[]{0.0f, 0.38f, 1.0f};
+                    background.SetInterpolationColors(colors, STOPS, ARRAYSIZE(STOPS));
+                    graphics.FillRectangle(&background, panel);
+                }
+                if (!image || image->GetLastStatus() != Gdiplus::Ok)
+                    return;
+
+                const auto outer = panel.Width * ARTWORK_OUTER_INSET;
+                const auto matte = panel.Width * ARTWORK_MATTE_INSET;
+                const auto width = panel.Width - 2 * (outer + matte);
                 const auto height =
-                    MulDiv(width, static_cast<int>(image->GetHeight()), static_cast<int>(image->GetWidth()));
+                    width * static_cast<float>(image->GetHeight()) / static_cast<float>(image->GetWidth());
+                const Gdiplus::RectF frame(panel.X + outer, panel.Y + outer, width + 2 * matte, height + 2 * matte);
+                if (!highContrast) {
+                    auto shadow = frame;
+                    shadow.Offset(0, panel.Width * ARTWORK_SHADOW_OFFSET);
+                    const Gdiplus::SolidBrush shade{Gdiplus::Color(ARTWORK_SHADOW)};
+                    graphics.FillRectangle(&shade, shadow);
+                }
+                const Gdiplus::SolidBrush paper{Gdiplus::Color(ARTWORK_MATTE)};
+                graphics.FillRectangle(&paper, frame);
+                if (!highContrast) {
+                    const Gdiplus::Pen border{Gdiplus::Color(ARTWORK_FRAME)};
+                    graphics.DrawRectangle(&border, frame);
+                }
                 graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-                graphics.DrawImage(
-                    image.get(), static_cast<int>(item.rcItem.left),
-                    static_cast<int>(item.rcItem.top + (item.rcItem.bottom - item.rcItem.top - height) / 2),
-                    static_cast<int>(width), height);
+                graphics.DrawImage(image.get(), Gdiplus::RectF(frame.X + matte, frame.Y + matte, width, height));
             }
         };
 
@@ -165,6 +228,9 @@ namespace Lj1005::Prerequisites {
                 }
 
                 const bool ready = !busy && status.Ready();
+                SetDlgItemTextW(page, IDC_HEADING,
+                                ready ? L"Ready for Have Disk"
+                                      : (prepare ? L"Prepare for Have Disk" : L"Check prerequisites"));
                 const auto inf = (directory / INF_NAME).wstring();
                 SetDlgItemTextW(page, IDC_INF_PATH, inf.c_str());
                 ShowWindow(GetDlgItem(page, IDC_INF_PATH), ready ? SW_SHOW : SW_HIDE);
@@ -315,12 +381,13 @@ namespace Lj1005::Prerequisites {
             if (message == WM_INITDIALOG) {
                 const auto* definition = reinterpret_cast<const PROPSHEETPAGEW*>(lParam);
                 SetWindowLongPtrW(page, GWLP_USERDATA, definition->lParam);
+                StyleHeading(page);
                 return TRUE;
             }
             auto* wizard = reinterpret_cast<Wizard*>(GetWindowLongPtrW(page, GWLP_USERDATA));
             if (!wizard)
                 return FALSE;
-            const bool welcome = GetDlgItem(page, IDC_ARTWORK) != nullptr;
+            const bool welcome = GetDlgItem(page, IDC_CERT_RESULT) == nullptr;
             const bool prepare = GetDlgItem(page, IDC_BROWSE) != nullptr;
             switch (message) {
             case WM_NOTIFY: {
@@ -373,17 +440,17 @@ namespace Lj1005::Prerequisites {
                     return TRUE;
                 }
                 break;
+            case WM_DESTROY:
+                if (const auto font = RemovePropW(page, HEADING_FONT_PROPERTY))
+                    DeleteObject(font);
+                break;
             case WM_CTLCOLORSTATIC: {
                 const auto id = GetDlgCtrlID(reinterpret_cast<HWND>(lParam));
                 if (id >= IDC_CERT_MARK && id <= IDC_USB_MARK) {
-                    HIGHCONTRASTW contrast{sizeof(contrast)};
-                    const bool highContrast =
-                        SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(contrast), &contrast, 0) &&
-                        (contrast.dwFlags & HCF_HIGHCONTRASTON);
                     const std::array ready{wizard->status.certificate.ready, wizard->status.firmware.ready,
                                            wizard->status.usb.ready};
                     const auto dc = reinterpret_cast<HDC>(wParam);
-                    SetTextColor(dc, highContrast
+                    SetTextColor(dc, HighContrast()
                                          ? GetSysColor(COLOR_WINDOWTEXT)
                                          : (ready[static_cast<std::size_t>(id - IDC_CERT_MARK)] ? READY_COLOR
                                                                                                 : INCOMPLETE_COLOR));
@@ -416,16 +483,14 @@ namespace Lj1005::Prerequisites {
             InitCommonControlsEx(&controls);
             Wizard wizard(instance, program);
             constexpr std::array TEMPLATES{IDD_WELCOME, IDD_CHECK, IDD_PREPARE};
-            constexpr std::array TITLES{L"", L"Check prerequisites", L"Prepare for Have Disk"};
             std::array<PROPSHEETPAGEW, TEMPLATES.size()> pages{};
             for (std::size_t index = 0; index < pages.size(); ++index) {
                 auto& page = pages[index];
                 page.dwSize = sizeof(page);
-                page.dwFlags = index == 0 ? PSP_HIDEHEADER : PSP_USEHEADERTITLE;
+                page.dwFlags = PSP_HIDEHEADER;
                 page.hInstance = instance;
                 page.pszTemplate = MAKEINTRESOURCEW(TEMPLATES[index]);
                 page.pfnDlgProc = PageProc;
-                page.pszHeaderTitle = TITLES[index];
                 page.lParam = reinterpret_cast<LPARAM>(&wizard);
             }
             PROPSHEETHEADERW sheet{};
