@@ -146,6 +146,28 @@ manages the default automatically. Screenshots are sufficient for restoring thes
 settings manually. Close printing applications and finish or cancel this printer's
 pending jobs before removal.
 
+## Remove with Uninstall.ps1
+
+Open **64-bit Windows PowerShell as administrator** in the extracted folder for
+the installed Benteveo release. If your 0.2.0 or 0.3.0 ZIP predates this helper,
+download [Uninstall.ps1 from the project](https://github.com/hernandp/OpenHPZJS1005-x64-drv#uninstall)
+and put it beside the original INF, catalog and driver files.
+
+```powershell
+powershell.exe -NoProfile -File .\Uninstall.ps1 /CHECK
+powershell.exe -NoProfile -File .\Uninstall.ps1 /REMOVE
+```
+
+`/CHECK` is a read-only preview. Review all listed queues before running
+`/REMOVE`. Finish or cancel their print jobs, then type **REMOVE** when prompted
+to confirm. If Windows reports an in-use component, restart and rerun
+`/REMOVE` from the same folder. Keep the ZIP and original firmware for reinstalling.
+
+After verified removal, press Enter to keep tester trust or type **REMOVE
+CERTIFICATE** to request its removal. The script keeps the certificate if a
+driver catalog still uses it or the dependency check cannot finish. Use the
+manual procedure below if the installed package is older or cannot be matched.
+
 ## Remove the queue and driver package
 
 1. In Settings, Printers & scanners, select the Benteveo queue and choose **Remove**.

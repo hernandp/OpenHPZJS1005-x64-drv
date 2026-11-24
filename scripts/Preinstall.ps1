@@ -1,9 +1,18 @@
-# SPDX-License-Identifier: GPL-2.0-or-later
+﻿# SPDX-License-Identifier: GPL-2.0-or-later
 # See LICENSE in the repository root for license terms.
 #requires -Version 5.1
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+
+$infPath = Join-Path $PSScriptRoot 'lj1005.inf'
+$versionLine = Select-String -LiteralPath $infPath -Pattern '^DriverVer=[^,]+,([0-9]+(?:\.[0-9]+){3})\s*$' `
+    -ErrorAction SilentlyContinue | Select-Object -First 1
+$driverVersion = if ($versionLine) { $versionLine.Matches[0].Groups[1].Value } else { 'version unavailable' }
+Write-Host "Project Benteveo   $driverVersion  HP Laserjet 1005 Device Driver."
+Write-Host 'Copyright (c) 2026 Hernán Di PIetro and collaborators.'
+Write-Host 'Licensed under GPL 2.0.'
+Write-Host ''
 
 if ($args.Count -gt 1 -or ($args.Count -eq 1 -and $args[0] -notin '/CHECK', '/INSTALL')) {
     Write-Host 'Usage: powershell.exe -NoProfile -File .\Preinstall.ps1 [/CHECK | /INSTALL]'
@@ -19,6 +28,15 @@ $hpUrl = 'https://ftp.hp.com/pub/softlib/software2/COL2222/lj-10067-2/lj1005host
 $certificateThumbprint = 'DEAD78F5D4F2A4D8A424726555A6C3D536E445FC'
 $certificateSha256 = 'E0EA91F75FAD36262A1BF580EFE384C7002AB69DD87F6012240A64A600A4EB19'
 $certificateStores = @('Root', 'TrustedPublisher')
+
+function Write-CheckResult([string]$Message, [switch]$Passed) {
+    if ($Passed) {
+        Write-Host '✓ ' -ForegroundColor Green -NoNewline
+    } else {
+        Write-Host '✗ ' -ForegroundColor Red -NoNewline
+    }
+    Write-Host $Message
+}
 
 function Get-Sha256([byte[]]$Bytes) {
     $algorithm = [Security.Cryptography.SHA256]::Create()
@@ -212,28 +230,29 @@ try {
     if ($missing.Count) {
         throw "Missing tester trust in $($missing -join ', '). Run /INSTALL in an administrator terminal."
     }
-    Write-Host 'Certificate: verified in both local computer stores.'
+    Write-CheckResult 'Certificate: verified in both local computer stores.' -Passed
 } catch {
     $ready = $false
-    Write-Host "Certificate: $($_.Exception.Message)"
+    Write-CheckResult "Certificate: $($_.Exception.Message)"
 }
 
 try {
     Confirm-Firmware
-    Write-Host 'Firmware: sihp1005.img verified.'
+    Write-CheckResult 'Firmware: sihp1005.img verified.' -Passed
 } catch {
     $ready = $false
-    Write-Host "Firmware: $($_.Exception.Message)"
+    Write-CheckResult "Firmware: $($_.Exception.Message)"
 }
 
 try {
     $port = Get-LaserJetPort
-    Write-Host "USB: Original LaserJet 1005 detected. Select $port in Have Disk."
+    Write-CheckResult "USB: Original LaserJet 1005 detected. Select $port in Have Disk." -Passed
 } catch {
     $ready = $false
-    Write-Host "USB: $($_.Exception.Message)"
+    Write-CheckResult "USB: $($_.Exception.Message)"
 }
 
+Write-Host ''
 if ($ready) {
     Write-Host "Ready for Have Disk. Select existing port $port, then browse to lj1005.inf."
     exit 0

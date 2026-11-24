@@ -10,6 +10,7 @@ was current; these were development and tester builds.
 - Add a Windows PowerShell 5.1 preinstallation check for the tester certificate, firmware, and live LaserJet USB port.
 - Add an install mode that downloads verified firmware and prompts before importing missing tester trust.
 - Include the helper in the signed Have Disk mini ZIP.
+- Add a matching-package uninstall helper for driver cleanup and optional tester certificate removal.
 
 ## 0.2.0 — 2026-11-20
 

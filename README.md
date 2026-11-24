@@ -135,6 +135,21 @@ pwsh -NoProfile -File ./scripts/build.ps1
 
 For offline integration checks, install a FILE: queue in the lab and run `./scripts/capture-tests.ps1 -QueueName '<lab queue>'` with Pillow and the reference encoder available. The helper writes explicit local capture files. [VM rehearsal](docs/VM_TESTING.md) · [Print validation](docs/PRINT_VALIDATION.md) · [Diagnostics](docs/DIAGNOSTICS.md)
 
+## Uninstall
+
+Run [Uninstall.ps1](scripts/Uninstall.ps1) from the extracted ZIP for the
+installed Benteveo version. Open 64-bit Windows PowerShell as administrator:
+
+```powershell
+powershell.exe -NoProfile -File .\Uninstall.ps1 /CHECK
+powershell.exe -NoProfile -File .\Uninstall.ps1 /REMOVE
+```
+
+Review the queues and files in the preview before confirming removal. The
+script offers a separate choice to remove tester trust after driver cleanup.
+If your ZIP predates the helper, download it from the link above and place
+it beside the extracted INF. [Installation and manual removal guide](docs/MINI_INSTALL.md#remove-with-uninstallps1)
+
 ## Build the mini ZIP
 
 In PowerShell 7.5 or later, start from a clean checkout with Visual Studio C++, the Windows SDK and WDK 10.0.26100.0, and Python 3 on PATH. You also need the original `sihp1005.img` and the dedicated `OpenZJS Technical Tester Signing` certificate with its private key in your current user's Personal store. If you do not already have that tester identity, create it with `./scripts/new-test-signing-identity.ps1 -OutputDirectory artifacts/test-signing-identity` and read the thumbprint from its `IDENTITY.json`.

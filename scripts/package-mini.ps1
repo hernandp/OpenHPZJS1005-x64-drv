@@ -39,7 +39,7 @@ if (!(Test-Path -LiteralPath $SignTool -PathType Leaf)) { throw 'SignTool is mis
 $unsignedZip = @(Get-ChildItem -LiteralPath $candidate -Filter '*-unsigned-candidate.zip')
 $sourceZip = @(Get-ChildItem -LiteralPath $candidate -Filter '*-source.zip')
 if ($unsignedZip.Count -ne 1 -or $sourceZip.Count -ne 1) { throw 'Expected one candidate/source pair.' }
-$preinstall = Join-Path $PSScriptRoot 'Preinstall.ps1'
+$helpers = @('Preinstall.ps1', 'Uninstall.ps1')
 $out = Join-Path $project ('artifacts\mini-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
 New-Item -ItemType Directory -Path $out | Out-Null
 Expand-Archive -LiteralPath $unsignedZip[0].FullName -DestinationPath $out
@@ -106,11 +106,14 @@ try {
     if (Test-Path -LiteralPath $temporaryFirmware) { Remove-Item -LiteralPath $temporaryFirmware -Force }
 }
 $packagedCertificateHash = (Get-FileHash -LiteralPath (Join-Path $bundle 'TEST-CERTIFICATE.cer')).Hash
-$preinstallText = Get-Content -LiteralPath $preinstall -Raw
-if (!$preinstallText.Contains($cert.Thumbprint) -or !$preinstallText.Contains($packagedCertificateHash)) {
-    throw 'Preinstall.ps1 must pin the certificate used to sign this package.'
+foreach ($helper in $helpers) {
+    $helperPath = Join-Path $PSScriptRoot $helper
+    $helperText = Get-Content -LiteralPath $helperPath -Raw
+    if (!$helperText.Contains($cert.Thumbprint) -or !$helperText.Contains($packagedCertificateHash)) {
+        throw "$helper must pin the certificate used to sign this package."
+    }
+    Copy-Item -LiteralPath $helperPath -Destination $bundle
 }
-Copy-Item -LiteralPath $preinstall -Destination $bundle
 $info.packageState = 'mini-self-signed-test-rehearsal'
 $signing = [ordered]@{
     subject = $cert.Subject
