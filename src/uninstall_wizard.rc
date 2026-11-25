@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// See LICENSE in the repository root for license terms.
+#include <windows.h>
+#include "uninstall_wizard.h"
+
+IDR_WIZARD_ART RCDATA "driver/about-logo.jpg"
+
+IDD_WELCOME DIALOGEX 0, 0, 418, 220
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 9, "Segoe UI"
+BEGIN
+    CONTROL "", IDC_ARTWORK, "Static", SS_OWNERDRAW, 8, 10, 114, 200
+    LTEXT "Welcome to the Benteveo uninstall wizard", IDC_HEADING, 140, 20, 266, 25
+    LTEXT "This wizard removes the Benteveo driver installed from this exact package.", -1, 140, 55, 266, 28
+    LTEXT "Close printer properties, queue windows and print dialogs before continuing.", -1, 140, 95, 266, 28
+    LTEXT "If you are upgrading, record the printer name, USB port, printing preferences and default printer before removal.", -1, 140, 135, 266, 39
+END
+
+IDD_REVIEW DIALOGEX 0, 0, 418, 220
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 9, "Segoe UI"
+BEGIN
+    CONTROL "", IDC_ARTWORK, "Static", SS_OWNERDRAW, 8, 10, 114, 200
+    LTEXT "Review removal", IDC_HEADING, 140, 20, 266, 24
+    LTEXT "", IDC_STATUS, 140, 46, 266, 24
+    EDITTEXT IDC_DETAILS, 140, 73, 266, 111, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON "Check again", IDC_CHECK, 140, 193, 64, 16
+    PUSHBUTTON "Remove certificate...", IDC_CERTIFICATE, 140, 193, 110, 16
+END

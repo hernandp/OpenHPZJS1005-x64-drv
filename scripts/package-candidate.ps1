@@ -79,7 +79,8 @@ $allowedExtensions = @('.cpp', '.hpp', '.c', '.h', '.ps1', '.py', '.cmake', '.md
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative.Contains('..') -or [IO.Path]::IsPathRooted($relative)) { throw "Invalid source path: $relative" }
     if ($relative.Contains('/') -and [IO.Path]::GetExtension($relative) -notin $allowedExtensions -and
-        $relative -notin @('driver/version.rc.in', 'docs/benteveo-and-hp.png', 'driver/about-logo.jpg', 'src/prereq_wizard.manifest')) {
+        $relative -notin @('driver/version.rc.in', 'docs/benteveo-and-hp.png', 'driver/about-logo.jpg',
+            'src/prereq_wizard.manifest', 'src/uninstall_wizard.manifest')) {
         throw "Review unexpected source file before packaging: $relative"
     }
     $original = Get-Item -LiteralPath (Join-Path $projectRoot $relative)
@@ -117,8 +118,10 @@ $binaryRoot = Join-Path $source 'build\Release'
 foreach ($file in @('lj1005.inf', 'lj1005.gpd', 'lj1005.ini', 'lj1005render.dll', 'lj1005monitor.dll', 'lj1005ui.dll')) {
     Copy-Item -LiteralPath (Join-Path $binaryRoot $file) -Destination $payload
 }
-$wizard = 'BenteveoPrerequisites.exe'
-Copy-Item -LiteralPath (Join-Path $binaryRoot $wizard) -Destination $bundle
+$companions = @('BenteveoPrerequisites.exe', 'BenteveoUninstall.exe')
+foreach ($companion in $companions) {
+    Copy-Item -LiteralPath (Join-Path $binaryRoot $companion) -Destination $bundle
+}
 foreach ($file in @('LICENSE', 'THIRD_PARTY.md')) {
     Copy-Item -LiteralPath (Join-Path $source $file) -Destination $bundle
 }
@@ -127,7 +130,9 @@ Copy-Item -LiteralPath (Join-Path $source 'docs\MINI_INSTALL.md') -Destination (
 & (Join-Path $source 'scripts\verify-binary-versions.ps1') -PackagePath $bundle -ExpectedVersion "$version.0" |
     ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $logs 'binary-versions.json') -Encoding utf8
 
-$binaries = @(Get-ChildItem -LiteralPath $payload -Filter '*.dll') + @(Get-Item -LiteralPath (Join-Path $bundle $wizard))
+$binaries = @(Get-ChildItem -LiteralPath $payload -Filter '*.dll') + @($companions | ForEach-Object {
+    Get-Item -LiteralPath (Join-Path $bundle $_)
+})
 foreach ($file in $binaries) {
     $bytes = [IO.File]::ReadAllBytes($file.FullName)
     $peOffset = [BitConverter]::ToInt32($bytes, 0x3c)

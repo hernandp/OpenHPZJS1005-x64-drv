@@ -1,5 +1,19 @@
 # Test evidence by deployment path
 
+## Benteveo 0.4.0 uninstall retry — November 25, 2026
+
+In the Windows 11 25H2 VMware guest (build 26200.10066), the maintainer
+reported that the original 0.4.0 uninstall wizard stopped at queue deletion
+with Windows error 5. The retry build requested the `DELETE` access right on
+the printer handle. The signed retry EXE supplied for this test has SHA-256
+`a31b9b4428848687911af454c9927dae82f43767bf4877f7604a60553d117a55`.
+
+The maintainer reran the wizard beside the original extracted 0.4.0 package.
+The final screen confirmed that the driver, queues, monitor and installed
+files were absent. It also reported tester trust absent from the local machine
+stores. This records the successful removal retry on Windows 11. A fresh
+install from the rebuilt ZIP and Windows 10 wizard acceptance remain pending.
+
 ## Physical Letter blank-sheet report — November 22, 2026
 
 The maintainer reported that selecting Letter with A4 paper loaded produced
