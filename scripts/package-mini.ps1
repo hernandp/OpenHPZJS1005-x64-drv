@@ -49,8 +49,10 @@ $logs = Join-Path $out 'validation'
 New-Item -ItemType Directory -Path $bundle, $logs | Out-Null
 $plugins = @('lj1005render.dll','lj1005monitor.dll')
 if (Test-Path -LiteralPath (Join-Path $inputBundle 'driver\lj1005ui.dll')) { $plugins += 'lj1005ui.dll' }
-$wizard = 'BenteveoPrerequisites.exe'
-Copy-Item -LiteralPath (Join-Path $inputBundle $wizard) -Destination $bundle
+$companions = @('BenteveoPrerequisites.exe', 'BenteveoUninstall.exe')
+foreach ($companion in $companions) {
+    Copy-Item -LiteralPath (Join-Path $inputBundle $companion) -Destination $bundle
+}
 foreach ($name in @('lj1005.inf','lj1005.gpd','lj1005.ini') + $plugins) {
     Copy-Item -LiteralPath (Join-Path $inputBundle "driver\$name") -Destination $bundle
 }
@@ -80,7 +82,7 @@ function Sign-File([string]$Path, [string]$Log) {
         status = [string]$signature.Status; statusMessage = $signature.StatusMessage
         signerThumbprintSha1 = $signature.SignerCertificate.Thumbprint }
 }
-$signatureResults = foreach ($name in ($plugins + $wizard)) {
+$signatureResults = foreach ($name in ($plugins + $companions)) {
     Sign-File (Join-Path $bundle $name) "$name-sign.log"
 }
 $signatureResults | ConvertTo-Json | Set-Content (Join-Path $logs 'signed-binaries.json')

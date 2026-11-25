@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // See LICENSE in the repository root for license terms.
 #include "prerequisites.hpp"
+#include "package_trust.hpp"
 #include "lj1005/usb.hpp"
 #include <windows.h>
-#include <bcrypt.h>
 #include <cfg.h>
 #include <cfgmgr32.h>
 #include <shlobj.h>
@@ -23,7 +23,7 @@
 namespace Lj1005::Prerequisites {
     namespace {
         namespace Fs = std::filesystem;
-        using Bytes = std::vector<BYTE>;
+        using namespace PackageTrust;
 
         constexpr std::size_t FIRMWARE_BYTES = 116892;
         constexpr std::size_t MAX_DOWNLOAD_BYTES = 16 * 1024 * 1024;
@@ -34,15 +34,10 @@ namespace Lj1005::Prerequisites {
         constexpr DWORD SPOOLER_PORT_LEVEL = 2;
         constexpr wchar_t HP_HOST[] = L"ftp.hp.com";
         constexpr wchar_t HP_PATH[] = L"/pub/softlib/software2/COL2222/lj-10067-2/lj1005hostbased-en.exe";
-        constexpr wchar_t CERTIFICATE_NAME[] = L"TEST-CERTIFICATE.cer";
         constexpr wchar_t CATALOG_NAME[] = L"lj1005.cat";
         constexpr std::wstring_view USB_ID_PREFIX = L"USB\\VID_03F0&PID_1317\\";
         constexpr wchar_t USB_PORTS_KEY[] =
             L"SYSTEM\\CurrentControlSet\\Control\\Print\\Monitors\\USB Monitor\\Ports\\";
-        constexpr std::string_view CERTIFICATE_SHA256 =
-            "e0ea91f75fad36262a1bf580efe384c7002ab69dd87f6012240a64a600a4eb19";
-        constexpr std::string_view FIRMWARE_SHA256 = "638b9ad4a2cf6888208926ef7c7de073da8ba4cded25d31000a585c4526a9ca1";
-        constexpr std::size_t SHA256_BYTES = 32;
         constexpr std::array STORES{L"Root", L"TrustedPublisher"};
 
         struct WindowsError : std::system_error {
@@ -70,26 +65,6 @@ namespace Lj1005::Prerequisites {
             return result;
         }
 
-        std::string Hash(std::span<const BYTE> bytes) {
-            BCRYPT_ALG_HANDLE algorithm = nullptr;
-            if (BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0) < 0)
-                throw std::runtime_error("Could not open Windows SHA-256.");
-            std::array<BYTE, SHA256_BYTES> digest{};
-            const auto result =
-                BCryptHash(algorithm, nullptr, 0, const_cast<BYTE*>(bytes.data()), static_cast<ULONG>(bytes.size()),
-                           digest.data(), static_cast<ULONG>(digest.size()));
-            BCryptCloseAlgorithmProvider(algorithm, 0);
-            if (result < 0)
-                throw std::runtime_error("Could not verify the SHA-256 digest.");
-            constexpr char HEX[] = "0123456789abcdef";
-            std::string hash;
-            for (const BYTE byte : digest) {
-                hash += HEX[byte >> 4];
-                hash += HEX[byte & 0xf];
-            }
-            return hash;
-        }
-
         struct CloseHandleGuard {
             HANDLE handle;
 
@@ -98,26 +73,6 @@ namespace Lj1005::Prerequisites {
                     CloseHandle(handle);
             }
         };
-
-        Bytes ReadOrdinaryFile(const Fs::path& path, std::size_t maximum) {
-            const CloseHandleGuard file{CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
-                                                    FILE_FLAG_OPEN_REPARSE_POINT, nullptr)};
-            Require(file.handle != INVALID_HANDLE_VALUE, "Could not open the required file");
-            BY_HANDLE_FILE_INFORMATION info{};
-            Require(GetFileInformationByHandle(file.handle, &info), "Could not inspect the required file");
-            if (info.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT) ||
-                info.nFileSizeHigh || info.nFileSizeLow > maximum)
-                throw std::runtime_error("The file has an unexpected type or size.");
-            Bytes bytes(info.nFileSizeLow);
-            DWORD read = 0;
-            Require(ReadFile(file.handle, bytes.data(), static_cast<DWORD>(bytes.size()), &read, nullptr),
-                    "Could not read the required file");
-            if (read != bytes.size())
-                throw std::runtime_error("The file could not be read completely.");
-            return bytes;
-        }
-
-        using Certificate = std::unique_ptr<const CERT_CONTEXT, decltype(&CertFreeCertificateContext)>;
 
         struct Store {
             HCERTSTORE handle;
@@ -131,48 +86,10 @@ namespace Lj1005::Prerequisites {
         Certificate VerifyCertificate(const Fs::path& directory) {
             if (!Fs::is_regular_file(directory / INF_NAME))
                 throw std::runtime_error("Extract the complete mini ZIP. The driver INF is missing.");
-            const auto bytes = ReadOrdinaryFile(directory / CERTIFICATE_NAME, MAX_DOWNLOAD_BYTES);
-            if (Hash(bytes) != CERTIFICATE_SHA256)
-                throw std::runtime_error("The tester certificate differs from the Benteveo signing identity.");
-            Certificate certificate(
-                CertCreateCertificateContext(X509_ASN_ENCODING, bytes.data(), static_cast<DWORD>(bytes.size())),
-                CertFreeCertificateContext);
-            Require(certificate != nullptr, "Could not decode the tester certificate");
+            auto certificate = ReadTesterCertificate(directory);
             if (CertVerifyTimeValidity(nullptr, certificate->pCertInfo))
                 throw std::runtime_error("The tester certificate is outside its validity period.");
-
-            const auto catalog = ReadOrdinaryFile(directory / CATALOG_NAME, MAX_DOWNLOAD_BYTES);
-            CRYPT_DATA_BLOB blob{static_cast<DWORD>(catalog.size()), const_cast<BYTE*>(catalog.data())};
-
-            struct Message {
-                HCRYPTMSG handle = nullptr;
-
-                ~Message() {
-                    if (handle)
-                        CryptMsgClose(handle);
-                }
-            } message;
-
-            Require(CryptQueryObject(CERT_QUERY_OBJECT_BLOB, &blob, CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED,
-                                     CERT_QUERY_FORMAT_FLAG_BINARY, 0, nullptr, nullptr, nullptr, nullptr,
-                                     &message.handle, nullptr),
-                    "Could not open the driver catalog");
-            DWORD count = 0;
-            DWORD size = sizeof(count);
-            Require(CryptMsgGetParam(message.handle, CMSG_SIGNER_COUNT_PARAM, 0, &count, &size),
-                    "Could not inspect the driver catalog");
-            if (count != 1)
-                throw std::runtime_error("The driver catalog must have exactly one signer.");
-            Require(CryptMsgGetParam(message.handle, CMSG_SIGNER_CERT_INFO_PARAM, 0, nullptr, &size),
-                    "Could not inspect the catalog signer");
-            Bytes signer(size);
-            Require(CryptMsgGetParam(message.handle, CMSG_SIGNER_CERT_INFO_PARAM, 0, signer.data(), &size),
-                    "Could not read the catalog signer");
-            auto* signerInfo = reinterpret_cast<CERT_INFO*>(signer.data());
-            if (!CertCompareCertificate(X509_ASN_ENCODING, signerInfo, certificate->pCertInfo))
-                throw std::runtime_error("The catalog was signed by a different certificate.");
-            Require(CryptMsgControl(message.handle, 0, CMSG_CTRL_VERIFY_SIGNATURE, certificate->pCertInfo),
-                    "The driver catalog signature could not be verified");
+            VerifyCatalog(ReadOrdinaryFile(directory / CATALOG_NAME), certificate.get());
             return certificate;
         }
 

@@ -33,13 +33,16 @@ It successfully prints text, bitmaps, and multiple-page documents without a hass
 
 ## Installation using the Prerequisites Wizard
 
+For an upgrade, [fully uninstall the installed driver](#upgrade-the-driver)
+before installing the new version through Have Disk.
+
 The tester ZIP uses a self-signed certificate. The prerequisite wizard asks for
 your consent before adding tester trust to the local computer.
 
 1. Extract the entire ZIP. Connect the original HP LaserJet 1005 to USB and turn it on.
 2. Run **BenteveoPrerequisites.exe** beside `lj1005.inf` and click **Next** to check the prerequisites.
 3. Follow the prompts to prepare the tester certificate and HP firmware. Note the USB port and INF path on the ready screen.
-4. Click **Open Add Printer Wizard** to continue, or **Exit** to install later.
+4. Click **Open Add Printer Wizard** to open the Windows dialog and close the prerequisite wizard, or **Exit** to install later.
 
 ### Continue with Add Printer Wizard
 
@@ -125,18 +128,32 @@ For offline integration checks, install a FILE: queue in the lab and run `./scri
 
 ## Uninstall
 
-Run [Uninstall.ps1](scripts/Uninstall.ps1) from the extracted ZIP for the
-installed Benteveo version. Open 64-bit Windows PowerShell as administrator:
+Starting with 0.4.0, run **BenteveoUninstall.exe** from the original extracted
+mini ZIP you installed and approve the administrator prompt. The wizard
+checks that the installed driver matches that exact build.
+Review the listed queues and files, finish or cancel pending print jobs, then
+click **Remove**. If Windows reports an in-use monitor, restart Windows and
+reopen the wizard with the same package. Keep the tester certificate if you
+plan to reinstall or upgrade. [Uninstallation guide](docs/MINI_INSTALL.md#remove-with-the-uninstall-wizard)
+
+For the command-line fallback, use `Uninstall.ps1` from the original extracted
+ZIP. Open 64-bit Windows PowerShell as administrator in that folder and run:
 
 ```powershell
 powershell.exe -NoProfile -File .\Uninstall.ps1 /CHECK
 powershell.exe -NoProfile -File .\Uninstall.ps1 /REMOVE
 ```
 
-Review the queues and files in the preview before confirming removal. The
-script offers a separate choice to remove tester trust after driver cleanup.
-If your ZIP predates the helper, download it from the link above and place
-it beside the extracted INF. [Installation and manual removal guide](docs/MINI_INSTALL.md#remove-with-uninstallps1)
+Review the queues and files in the preview before confirming removal.
+For an older release, use its own `Uninstall.ps1` when included, or follow the
+[manual removal procedure](docs/MINI_INSTALL.md#remove-the-queue-and-driver-package).
+
+## Upgrade the driver
+
+1. Keep the extracted ZIP for the installed version. Record your printer name, USB port, printing preferences and default printer.
+2. Fully uninstall the installed driver using the uninstaller from its original ZIP or the manual removal procedure. If removal requires a restart, restart Windows and finish cleanup before proceeding.
+3. Run the new package's prerequisite wizard and install the driver through [Have Disk](#continue-with-add-printer-wizard).
+4. Restore your settings and print one A4 test page.
 
 ## Building the mini ZIP
 

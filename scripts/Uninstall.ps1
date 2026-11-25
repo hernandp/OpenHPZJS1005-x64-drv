@@ -11,6 +11,7 @@ if ($args.Count -gt 1 -or ($args.Count -eq 1 -and $args[0] -notin '/CHECK', '/RE
 }
 
 $remove = $args.Count -eq 1 -and $args[0] -eq '/REMOVE'
+$packageVersion = '0.4.0.0'
 $model = 'HP Laserjet 1005 (Project Benteveo Driver)'
 $provider = 'Project Benteveo'
 $monitorName = 'HP LaserJet 1005 Firmware Monitor (Project Benteveo)'
@@ -63,16 +64,15 @@ function Get-PackageReference {
         $hashes[$name] = (Get-FileHash -LiteralPath $file.FullName).Hash
     }
     $inf = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'lj1005.inf') -Raw
-    if ($inf -notmatch '(?m)^DriverVer=[^,\r\n]+,(0\.[23]\.0\.0)\s*$') {
-        throw 'Use the extracted Benteveo 0.2.0 or 0.3.0 package for the installed version.'
+    if ($inf -notmatch '(?m)^DriverVer=[^,\r\n]+,([0-9.]+)\s*$' -or $Matches[1] -ne $packageVersion) {
+        throw "This script belongs to Benteveo $packageVersion. Run it from its original extracted package."
     }
-    $version = $Matches[1]
     $signers = @(Get-Signers (Join-Path $PSScriptRoot 'lj1005.cat') -VerifySignature)
     if ($signers.Count -ne 1 -or $signers[0].Thumbprint -ne $thumbprint -or
         (Get-CertificateHash $signers[0]) -ne $certificateHash) {
         throw 'The retained catalog does not match the Benteveo tester signing identity.'
     }
-    [pscustomobject]@{ Version = $version; Hashes = $hashes; Certificate = $signers[0] }
+    [pscustomobject]@{ Version = $packageVersion; Hashes = $hashes; Certificate = $signers[0] }
 }
 
 function Assert-FileHash([string]$Path, [string]$Expected) {

@@ -20,9 +20,9 @@ Use a disposable VM for the initial installation rehearsal.
    local `sihp1005.img` using **Browse for firmware**. If the printer is missing,
    connect it and retry.
 4. Note the USB port and INF path on the ready screen. **Open Add Printer
-   Wizard** opens **Find a printer by other options**. Choose **Add a local
-   printer or network printer with manual settings**, then use the reported
-   port and Have Disk as described below. Choose **Exit** to install later.
+   Wizard** opens **Find a printer by other options** and closes the prerequisite
+   wizard. Choose **Add a local printer or network printer with manual settings**,
+   then use the reported port and Have Disk. Choose **Exit** to install later.
 
 ## Prepare the extracted folder
 
@@ -58,8 +58,12 @@ required, omitted firmware.
 
 ## Install with Windows
 
-For reinstallation or an update, first complete the removal procedure below.
-Retain the currently installed version's extracted package until cleanup is verified.
+For reinstallation or an upgrade, perform a full uninstall before installing
+through Have Disk. [Record your settings](#record-settings-before-maintenance),
+[complete removal](#remove-with-the-uninstall-wizard), and restart if requested.
+Keep the old package until removal is verified. Run the new package's prerequisite
+wizard, install through Have Disk, restore your recorded settings and print one
+A4 test page.
 
 1. Connect and power on the printer. Windows protected print mode must be off;
    this legacy third-party driver cannot operate in that mode.
@@ -126,12 +130,28 @@ manages the default automatically. Screenshots are sufficient for restoring thes
 settings manually. Close printing applications and finish or cancel this printer's
 pending jobs before removal.
 
+## Remove with the uninstall wizard
+
+1. Run **BenteveoUninstall.exe** from the original extracted ZIP you used to
+   install the driver. The wizard verifies the exact installed build against the
+   catalog and files beside the EXE. Approve the administrator prompt and click
+   **Next** to review removal.
+2. Review the queues, USB port assignments and components. If a queue has
+   pending jobs, finish or cancel them in Windows, then click **Check again**.
+   Click **Remove** when ready. For a package the wizard cannot match, use the
+   [manual removal procedure](#remove-the-queue-and-driver-package).
+3. If Windows reports an in-use component, restart and reopen the wizard from
+   the same extracted package to finish cleanup. Keep tester trust when
+   reinstalling or upgrading. To remove it after verified driver removal,
+   click **Remove certificate** and confirm. The wizard keeps trust when another
+   driver package depends on it or the check is inconclusive.
+
 ## Remove with Uninstall.ps1
 
-Open **64-bit Windows PowerShell as administrator** in the extracted folder for
-the installed Benteveo release. If your 0.2.0 or 0.3.0 ZIP predates this helper,
-download [Uninstall.ps1 from the project](https://github.com/hernandp/OpenHPZJS1005-x64-drv#uninstall)
-and put it beside the original INF, catalog and driver files.
+Open **64-bit Windows PowerShell as administrator** in the original extracted
+folder for the installed Benteveo build. Use the `Uninstall.ps1` shipped with
+that build. If an older package lacks the script, follow the
+[manual removal procedure](#remove-the-queue-and-driver-package).
 
 ```powershell
 powershell.exe -NoProfile -File .\Uninstall.ps1 /CHECK

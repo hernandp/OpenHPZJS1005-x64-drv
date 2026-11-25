@@ -51,8 +51,8 @@ def verify(directory, original):
     plugins = ("lj1005render.dll", "lj1005monitor.dll")
     if "driver/lj1005ui.dll" in baseline:
         plugins += ("lj1005ui.dll",)
-    wizard = "BenteveoPrerequisites.exe"
-    expected_payload = PAYLOAD | set(plugins) | ({wizard} if wizard in baseline else set())
+    companions = {"BenteveoPrerequisites.exe", "BenteveoUninstall.exe"} & baseline.keys()
+    expected_payload = PAYLOAD | set(plugins) | companions
     require(expected_payload <= set(files) <= expected_payload | {UNINSTALLER},
             "Mini payload differs: firmware and unexpected files are forbidden")
     require(all(digest(data) != FIRMWARE_HASH for data in files.values()), "Firmware leaked into ZIP")
@@ -73,8 +73,8 @@ def verify(directory, original):
         require(files[name] == baseline["driver/" + name], "Changed driver payload: " + name)
     for name in plugins:
         compare_pe(baseline["driver/" + name], files[name])
-    if wizard in baseline:
-        compare_pe(baseline[wizard], files[wizard])
+    for companion in companions:
+        compare_pe(baseline[companion], files[companion])
     for name in ("LICENSE", "THIRD_PARTY.md", "README.md"):
         require(files[name] == baseline[name], "Changed packaged file: " + name)
     require(hashlib.sha1(files["TEST-CERTIFICATE.cer"]).hexdigest().upper() ==

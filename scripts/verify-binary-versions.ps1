@@ -8,8 +8,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $binaries = @('driver/lj1005render.dll', 'driver/lj1005monitor.dll', 'driver/lj1005ui.dll')
-$wizard = 'BenteveoPrerequisites.exe'
-if (Test-Path -LiteralPath (Join-Path $PackagePath $wizard) -PathType Leaf) { $binaries += $wizard }
+foreach ($companion in 'BenteveoPrerequisites.exe', 'BenteveoUninstall.exe') {
+    if (Test-Path -LiteralPath (Join-Path $PackagePath $companion) -PathType Leaf) { $binaries += $companion }
+}
 foreach ($relative in $binaries) {
     $path = Join-Path $PackagePath $relative
     if (!(Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing binary: $relative" }

@@ -2,13 +2,11 @@
 // See LICENSE in the repository root for license terms.
 #include "prereq_wizard.h"
 #include "prerequisites.hpp"
+#include "wizard_style.hpp"
 #include <windows.h>
 #include <commctrl.h>
 #include <commdlg.h>
-#include <objidl.h>
-#include <gdiplus.h>
 #include <shellapi.h>
-#include <shlwapi.h>
 #include <array>
 #include <memory>
 #include <stdexcept>
@@ -22,6 +20,8 @@ namespace Lj1005::Prerequisites {
 
         constexpr UINT WORK_COMPLETE = WM_APP + 1;
         constexpr UINT DOWNLOAD_PROGRESS = WM_APP + 2;
+        constexpr DWORD PRINTER_WINDOW_TIMEOUT_MS = 5000;
+        constexpr DWORD PRINTER_WINDOW_POLL_MS = 50;
         constexpr std::size_t BYTES_PER_KIB = 1024;
         constexpr DWORD UTILITY_PATH_CAPACITY = 32768;
         constexpr DWORD CERTIFICATE_FAILED = ERROR_INSTALL_FAILURE;
@@ -29,16 +29,6 @@ namespace Lj1005::Prerequisites {
         constexpr wchar_t TITLE[] = L"Project Benteveo Prerequisites Installation Tool";
         constexpr COLORREF READY_COLOR = RGB(0, 109, 50);
         constexpr COLORREF INCOMPLETE_COLOR = RGB(181, 23, 35);
-        constexpr Gdiplus::ARGB SIDEBAR_GOLD = 0xffedc456;
-        constexpr Gdiplus::ARGB SIDEBAR_AMBER = 0xffbc8b35;
-        constexpr Gdiplus::ARGB SIDEBAR_WALNUT = 0xff4d432f;
-        constexpr Gdiplus::ARGB ARTWORK_MATTE = 0xfffffdf7;
-        constexpr Gdiplus::ARGB ARTWORK_FRAME = 0xffad842e;
-        constexpr Gdiplus::ARGB ARTWORK_SHADOW = 0x304d432f;
-        constexpr float ARTWORK_OUTER_INSET = 0.075f;
-        constexpr float ARTWORK_MATTE_INSET = 0.036f;
-        constexpr float ARTWORK_SHADOW_OFFSET = 0.014f;
-        constexpr wchar_t HEADING_FONT_PROPERTY[] = L"BenteveoHeadingFont";
         constexpr std::array RESULT_IDS{IDC_CERT_RESULT, IDC_FW_RESULT, IDC_USB_RESULT};
         constexpr std::array MARK_IDS{IDC_CERT_MARK, IDC_FW_MARK, IDC_USB_MARK};
         constexpr std::array LABELS{L"Certificates", L"HP firmware", L"USB connection"};
@@ -60,101 +50,6 @@ namespace Lj1005::Prerequisites {
             result.pop_back();
             return result;
         }
-
-        bool HighContrast() {
-            HIGHCONTRASTW contrast{sizeof(contrast)};
-            return SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(contrast), &contrast, 0) &&
-                   (contrast.dwFlags & HCF_HIGHCONTRASTON);
-        }
-
-        void StyleHeading(HWND page) {
-            const auto heading = GetDlgItem(page, IDC_HEADING);
-            const auto font = reinterpret_cast<HFONT>(SendMessageW(heading, WM_GETFONT, 0, 0));
-            LOGFONTW description{};
-            if (!GetObjectW(font, sizeof(description), &description))
-                return;
-            description.lfWeight = FW_BOLD;
-            description.lfHeight = MulDiv(description.lfHeight, 4, 3);
-            const auto title = CreateFontIndirectW(&description);
-            if (title && SetPropW(page, HEADING_FONT_PROPERTY, title))
-                SendMessageW(heading, WM_SETFONT, reinterpret_cast<WPARAM>(title), FALSE);
-            else if (title)
-                DeleteObject(title);
-        }
-
-        struct Artwork {
-            ULONG_PTR token = 0;
-            IStream* stream = nullptr;
-            std::unique_ptr<Gdiplus::Image> image;
-
-            explicit Artwork(HINSTANCE instance) {
-                const Gdiplus::GdiplusStartupInput input;
-                if (Gdiplus::GdiplusStartup(&token, &input, nullptr) != Gdiplus::Ok)
-                    return;
-                const auto resource = FindResourceW(instance, MAKEINTRESOURCEW(IDR_WIZARD_ART), RT_RCDATA);
-                if (!resource)
-                    return;
-                stream = SHCreateMemStream(static_cast<const BYTE*>(LockResource(LoadResource(instance, resource))),
-                                           SizeofResource(instance, resource));
-                if (stream)
-                    image = std::make_unique<Gdiplus::Image>(stream);
-            }
-
-            ~Artwork() {
-                image.reset();
-                if (stream)
-                    stream->Release();
-                if (token)
-                    Gdiplus::GdiplusShutdown(token);
-            }
-
-            void Draw(const DRAWITEMSTRUCT& item) const {
-                const auto& bounds = item.rcItem;
-                const bool highContrast = HighContrast();
-                const Gdiplus::RectF panel(static_cast<float>(bounds.left), static_cast<float>(bounds.top),
-                                           static_cast<float>(bounds.right - bounds.left),
-                                           static_cast<float>(bounds.bottom - bounds.top));
-                if (panel.Width <= 0 || panel.Height <= 0)
-                    return;
-                Gdiplus::Graphics graphics(item.hDC);
-                if (highContrast || !token) {
-                    FillRect(item.hDC, &bounds, GetSysColorBrush(COLOR_WINDOW));
-                    FrameRect(item.hDC, &bounds, GetSysColorBrush(COLOR_WINDOWTEXT));
-                }
-                else {
-                    const Gdiplus::Color gold(SIDEBAR_GOLD);
-                    const Gdiplus::Color walnut(SIDEBAR_WALNUT);
-                    Gdiplus::LinearGradientBrush background(panel, gold, walnut, Gdiplus::LinearGradientModeVertical);
-                    const Gdiplus::Color colors[]{gold, Gdiplus::Color(SIDEBAR_AMBER), walnut};
-                    constexpr float STOPS[]{0.0f, 0.38f, 1.0f};
-                    background.SetInterpolationColors(colors, STOPS, ARRAYSIZE(STOPS));
-                    graphics.FillRectangle(&background, panel);
-                }
-                if (!image || image->GetLastStatus() != Gdiplus::Ok)
-                    return;
-
-                const auto outer = panel.Width * ARTWORK_OUTER_INSET;
-                const auto matte = panel.Width * ARTWORK_MATTE_INSET;
-                const auto width = panel.Width - 2 * (outer + matte);
-                const auto height =
-                    width * static_cast<float>(image->GetHeight()) / static_cast<float>(image->GetWidth());
-                const Gdiplus::RectF frame(panel.X + outer, panel.Y + outer, width + 2 * matte, height + 2 * matte);
-                if (!highContrast) {
-                    auto shadow = frame;
-                    shadow.Offset(0, panel.Width * ARTWORK_SHADOW_OFFSET);
-                    const Gdiplus::SolidBrush shade{Gdiplus::Color(ARTWORK_SHADOW)};
-                    graphics.FillRectangle(&shade, shadow);
-                }
-                const Gdiplus::SolidBrush paper{Gdiplus::Color(ARTWORK_MATTE)};
-                graphics.FillRectangle(&paper, frame);
-                if (!highContrast) {
-                    const Gdiplus::Pen border{Gdiplus::Color(ARTWORK_FRAME)};
-                    graphics.DrawRectangle(&border, frame);
-                }
-                graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-                graphics.DrawImage(image.get(), Gdiplus::RectF(frame.X + matte, frame.Y + matte, width, height));
-            }
-        };
 
         Fs::path ProgramPath() {
             std::wstring path(UTILITY_PATH_CAPACITY, L'\0');
@@ -178,29 +73,70 @@ namespace Lj1005::Prerequisites {
             return GetOpenFileNameW(&file) ? Fs::path(name) : Fs::path{};
         }
 
-        void OpenPrinter(HWND owner) {
+        struct PrinterDialog {
+            DWORD processId = 0;
+            HWND window = nullptr;
+
+            void Activate(HWND owner) const {
+                DWORD currentProcessId = 0;
+                if (GetForegroundWindow() != owner || !GetWindowThreadProcessId(window, &currentProcessId) ||
+                    currentProcessId != processId)
+                    return;
+                if (!SetForegroundWindow(window))
+                    FlashWindow(window, TRUE);
+            }
+        };
+
+        BOOL CALLBACK FindPrinterWindow(HWND window, LPARAM data) {
+            auto& dialog = *reinterpret_cast<PrinterDialog*>(data);
+            DWORD processId = 0;
+            GetWindowThreadProcessId(window, &processId);
+            if (processId != dialog.processId || !IsWindowVisible(window) ||
+                IsWindowVisible(GetWindow(window, GW_OWNER)))
+                return TRUE;
+            dialog.window = window;
+            return FALSE;
+        }
+
+        PrinterDialog OpenPrinter(HWND owner, std::stop_token stop) {
             wchar_t system[MAX_PATH]{};
             const auto length = GetSystemDirectoryW(system, ARRAYSIZE(system));
             if (!length || length >= ARRAYSIZE(system))
                 throw std::runtime_error("Could not locate the Windows Add Printer Wizard.");
             const auto program = Fs::path(system) / L"rundll32.exe";
             const auto dll = Fs::path(system) / L"printui.dll";
-            const auto arguments = L"\"" + dll.wstring() + L"\",PrintUIEntry /im";
-            SHELLEXECUTEINFOW shell{};
-            shell.cbSize = sizeof(shell);
-            shell.hwnd = owner;
-            shell.lpFile = program.c_str();
-            shell.lpParameters = arguments.c_str();
-            shell.nShow = SW_SHOWNORMAL;
-            if (!ShellExecuteExW(&shell))
+            auto command = L"\"" + program.wstring() + L"\" \"" + dll.wstring() + L"\",PrintUIEntry /im";
+            STARTUPINFOW startup{sizeof(startup)};
+            PROCESS_INFORMATION child{};
+            if (!CreateProcessW(program.c_str(), command.data(), nullptr, nullptr, FALSE, 0, nullptr, system, &startup,
+                                &child))
                 throw std::runtime_error(
                     "Could not open Add Printer. Use Printers & scanners to add the printer manually.");
+            CloseHandle(child.hThread);
+            const std::unique_ptr<void, decltype(&CloseHandle)> process(child.hProcess, CloseHandle);
+            if (GetForegroundWindow() == owner)
+                AllowSetForegroundWindow(child.dwProcessId);
+
+            // Keep our wizard alive until we have a visible window to hand focus to.
+            PrinterDialog dialog{child.dwProcessId};
+            const auto deadline = GetTickCount64() + PRINTER_WINDOW_TIMEOUT_MS;
+            while (!stop.stop_requested() && GetTickCount64() < deadline) {
+                EnumWindows(FindPrinterWindow, reinterpret_cast<LPARAM>(&dialog));
+                if (dialog.window)
+                    return dialog;
+                if (WaitForSingleObject(process.get(), PRINTER_WINDOW_POLL_MS) != WAIT_TIMEOUT)
+                    break;
+            }
+            if (stop.stop_requested())
+                return {};
+            throw std::runtime_error(
+                "Could not find the Add Printer window. Check the taskbar or open Printers & scanners.");
         }
 
         struct Wizard {
             Fs::path program;
             Fs::path directory;
-            Artwork artwork;
+            WizardStyle::Artwork artwork;
             Status status;
             Status result;
             std::wstring detail;
@@ -208,10 +144,10 @@ namespace Lj1005::Prerequisites {
             std::jthread worker;
             Work work = Work::inspect;
             bool closeRequested = false;
-            bool launchPrinter = false;
+            PrinterDialog printer;
 
             Wizard(HINSTANCE instance, Fs::path executable)
-                : program(std::move(executable)), directory(program.parent_path()), artwork(instance) {}
+                : program(std::move(executable)), directory(program.parent_path()), artwork(instance, IDR_WIZARD_ART) {}
 
             void Render(HWND page, bool prepare) const {
                 const bool busy = worker.joinable();
@@ -242,8 +178,8 @@ namespace Lj1005::Prerequisites {
 
                 std::wstring message = detail;
                 if (ready && detail.empty())
-                    message = L"Ready for Have Disk. Choose " + status.port +
-                              L" as the existing port, then browse to the INF below.";
+                    message = L"Choose Add a local printer or network printer with manual settings. Then select " +
+                              status.port + L" as the existing port and browse to the INF below.";
                 else if (message.empty() && !prepare)
                     message = L"Click Next to prepare the missing prerequisites.";
                 SetDlgItemTextW(page, IDC_MESSAGE, message.c_str());
@@ -271,42 +207,51 @@ namespace Lj1005::Prerequisites {
             void Start(HWND page, bool prepare, Work action, Fs::path file = {}, HANDLE process = nullptr) {
                 work = action;
                 error.clear();
-                launchPrinter = false;
+                printer = {};
                 detail = action == Work::download       ? L"Downloading the original HP firmware..."
                          : action == Work::certificates ? L"Waiting for Windows to add tester trust..."
                          : action == Work::browse       ? L"Verifying the selected firmware..."
                                                         : L"Checking prerequisites...";
-                worker = std::jthread([this, page, action, image = std::move(file), process](std::stop_token stop) {
-                    try {
-                        if (action == Work::download) {
-                            DownloadFirmware(directory, stop, [page](std::size_t bytes) {
-                                PostMessageW(page, DOWNLOAD_PROGRESS, bytes / BYTES_PER_KIB, 0);
-                            });
+                const auto sheet = GetParent(page);
+                worker =
+                    std::jthread([this, page, sheet, action, image = std::move(file), process](std::stop_token stop) {
+                        try {
+                            if (action == Work::download) {
+                                DownloadFirmware(directory, stop, [page](std::size_t bytes) {
+                                    PostMessageW(page, DOWNLOAD_PROGRESS, bytes / BYTES_PER_KIB, 0);
+                                });
+                            }
+                            else if (action == Work::browse) {
+                                SupplyFirmware(directory, image);
+                            }
+                            else if (action == Work::certificates) {
+                                DWORD outcome = ERROR_GEN_FAILURE;
+                                // Let the elevated operation settle before allowing the wizard to close.
+                                if (WaitForSingleObject(process, INFINITE) == WAIT_OBJECT_0)
+                                    GetExitCodeProcess(process, &outcome);
+                                CloseHandle(process);
+                                if (outcome != ERROR_SUCCESS)
+                                    throw std::runtime_error("Windows could not add tester trust (error " +
+                                                             std::to_string(outcome) +
+                                                             "). Check the certificate policy and retry.");
+                            }
                         }
-                        else if (action == Work::browse) {
-                            SupplyFirmware(directory, image);
+                        catch (const std::exception& failure) {
+                            error = Message(failure.what());
                         }
-                        else if (action == Work::certificates) {
-                            DWORD outcome = ERROR_GEN_FAILURE;
-                            // Let the elevated operation settle before allowing the wizard to close.
-                            if (WaitForSingleObject(process, INFINITE) == WAIT_OBJECT_0)
-                                GetExitCodeProcess(process, &outcome);
-                            CloseHandle(process);
-                            if (outcome != ERROR_SUCCESS)
-                                throw std::runtime_error("Windows could not add tester trust (error " +
-                                                         std::to_string(outcome) +
-                                                         "). Check the certificate policy and retry.");
+                        if (!stop.stop_requested()) {
+                            result = Inspect(directory);
+                            if (action == Work::openPrinter && result.Ready() && !stop.stop_requested()) {
+                                try {
+                                    printer = OpenPrinter(sheet, stop);
+                                }
+                                catch (const std::exception& failure) {
+                                    error = Message(failure.what());
+                                }
+                            }
                         }
-                    }
-                    catch (const std::exception& failure) {
-                        error = Message(failure.what());
-                    }
-                    if (!stop.stop_requested()) {
-                        result = Inspect(directory);
-                        launchPrinter = action == Work::openPrinter && result.Ready();
-                    }
-                    PostMessageW(page, WORK_COMPLETE, 0, 0);
-                });
+                        PostMessageW(page, WORK_COMPLETE, 0, 0);
+                    });
                 Render(page, prepare);
             }
 
@@ -355,15 +300,13 @@ namespace Lj1005::Prerequisites {
                 const auto next = work;
                 status = std::move(result);
                 detail = std::move(error);
-                if (launchPrinter) {
-                    try {
-                        OpenPrinter(GetParent(page));
-                    }
-                    catch (const std::exception& failure) {
-                        detail = Message(failure.what());
-                    }
+                if (printer.window) {
+                    const auto sheet = GetParent(page);
+                    printer.Activate(sheet);
+                    PropSheet_PressButton(sheet, PSBTN_CANCEL);
+                    return;
                 }
-                else if (next == Work::openPrinter) {
+                if (next == Work::openPrinter && detail.empty()) {
                     detail = L"Readiness changed. Check the results above before opening Add Printer.";
                 }
                 if (prepare && next == Work::certificates && detail.empty() && status.certificate.ready &&
@@ -381,7 +324,7 @@ namespace Lj1005::Prerequisites {
             if (message == WM_INITDIALOG) {
                 const auto* definition = reinterpret_cast<const PROPSHEETPAGEW*>(lParam);
                 SetWindowLongPtrW(page, GWLP_USERDATA, definition->lParam);
-                StyleHeading(page);
+                WizardStyle::StyleHeading(page, IDC_HEADING);
                 return TRUE;
             }
             auto* wizard = reinterpret_cast<Wizard*>(GetWindowLongPtrW(page, GWLP_USERDATA));
@@ -441,7 +384,7 @@ namespace Lj1005::Prerequisites {
                 }
                 break;
             case WM_DESTROY:
-                if (const auto font = RemovePropW(page, HEADING_FONT_PROPERTY))
+                if (const auto font = RemovePropW(page, WizardStyle::HEADING_FONT_PROPERTY))
                     DeleteObject(font);
                 break;
             case WM_CTLCOLORSTATIC: {
@@ -450,7 +393,7 @@ namespace Lj1005::Prerequisites {
                     const std::array ready{wizard->status.certificate.ready, wizard->status.firmware.ready,
                                            wizard->status.usb.ready};
                     const auto dc = reinterpret_cast<HDC>(wParam);
-                    SetTextColor(dc, HighContrast()
+                    SetTextColor(dc, WizardStyle::HighContrast()
                                          ? GetSysColor(COLOR_WINDOWTEXT)
                                          : (ready[static_cast<std::size_t>(id - IDC_CERT_MARK)] ? READY_COLOR
                                                                                                 : INCOMPLETE_COLOR));
