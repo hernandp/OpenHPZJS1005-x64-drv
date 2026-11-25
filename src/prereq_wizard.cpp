@@ -20,6 +20,8 @@ namespace Lj1005::Prerequisites {
 
         constexpr UINT WORK_COMPLETE = WM_APP + 1;
         constexpr UINT DOWNLOAD_PROGRESS = WM_APP + 2;
+        constexpr DWORD PRINTER_WINDOW_TIMEOUT_MS = 5000;
+        constexpr DWORD PRINTER_WINDOW_POLL_MS = 50;
         constexpr std::size_t BYTES_PER_KIB = 1024;
         constexpr DWORD UTILITY_PATH_CAPACITY = 32768;
         constexpr DWORD CERTIFICATE_FAILED = ERROR_INSTALL_FAILURE;
@@ -71,24 +73,64 @@ namespace Lj1005::Prerequisites {
             return GetOpenFileNameW(&file) ? Fs::path(name) : Fs::path{};
         }
 
-        void OpenPrinter(HWND owner) {
+        struct PrinterDialog {
+            DWORD processId = 0;
+            HWND window = nullptr;
+
+            void Activate(HWND owner) const {
+                DWORD currentProcessId = 0;
+                if (GetForegroundWindow() != owner || !GetWindowThreadProcessId(window, &currentProcessId) ||
+                    currentProcessId != processId)
+                    return;
+                if (!SetForegroundWindow(window))
+                    FlashWindow(window, TRUE);
+            }
+        };
+
+        BOOL CALLBACK FindPrinterWindow(HWND window, LPARAM data) {
+            auto& dialog = *reinterpret_cast<PrinterDialog*>(data);
+            DWORD processId = 0;
+            GetWindowThreadProcessId(window, &processId);
+            if (processId != dialog.processId || !IsWindowVisible(window) ||
+                IsWindowVisible(GetWindow(window, GW_OWNER)))
+                return TRUE;
+            dialog.window = window;
+            return FALSE;
+        }
+
+        PrinterDialog OpenPrinter(HWND owner, std::stop_token stop) {
             wchar_t system[MAX_PATH]{};
             const auto length = GetSystemDirectoryW(system, ARRAYSIZE(system));
             if (!length || length >= ARRAYSIZE(system))
                 throw std::runtime_error("Could not locate the Windows Add Printer Wizard.");
             const auto program = Fs::path(system) / L"rundll32.exe";
             const auto dll = Fs::path(system) / L"printui.dll";
-            const auto arguments = L"\"" + dll.wstring() + L"\",PrintUIEntry /im";
-            SHELLEXECUTEINFOW shell{};
-            shell.cbSize = sizeof(shell);
-            shell.fMask = SEE_MASK_NOASYNC;
-            shell.hwnd = owner;
-            shell.lpFile = program.c_str();
-            shell.lpParameters = arguments.c_str();
-            shell.nShow = SW_SHOWNORMAL;
-            if (!ShellExecuteExW(&shell))
+            auto command = L"\"" + program.wstring() + L"\" \"" + dll.wstring() + L"\",PrintUIEntry /im";
+            STARTUPINFOW startup{sizeof(startup)};
+            PROCESS_INFORMATION child{};
+            if (!CreateProcessW(program.c_str(), command.data(), nullptr, nullptr, FALSE, 0, nullptr, system, &startup,
+                                &child))
                 throw std::runtime_error(
                     "Could not open Add Printer. Use Printers & scanners to add the printer manually.");
+            CloseHandle(child.hThread);
+            const std::unique_ptr<void, decltype(&CloseHandle)> process(child.hProcess, CloseHandle);
+            if (GetForegroundWindow() == owner)
+                AllowSetForegroundWindow(child.dwProcessId);
+
+            // Keep our wizard alive until we have a visible window to hand focus to.
+            PrinterDialog dialog{child.dwProcessId};
+            const auto deadline = GetTickCount64() + PRINTER_WINDOW_TIMEOUT_MS;
+            while (!stop.stop_requested() && GetTickCount64() < deadline) {
+                EnumWindows(FindPrinterWindow, reinterpret_cast<LPARAM>(&dialog));
+                if (dialog.window)
+                    return dialog;
+                if (WaitForSingleObject(process.get(), PRINTER_WINDOW_POLL_MS) != WAIT_TIMEOUT)
+                    break;
+            }
+            if (stop.stop_requested())
+                return {};
+            throw std::runtime_error(
+                "Could not find the Add Printer window. Check the taskbar or open Printers & scanners.");
         }
 
         struct Wizard {
@@ -102,7 +144,7 @@ namespace Lj1005::Prerequisites {
             std::jthread worker;
             Work work = Work::inspect;
             bool closeRequested = false;
-            bool launchPrinter = false;
+            PrinterDialog printer;
 
             Wizard(HINSTANCE instance, Fs::path executable)
                 : program(std::move(executable)), directory(program.parent_path()), artwork(instance, IDR_WIZARD_ART) {}
@@ -136,8 +178,8 @@ namespace Lj1005::Prerequisites {
 
                 std::wstring message = detail;
                 if (ready && detail.empty())
-                    message = L"Ready for Have Disk. Choose " + status.port +
-                              L" as the existing port, then browse to the INF below.";
+                    message = L"Choose Add a local printer or network printer with manual settings. Then select " +
+                              status.port + L" as the existing port and browse to the INF below.";
                 else if (message.empty() && !prepare)
                     message = L"Click Next to prepare the missing prerequisites.";
                 SetDlgItemTextW(page, IDC_MESSAGE, message.c_str());
@@ -165,42 +207,51 @@ namespace Lj1005::Prerequisites {
             void Start(HWND page, bool prepare, Work action, Fs::path file = {}, HANDLE process = nullptr) {
                 work = action;
                 error.clear();
-                launchPrinter = false;
+                printer = {};
                 detail = action == Work::download       ? L"Downloading the original HP firmware..."
                          : action == Work::certificates ? L"Waiting for Windows to add tester trust..."
                          : action == Work::browse       ? L"Verifying the selected firmware..."
                                                         : L"Checking prerequisites...";
-                worker = std::jthread([this, page, action, image = std::move(file), process](std::stop_token stop) {
-                    try {
-                        if (action == Work::download) {
-                            DownloadFirmware(directory, stop, [page](std::size_t bytes) {
-                                PostMessageW(page, DOWNLOAD_PROGRESS, bytes / BYTES_PER_KIB, 0);
-                            });
+                const auto sheet = GetParent(page);
+                worker =
+                    std::jthread([this, page, sheet, action, image = std::move(file), process](std::stop_token stop) {
+                        try {
+                            if (action == Work::download) {
+                                DownloadFirmware(directory, stop, [page](std::size_t bytes) {
+                                    PostMessageW(page, DOWNLOAD_PROGRESS, bytes / BYTES_PER_KIB, 0);
+                                });
+                            }
+                            else if (action == Work::browse) {
+                                SupplyFirmware(directory, image);
+                            }
+                            else if (action == Work::certificates) {
+                                DWORD outcome = ERROR_GEN_FAILURE;
+                                // Let the elevated operation settle before allowing the wizard to close.
+                                if (WaitForSingleObject(process, INFINITE) == WAIT_OBJECT_0)
+                                    GetExitCodeProcess(process, &outcome);
+                                CloseHandle(process);
+                                if (outcome != ERROR_SUCCESS)
+                                    throw std::runtime_error("Windows could not add tester trust (error " +
+                                                             std::to_string(outcome) +
+                                                             "). Check the certificate policy and retry.");
+                            }
                         }
-                        else if (action == Work::browse) {
-                            SupplyFirmware(directory, image);
+                        catch (const std::exception& failure) {
+                            error = Message(failure.what());
                         }
-                        else if (action == Work::certificates) {
-                            DWORD outcome = ERROR_GEN_FAILURE;
-                            // Let the elevated operation settle before allowing the wizard to close.
-                            if (WaitForSingleObject(process, INFINITE) == WAIT_OBJECT_0)
-                                GetExitCodeProcess(process, &outcome);
-                            CloseHandle(process);
-                            if (outcome != ERROR_SUCCESS)
-                                throw std::runtime_error("Windows could not add tester trust (error " +
-                                                         std::to_string(outcome) +
-                                                         "). Check the certificate policy and retry.");
+                        if (!stop.stop_requested()) {
+                            result = Inspect(directory);
+                            if (action == Work::openPrinter && result.Ready() && !stop.stop_requested()) {
+                                try {
+                                    printer = OpenPrinter(sheet, stop);
+                                }
+                                catch (const std::exception& failure) {
+                                    error = Message(failure.what());
+                                }
+                            }
                         }
-                    }
-                    catch (const std::exception& failure) {
-                        error = Message(failure.what());
-                    }
-                    if (!stop.stop_requested()) {
-                        result = Inspect(directory);
-                        launchPrinter = action == Work::openPrinter && result.Ready();
-                    }
-                    PostMessageW(page, WORK_COMPLETE, 0, 0);
-                });
+                        PostMessageW(page, WORK_COMPLETE, 0, 0);
+                    });
                 Render(page, prepare);
             }
 
@@ -249,18 +300,13 @@ namespace Lj1005::Prerequisites {
                 const auto next = work;
                 status = std::move(result);
                 detail = std::move(error);
-                if (launchPrinter) {
+                if (printer.window) {
                     const auto sheet = GetParent(page);
-                    try {
-                        OpenPrinter(sheet);
-                        PropSheet_PressButton(sheet, PSBTN_CANCEL);
-                        return;
-                    }
-                    catch (const std::exception& failure) {
-                        detail = Message(failure.what());
-                    }
+                    printer.Activate(sheet);
+                    PropSheet_PressButton(sheet, PSBTN_CANCEL);
+                    return;
                 }
-                else if (next == Work::openPrinter) {
+                if (next == Work::openPrinter && detail.empty()) {
                     detail = L"Readiness changed. Check the results above before opening Add Printer.";
                 }
                 if (prepare && next == Work::certificates && detail.empty() && status.certificate.ready &&

@@ -9,6 +9,7 @@ was current; these were development and tester builds.
 
 - Add a native uninstall wizard with a removal preview, restart-and-retry guidance and optional tester certificate cleanup.
 - Verify the installed driver against the exact package that shipped with the uninstaller. Retain the PowerShell fallback.
+- Bring the Windows Add Printer dialog to the foreground before closing the prerequisite wizard.
 - Document full removal followed by a fresh Have Disk installation as the upgrade procedure.
 
 ## 0.3.0 — 2026-11-23
